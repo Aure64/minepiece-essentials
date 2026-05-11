@@ -21,6 +21,7 @@ public enum Island {
     ILE_HOMMES_POISSONS("Ile des Hommes-Poissons", "homme_poissons", "nouveau_monde"),
     PUNK_HAZARD("Punk Hazard", "punk_hazard", "nouveau_monde"),
     DRESSROSA("Dressrosa", "dressrosa", "nouveau_monde"),
+    WHOLE_CAKE("Whole Cake", "whole_cake", "nouveau_monde"),
     UNKNOWN("Unknown", "unknown", "unknown");
 
     public final String displayName;
@@ -44,6 +45,8 @@ public enum Island {
         BOSSBAR_MAP.put("archipel des sabaody", SABAODY);
         BOSSBAR_MAP.put("ile des hommes poissons", ILE_HOMMES_POISSONS);
         BOSSBAR_MAP.put("ile des hommes-poissons", ILE_HOMMES_POISSONS);
+        BOSSBAR_MAP.put("whole cake island", WHOLE_CAKE);
+        BOSSBAR_MAP.put("royaume de drum", DRUM);
     }
 
     public static Island fromBossbarText(String text) {

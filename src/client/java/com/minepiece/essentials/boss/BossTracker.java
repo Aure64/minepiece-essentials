@@ -19,11 +19,13 @@ public class BossTracker {
 
     public static final Set<Island> TRACKED_ISLANDS = Set.of(
         Island.FUCHSIA,
+        Island.DRUM,
         Island.ALABASTA,
         Island.THRILLER_BARK,
         Island.SABAODY,
         Island.ILE_HOMMES_POISSONS,
-        Island.DRESSROSA
+        Island.DRESSROSA,
+        Island.WHOLE_CAKE
     );
 
     private static final Pattern COORD_PATTERN =
@@ -54,46 +56,73 @@ public class BossTracker {
         }
     }
 
-    // Initial scan on server join
     private boolean initialScanDone = false;
-    private final Queue<Island> initialQueue = new LinkedList<>();
-    private long lastAutoRefresh = 0;
-    private int initialTotal = 0;
-    private int initialScanned = 0;
     private boolean wasConnected = false;
+
+    // Refresh queue — clicks add to it, tick() polls one at a time respecting cooldown.
+    // Each cycle takes ~5s (BGRefresh global cooldown is the bottleneck).
+    private static final long PER_ISLAND_SECONDS = 5L;
+    private final Deque<Island> refreshQueue = new ArrayDeque<>();
 
     public void tick() {
         BackgroundGuiRefresh.tick();
 
-        // Detect disconnect/reconnect — reset scan when island becomes UNKNOWN then back
         boolean connected = IslandDetector.getInstance().getCurrentIsland() != Island.UNKNOWN;
         if (wasConnected && !connected) {
-            // Disconnected — reset for next connection
             initialScanDone = false;
-            initialTotal = 0;
-            initialScanned = 0;
-            initialQueue.clear();
+            refreshQueue.clear();
             BossAlertManager.getInstance().reset();
         }
         wasConnected = connected;
 
-        // Check boss timers for sound alerts
         BossAlertManager.getInstance().tick();
 
-        // Auto-scan disabled — use manual refresh buttons in HUD
         if (!initialScanDone && connected) {
             initialScanDone = true;
+        }
+
+        if (!refreshQueue.isEmpty() && !BackgroundGuiRefresh.isBusy() && BackgroundGuiRefresh.isReady()) {
+            Island next = refreshQueue.poll();
+            if (next != null) {
+                doRefresh(next);
+            }
         }
     }
 
     /**
-     * Manually refresh a single island. Called when user clicks the refresh button in HUD.
+     * Queue an island for refresh. Clicking the refresh button always enqueues —
+     * no silent failures from cooldown / busy state.
      */
     public void refreshIsland(Island island) {
-        if (BackgroundGuiRefresh.isBusy()) return;
+        if (refreshQueue.contains(island)) return;
+        refreshQueue.add(island);
+    }
 
+    public void refreshAllIslands() {
+        for (Island island : TRACKED_ISLANDS) {
+            if (!refreshQueue.contains(island)) {
+                refreshQueue.add(island);
+            }
+        }
+    }
+
+    public void cancelRefreshQueue() {
+        refreshQueue.clear();
+    }
+
+    public int getQueueSize() { return refreshQueue.size(); }
+    public boolean isInQueue(Island island) { return refreshQueue.contains(island); }
+
+    /** Estimated seconds until queue is fully drained. */
+    public int getEtaSeconds() {
+        int pending = refreshQueue.size();
+        long cooldownRemaining = BackgroundGuiRefresh.getCooldownRemainingMs();
+        return (int) Math.ceil((pending * PER_ISLAND_SECONDS * 1000L + cooldownRemaining) / 1000.0);
+    }
+
+    private void doRefresh(Island island) {
         String command = island.getCommand();
-        MinepieceEssentialsClient.LOGGER.info("[BossTracker] Manual refresh: {} ({})", island.displayName, command);
+        MinepieceEssentialsClient.LOGGER.info("[BossTracker] Refresh: {} ({})", island.displayName, command);
 
         BackgroundGuiRefresh.sendCommand(command, items -> {
             int mobSlot = findMobSlot(items);
@@ -179,14 +208,6 @@ public class BossTracker {
     public Map<Island, List<BossData>> getAllBossData() {
         return Collections.unmodifiableMap(bossMap);
     }
-
-    public boolean isInitialScanInProgress() { return !initialScanDone && initialTotal > 0; }
-    public float getInitialScanProgress() {
-        if (initialTotal == 0) return 0;
-        return (float) initialScanned / initialTotal;
-    }
-    public int getInitialScanned() { return initialScanned; }
-    public int getInitialTotal() { return initialTotal; }
 
     private void saveBossData(Island island, List<BossData> bosses) {
         Path path = MinepieceEssentialsClient.getInstance().getConfigManager()

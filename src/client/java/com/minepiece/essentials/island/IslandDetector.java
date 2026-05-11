@@ -17,7 +17,7 @@ public class IslandDetector {
         // Log bossbar text periodically to debug detection
         if (System.currentTimeMillis() - lastBossBarLog > 5000) {
             lastBossBarLog = System.currentTimeMillis();
-            MinepieceEssentialsClient.LOGGER.info("[IslandDetector] Bossbar text: '{}'", text);
+            MinepieceEssentialsClient.LOGGER.debug("[IslandDetector] Bossbar text: '{}'", text);
         }
 
         Island detected = Island.fromBossbarText(text);

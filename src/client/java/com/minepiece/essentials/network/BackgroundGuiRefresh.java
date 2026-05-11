@@ -18,6 +18,17 @@ public class BackgroundGuiRefresh {
 
     public static boolean isBusy() { return busy; }
 
+    /** True when the global cooldown has elapsed since the last refresh start. */
+    public static boolean isReady() {
+        return System.currentTimeMillis() - lastRefreshTime >= 5000;
+    }
+
+    /** Milliseconds remaining before another refresh can fire. 0 if ready. */
+    public static long getCooldownRemainingMs() {
+        long elapsed = System.currentTimeMillis() - lastRefreshTime;
+        return Math.max(0, 5000 - elapsed);
+    }
+
     /**
      * Send a command and collect GUI items passively from slot updates.
      * The screen is blocked from opening via mixin cancel on onOpenScreen.
