@@ -1,0 +1,25 @@
+{
+    "schemaVersion": 1,
+    "id": "minepiece-essentials",
+    "version": "${version}",
+    "name": "Minepiece Essentials",
+    "description": "Boss timers and quest parchment reader for the MinePiece server.",
+    "authors": ["Aurelien"],
+    "contact": {},
+    "license": "All-Rights-Reserved",
+    "icon": "assets/minepiece-essentials/icon.png",
+    "environment": "client",
+    "entrypoints": {
+        "client": ["com.minepiece.essentials.MinepieceEssentialsClient"]
+    },
+    "mixins": ["minepiece-essentials.mixins.json"],
+    "depends": {
+        "fabricloader": ">=0.19.2",
+        "minecraft": "~1.21.11",
+        "java": ">=21",
+        "fabric-api": "*"
+    },
+    "suggests": {
+        "xaerominimap": "*"
+    }
+}

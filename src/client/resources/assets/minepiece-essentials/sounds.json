@@ -1,0 +1,10 @@
+{
+  "boss.luffy": { "sounds": ["minepiece-essentials:boss/luffy"] },
+  "boss.nightmare_luffy": { "sounds": ["minepiece-essentials:boss/nightmare_luffy"] },
+  "boss.sabo": { "sounds": ["minepiece-essentials:boss/sabo"] },
+  "boss.trafalgar_law": { "sounds": ["minepiece-essentials:boss/trafalgar_law"] },
+  "boss.ace": { "sounds": ["minepiece-essentials:boss/ace"] },
+  "boss.robin": { "sounds": ["minepiece-essentials:boss/robin"] },
+  "boss.vander_decken_ix": { "sounds": ["minepiece-essentials:boss/vander_decken_ix"] },
+  "boss.perona": { "sounds": ["minepiece-essentials:boss/perona"] }
+}
