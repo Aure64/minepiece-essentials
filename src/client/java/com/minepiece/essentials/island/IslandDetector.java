@@ -31,4 +31,8 @@ public class IslandDetector {
     }
 
     public Island getCurrentIsland() { return currentIsland; }
+
+    public void reset() {
+        currentIsland = Island.UNKNOWN;
+    }
 }

@@ -11,6 +11,7 @@ import com.minepiece.essentials.island.IslandDetector;
 import com.minepiece.essentials.quest.ParcheminHud;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.minecraft.client.option.KeyBinding;
 import net.minecraft.client.util.InputUtil;
@@ -47,6 +48,17 @@ public class MinepieceEssentialsClient implements ClientModInitializer {
 
         HudElementRegistry.register(new BossTimerHud());
         HudElementRegistry.register(new ParcheminHud());
+
+        // Reset transient state (queues, last island) on every server join/disconnect.
+        // Without this, refreshQueue can persist across reconnects and resume firing.
+        ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> {
+            IslandDetector.getInstance().reset();
+            BossTracker.getInstance().onConnectionChange();
+        });
+        ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> {
+            IslandDetector.getInstance().reset();
+            BossTracker.getInstance().onConnectionChange();
+        });
 
         registerKeybinds();
 

@@ -110,6 +110,13 @@ public class BossTracker {
         refreshQueue.clear();
     }
 
+    public void onConnectionChange() {
+        refreshQueue.clear();
+        initialScanDone = false;
+        wasConnected = false;
+        BossAlertManager.getInstance().reset();
+    }
+
     public int getQueueSize() { return refreshQueue.size(); }
     public boolean isInQueue(Island island) { return refreshQueue.contains(island); }
 
