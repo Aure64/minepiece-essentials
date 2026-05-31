@@ -34,7 +34,6 @@ public class MinepieceEssentialsClient implements ClientModInitializer {
     private ConfigManager configManager;
 
     private KeyBinding editHudKey;
-    private KeyBinding placeWaypointKey;
     private KeyBinding helpKey;
 
     private boolean pendingHelp = false;
@@ -98,16 +97,6 @@ public class MinepieceEssentialsClient implements ClientModInitializer {
             while (editHudKey.wasPressed()) {
                 client.setScreen(new HudEditScreen());
             }
-            while (placeWaypointKey.wasPressed()) {
-                if (client.player != null) {
-                    var island = IslandDetector.getInstance().getCurrentIsland();
-                    WaypointManager.getInstance().addManualWaypoint(
-                        island, "Waypoint",
-                        (int) client.player.getX(),
-                        (int) client.player.getY(),
-                        (int) client.player.getZ(), 6);
-                }
-            }
         });
 
         LOGGER.info("Minepiece Essentials initialized with {} HUD elements",
@@ -117,8 +106,6 @@ public class MinepieceEssentialsClient implements ClientModInitializer {
     private void registerKeybinds() {
         editHudKey = KeyBindingHelper.registerKeyBinding(new KeyBinding(
             "key.minepiece-essentials.edit_hud", InputUtil.Type.KEYSYM, GLFW.GLFW_KEY_K, CATEGORY));
-        placeWaypointKey = KeyBindingHelper.registerKeyBinding(new KeyBinding(
-            "key.minepiece-essentials.waypoint", InputUtil.Type.KEYSYM, GLFW.GLFW_KEY_B, CATEGORY));
         helpKey = KeyBindingHelper.registerKeyBinding(new KeyBinding(
             "key.minepiece-essentials.help", InputUtil.Type.KEYSYM, GLFW.GLFW_KEY_H, CATEGORY));
     }

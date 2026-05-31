@@ -36,7 +36,6 @@ See [UPGRADE.md](UPGRADE.md).
 | Default | Action |
 |--|--|
 | `K` | Open HUD edit screen |
-| `B` | Place a manual waypoint at your current position |
 | `H` | Open the in-game help guide |
 
 ## Configuration
