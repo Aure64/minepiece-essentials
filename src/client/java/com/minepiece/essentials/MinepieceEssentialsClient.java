@@ -5,9 +5,14 @@ import com.minepiece.essentials.boss.BossTracker;
 import com.minepiece.essentials.boss.ModSounds;
 import com.minepiece.essentials.boss.WaypointManager;
 import com.minepiece.essentials.config.ConfigManager;
+import com.minepiece.essentials.help.HelpScreen;
 import com.minepiece.essentials.hud.HudEditScreen;
 import com.minepiece.essentials.hud.HudElementRegistry;
 import com.minepiece.essentials.island.IslandDetector;
+import com.minepiece.essentials.pet.ActivePetsHud;
+import com.minepiece.essentials.pet.MinionFeedLearner;
+import com.minepiece.essentials.pet.MinionTooltip;
+import com.minepiece.essentials.pet.PetStatTooltip;
 import com.minepiece.essentials.quest.ParcheminHud;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
@@ -30,6 +35,10 @@ public class MinepieceEssentialsClient implements ClientModInitializer {
 
     private KeyBinding editHudKey;
     private KeyBinding placeWaypointKey;
+    private KeyBinding helpKey;
+
+    private boolean pendingHelp = false;
+    private boolean helpShownThisSession = false;
 
     @Override
     public void onInitializeClient() {
@@ -48,12 +57,19 @@ public class MinepieceEssentialsClient implements ClientModInitializer {
 
         HudElementRegistry.register(new BossTimerHud());
         HudElementRegistry.register(new ParcheminHud());
+        HudElementRegistry.register(new ActivePetsHud());
+
+        PetStatTooltip.register();
+        MinionTooltip.register();
 
         // Reset transient state (queues, last island) on every server join/disconnect.
         // Without this, refreshQueue can persist across reconnects and resume firing.
         ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> {
             IslandDetector.getInstance().reset();
             BossTracker.getInstance().onConnectionChange();
+            if (!configManager.config().helpDismissed && !helpShownThisSession) {
+                pendingHelp = true;
+            }
         });
         ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> {
             IslandDetector.getInstance().reset();
@@ -63,10 +79,22 @@ public class MinepieceEssentialsClient implements ClientModInitializer {
         registerKeybinds();
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
+            // Auto-learn minion resource XP ratios from the feeding screen.
+            MinionFeedLearner.tick();
+
             if (!ServerDetector.isOnMinePiece()) return;
 
             BossTracker.getInstance().tick();
 
+            if (pendingHelp && client.currentScreen == null && client.player != null) {
+                client.setScreen(new HelpScreen());
+                pendingHelp = false;
+                helpShownThisSession = true;
+            }
+
+            while (helpKey.wasPressed()) {
+                client.setScreen(new HelpScreen());
+            }
             while (editHudKey.wasPressed()) {
                 client.setScreen(new HudEditScreen());
             }
@@ -91,6 +119,8 @@ public class MinepieceEssentialsClient implements ClientModInitializer {
             "key.minepiece-essentials.edit_hud", InputUtil.Type.KEYSYM, GLFW.GLFW_KEY_K, CATEGORY));
         placeWaypointKey = KeyBindingHelper.registerKeyBinding(new KeyBinding(
             "key.minepiece-essentials.waypoint", InputUtil.Type.KEYSYM, GLFW.GLFW_KEY_B, CATEGORY));
+        helpKey = KeyBindingHelper.registerKeyBinding(new KeyBinding(
+            "key.minepiece-essentials.help", InputUtil.Type.KEYSYM, GLFW.GLFW_KEY_H, CATEGORY));
     }
 
     public static MinepieceEssentialsClient getInstance() { return instance; }

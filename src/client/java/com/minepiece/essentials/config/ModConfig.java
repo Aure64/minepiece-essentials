@@ -14,4 +14,12 @@ public class ModConfig {
     public int globalRefreshCooldownMs = 5000;
 
     public boolean notificationSoundsEnabled = true;
+
+    public boolean petStatQualityEnabled = true;
+
+    public boolean minionCalculatorEnabled = true;
+
+    public boolean petPanelEnabled = true;
+
+    public boolean helpDismissed = false;
 }

@@ -1,5 +1,7 @@
 {
     "category.minepiece-essentials.main": "Minepiece Essentials",
+    "key.category.minepiece-essentials.main": "Minepiece Essentials",
     "key.minepiece-essentials.edit_hud": "Editer le HUD",
-    "key.minepiece-essentials.waypoint": "Placer un waypoint"
+    "key.minepiece-essentials.waypoint": "Placer un waypoint",
+    "key.minepiece-essentials.help": "Aide / Guide"
 }

@@ -1,11 +1,15 @@
 # Minepiece Essentials
 
-A lightweight Fabric mod for the MinePiece server with two passive QoL features:
+A lightweight Fabric mod for the MinePiece server with passive quality-of-life features:
 
-- **Boss timers** — auto-tracks boss respawns per island, plays a sound alert when one is close.
+- **Boss timers** — auto-tracks boss respawns per island, plays a sound alert when one is close. Click the refresh button to update timers (don't move during a "Refresh All").
 - **Parchment reader** — scans quest parchments in your inventory and shows their objectives in a HUD.
+- **Pet stat quality** — shows the roll quality (`%` of the max for the rarity & level) next to each pet stat in the `/pets` tooltip.
+- **Minion calculator** — shows the resources left to reach the next prestige and the max prestige (P10), in stacks, in the minion tooltip. Resource XP values are learned automatically from the feeding screen.
+- **Active pets panel** — a HUD listing your active pets and the total combat stats they grant.
+- **In-game help** — a guide popup shown on first join and reopenable with `H`.
 
-Both HUDs are draggable. Press `K` to enter edit mode, drag with the mouse, click outside or press `Esc` to save.
+All HUDs are draggable. Press `K` to enter edit mode, drag with the mouse, scroll to resize, press `Esc` to save.
 
 ## Requirements
 
@@ -33,6 +37,7 @@ See [UPGRADE.md](UPGRADE.md).
 |--|--|
 | `K` | Open HUD edit screen |
 | `B` | Place a manual waypoint at your current position |
+| `H` | Open the in-game help guide |
 
 ## Configuration
 
