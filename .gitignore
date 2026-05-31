@@ -5,3 +5,6 @@ out/
 *.iml
 .vscode/
 run/
+
+# Local-only Claude Code instructions
+CLAUDE.md
