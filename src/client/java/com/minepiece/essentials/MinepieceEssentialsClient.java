@@ -12,6 +12,8 @@ import com.minepiece.essentials.help.HelpScreen;
 import com.minepiece.essentials.hud.HudEditScreen;
 import com.minepiece.essentials.hud.HudElementRegistry;
 import com.minepiece.essentials.island.IslandDetector;
+import com.minepiece.essentials.job.JobHud;
+import com.minepiece.essentials.job.JobTracker;
 import com.minepiece.essentials.pet.ActivePetsHud;
 import com.minepiece.essentials.pet.MinionFeedLearner;
 import com.minepiece.essentials.pet.MinionTooltip;
@@ -63,6 +65,7 @@ public class MinepieceEssentialsClient implements ClientModInitializer {
         HudElementRegistry.register(new ActivePetsHud());
         HudElementRegistry.register(new AscensionHud());
         HudElementRegistry.register(new HakiHud());
+        HudElementRegistry.register(new JobHud());
 
         HakiTimer.init();
 
@@ -76,6 +79,7 @@ public class MinepieceEssentialsClient implements ClientModInitializer {
         ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> {
             IslandDetector.getInstance().reset();
             BossTracker.getInstance().onConnectionChange();
+            JobTracker.reset();
             if (!configManager.config().helpDismissed && !helpShownThisSession) {
                 pendingHelp = true;
             }

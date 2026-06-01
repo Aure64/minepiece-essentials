@@ -5,6 +5,7 @@
     "client": [
         "BossBarHudMixin",
         "ClientPlayNetworkHandlerMixin",
+        "InGameHudMixin",
         "MinecraftClientMixin"
     ],
     "injectors": {

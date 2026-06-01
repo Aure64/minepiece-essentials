@@ -61,6 +61,9 @@ public class HelpScreen extends Screen {
             info("Total des stats données par tes pets actifs."),
             important("Fais /pets une fois pour remplir le panneau."),
         }),
+        new Feature("Progression métier", new Line[]{
+            info("Niveau, XP et % du métier en cours de récolte."),
+        }),
         new Feature("Éditeur de HUD", new Line[]{
             important("Touche K"),
             info("pour déplacer/redimensionner les panneaux."),

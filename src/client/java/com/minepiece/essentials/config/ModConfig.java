@@ -36,4 +36,6 @@ public class ModConfig {
     public boolean ascensionHudEnabled = true;
 
     public boolean hakiTimerEnabled = true;
+
+    public boolean jobHudEnabled = true;
 }
