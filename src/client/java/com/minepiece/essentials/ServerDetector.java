@@ -35,7 +35,9 @@ public final class ServerDetector {
     // cuts the per-frame allocations without any noticeable detection lag.
     private static final long CACHE_TTL_MS = 250;
     private static boolean cachedResult = false;
-    private static long cachedAt = Long.MIN_VALUE;
+    // 0 (not Long.MIN_VALUE) so the first `now - cachedAt` can't overflow — with
+    // MIN_VALUE it wrapped negative, stayed < TTL forever and never recomputed.
+    private static long cachedAt = 0;
 
     private ServerDetector() {}
 
