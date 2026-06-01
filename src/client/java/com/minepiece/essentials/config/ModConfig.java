@@ -22,4 +22,8 @@ public class ModConfig {
     public boolean petPanelEnabled = true;
 
     public boolean helpDismissed = false;
+
+    // Escape hatch: force the mod active even if server auto-detection fails
+    // (e.g. joined by direct IP, or a server address alias we don't recognise).
+    public boolean forceMinePieceDetection = false;
 }
