@@ -12,18 +12,17 @@ public class ParcheminHud extends HudElement {
     private static final int WIDTH = 170;
     private final ParcheminScanner parcheminScanner = new ParcheminScanner();
 
+    // Sorted snapshot, rebuilt in tick() (20×/s) instead of every render frame.
+    private List<ParcheminScanner.QuestInfo> sorted = List.of();
+
     public ParcheminHud() {
         super("parchemins", 5, 300, WIDTH, 100);
     }
 
     @Override
     public void render(DrawContext ctx, float tickDelta) {
-        List<ParcheminScanner.QuestInfo> parchemins = parcheminScanner.getActiveQuests();
+        List<ParcheminScanner.QuestInfo> parchemins = sorted;
         if (parchemins.isEmpty()) return;
-
-        parchemins = parchemins.stream()
-                .sorted(Comparator.comparingInt(ParcheminScanner.QuestInfo::estimateRemainingSeconds))
-                .toList();
 
         int h = 20 + parchemins.size() * 24 + 4;
         this.height = h;
@@ -53,5 +52,9 @@ public class ParcheminHud extends HudElement {
     @Override
     public void tick() {
         parcheminScanner.tick();
+        List<ParcheminScanner.QuestInfo> active = parcheminScanner.getActiveQuests();
+        sorted = active.isEmpty() ? List.of() : active.stream()
+                .sorted(Comparator.comparingInt(ParcheminScanner.QuestInfo::estimateRemainingSeconds))
+                .toList();
     }
 }

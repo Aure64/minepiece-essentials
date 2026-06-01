@@ -29,15 +29,30 @@ public final class ServerDetector {
     private static boolean lastState = false;
     private static String lastReason = "";
 
+    // isOnMinePiece() is polled every render frame AND every tick; detect() does
+    // string work (toLowerCase, hostname lookup). The answer only changes on
+    // connect/disconnect/island-change, so cache it for a short window — this
+    // cuts the per-frame allocations without any noticeable detection lag.
+    private static final long CACHE_TTL_MS = 250;
+    private static boolean cachedResult = false;
+    private static long cachedAt = Long.MIN_VALUE;
+
     private ServerDetector() {}
 
     public static boolean isOnMinePiece() {
+        long now = System.currentTimeMillis();
+        if (now - cachedAt < CACHE_TTL_MS) {
+            return cachedResult;
+        }
+        cachedAt = now;
+
         boolean result = detect();
         if (result != lastState) {
             lastState = result;
             MinepieceEssentialsClient.LOGGER.info("[ServerDetector] {} — {}",
                 result ? "active" : "inactive", lastReason);
         }
+        cachedResult = result;
         return result;
     }
 

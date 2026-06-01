@@ -34,6 +34,8 @@ public class AscensionHud extends HudElement {
 
     private List<AscensionItem> items = List.of();
     private int ticks;
+    private boolean hasFruit;
+    private boolean hasWeapon;
 
     public AscensionHud() {
         super("ascensions", 5, 360, WIDTH, 60);
@@ -44,6 +46,17 @@ public class AscensionHud extends HudElement {
         if (ticks++ % SCAN_INTERVAL != 0) return;
         ClientPlayerEntity player = MinecraftClient.getInstance().player;
         items = player == null ? List.of() : scan(player);
+
+        // Precompute the section flags once per scan instead of streaming twice
+        // every render frame.
+        boolean f = false, w = false;
+        for (AscensionItem it : items) {
+            if (it.type() == AscensionItem.Type.FRUIT) f = true;
+            else w = true;
+            if (f && w) break;
+        }
+        hasFruit = f;
+        hasWeapon = w;
     }
 
     private static List<AscensionItem> scan(ClientPlayerEntity player) {
@@ -77,8 +90,6 @@ public class AscensionHud extends HudElement {
 
         boolean fruitHeaderDrawn = false;
         boolean weaponHeaderDrawn = false;
-        boolean hasFruit = snapshot.stream().anyMatch(i -> i.type() == AscensionItem.Type.FRUIT);
-        boolean hasWeapon = snapshot.stream().anyMatch(i -> i.type() == AscensionItem.Type.WEAPON);
         int headers = (hasFruit ? 1 : 0) + (hasWeapon ? 1 : 0);
         int h = 20 + (snapshot.size() + headers) * 10 + 4;
         this.height = h;
