@@ -14,6 +14,7 @@ import com.minepiece.essentials.pet.MinionFeedLearner;
 import com.minepiece.essentials.pet.MinionTooltip;
 import com.minepiece.essentials.pet.PetStatTooltip;
 import com.minepiece.essentials.quest.ParcheminHud;
+import com.minepiece.essentials.update.UpdateChecker;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
@@ -61,6 +62,8 @@ public class MinepieceEssentialsClient implements ClientModInitializer {
         PetStatTooltip.register();
         MinionTooltip.register();
 
+        UpdateChecker.init();
+
         // Reset transient state (queues, last island) on every server join/disconnect.
         // Without this, refreshQueue can persist across reconnects and resume firing.
         ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> {
@@ -78,6 +81,9 @@ public class MinepieceEssentialsClient implements ClientModInitializer {
         registerKeybinds();
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
+            // Not gated to MinePiece: players whose detection fails still get notified to update.
+            UpdateChecker.tickNotify();
+
             // Auto-learn minion resource XP ratios from the feeding screen.
             MinionFeedLearner.tick();
 
