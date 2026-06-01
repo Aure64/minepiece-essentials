@@ -1,5 +1,8 @@
 package com.minepiece.essentials.config;
 
+import java.util.HashSet;
+import java.util.Set;
+
 public class ModConfig {
     public boolean islandDetectorEnabled = true;
     public boolean bossTrackerEnabled = true;
@@ -26,4 +29,11 @@ public class ModConfig {
     // Escape hatch: force the mod active even if server auto-detection fails
     // (e.g. joined by direct IP, or a server address alias we don't recognise).
     public boolean forceMinePieceDetection = false;
+
+    // Island ids collapsed in the Boss Timers HUD (header shown, bosses hidden).
+    public Set<String> collapsedBossIslands = new HashSet<>();
+
+    public boolean ascensionHudEnabled = true;
+
+    public boolean hakiTimerEnabled = true;
 }

@@ -11,8 +11,8 @@ import java.util.Map;
 /** HUD panel listing the active pets and the total combat stats they grant. */
 public class ActivePetsHud extends HudElement {
 
-    private static final int WIDTH = 150;
-    private static final int NAME_COLOR = 0xFFFFE9D5;
+    private static final int WIDTH = 170;
+    private static final int LEVEL_COLOR = 0xFFCBC8C7;
 
     public ActivePetsHud() {
         super("active_pets", 5, 120, WIDTH, 60);
@@ -24,18 +24,26 @@ public class ActivePetsHud extends HudElement {
             return;
         }
         ActivePetsState.Snapshot snap = ActivePetsState.get();
-        if (snap.isEmpty()) return;
+        if (snap.isEmpty()) {
+            this.height = 32;
+            ParchmentRenderer.renderPanel(ctx, 0, 0, WIDTH, 32, "Pets actifs");
+            RenderUtils.drawText(ctx, "Ouvre /pets pour afficher", 6, 20, 0xFFCBC8C7);
+            return;
+        }
 
-        int names = snap.petNames().size();
+        int count = snap.pets().size();
         int stats = snap.totals().size();
-        int h = 20 + names * 10 + 6 + stats * 10 + 4;
+        int h = 20 + count * 10 + 6 + stats * 10 + 4;
         this.height = h;
 
-        ParchmentRenderer.renderPanel(ctx, 0, 0, WIDTH, h, "Pets actifs (" + names + ")");
+        ParchmentRenderer.renderPanel(ctx, 0, 0, WIDTH, h, "Pets actifs (" + count + ")");
 
         int y = 20;
-        for (String name : snap.petNames()) {
-            RenderUtils.drawText(ctx, truncate(name), 6, y, NAME_COLOR);
+        for (ActivePetsState.ActivePet pet : snap.pets()) {
+            String lvl = pet.level() >= 20 ? "Max" : (pet.level() > 0 ? "Lv" + pet.level() : "");
+            int lvlX = WIDTH - 6 - RenderUtils.textWidth(lvl);
+            RenderUtils.drawText(ctx, lvl, lvlX, y, LEVEL_COLOR);
+            RenderUtils.drawText(ctx, truncate(pet.name(), lvlX - 8), 6, y, pet.color());
             y += 10;
         }
 
@@ -55,10 +63,10 @@ public class ActivePetsHud extends HudElement {
         ActivePetsScanner.tick();
     }
 
-    private static String truncate(String name) {
-        if (RenderUtils.textWidth(name) <= WIDTH - 12) return name;
+    private static String truncate(String name, int budget) {
+        if (RenderUtils.textWidth(name) <= budget) return name;
         String s = name;
-        while (s.length() > 1 && RenderUtils.textWidth(s + "..") > WIDTH - 12) {
+        while (s.length() > 1 && RenderUtils.textWidth(s + "..") > budget) {
             s = s.substring(0, s.length() - 1);
         }
         return s + "..";

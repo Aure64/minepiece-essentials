@@ -4,17 +4,22 @@ import com.minepiece.essentials.MinepieceEssentialsClient;
 import com.minepiece.essentials.ServerDetector;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
+import net.minecraft.component.DataComponentTypes;
+import net.minecraft.component.type.NbtComponent;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.item.tooltip.TooltipType;
 import net.minecraft.screen.slot.Slot;
+import net.minecraft.text.Style;
 import net.minecraft.text.Text;
+import net.minecraft.text.TextColor;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Scans the open /pets screen and publishes the combat-stat total of the
@@ -33,6 +38,12 @@ public final class ActivePetsScanner {
     private static final String SECTION_END = "Minion Effects";
     private static final int SCAN_INTERVAL = 4; // ticks
 
+    private static final Pattern RARITY_TRACK =
+        Pattern.compile("tracks\\.==(COMMON|RARE|EPIC|LEGENDARY|MYTHIC)");
+    private static final Pattern NIVEAU = Pattern.compile("Niveau:\\s*(\\S+)");
+    private static final int MAX_LEVEL = 20;
+    private static final int DEFAULT_COLOR = 0xFFFFE9D5;
+
     private static int ticks;
     private static List<String> lastLoggedNames = List.of();
 
@@ -49,7 +60,8 @@ public final class ActivePetsScanner {
 
     private static void scan(HandledScreen<?> screen, MinecraftClient client) {
         boolean isPetsScreen = false;
-        Map<String, List<PetEffect>> active = new LinkedHashMap<>();
+        List<ActivePetsState.ActivePet> activePets = new ArrayList<>();
+        List<PetEffect> allStats = new ArrayList<>();
 
         for (Slot slot : screen.getScreenHandler().slots) {
             ItemStack stack = slot.getStack();
@@ -59,23 +71,66 @@ public final class ActivePetsScanner {
             if (containsLine(tip, ACTIVE_ACTION) || containsLine(tip, INACTIVE_ACTION)) {
                 isPetsScreen = true;
             }
-            if (containsLine(tip, ACTIVE_ACTION)) {
-                active.put(stack.getName().getString(), combatStats(tip));
-            }
+            if (!containsLine(tip, ACTIVE_ACTION)) continue;
+
+            String nbt = nbt(stack);
+            int color = nameColor(stack.getName());
+            if (color == 0) color = rarityColor(nbt); // fallback when the name has no explicit colour
+            activePets.add(new ActivePetsState.ActivePet(stack.getName().getString(), color, levelOf(tip)));
+            allStats.addAll(combatStats(tip));
         }
 
         // Not the /pets screen, or a page with no active pets → keep the last total.
-        if (!isPetsScreen || active.isEmpty()) return;
+        if (!isPetsScreen || activePets.isEmpty()) return;
 
-        List<PetEffect> all = new ArrayList<>();
-        active.values().forEach(all::addAll);
-        List<String> names = new ArrayList<>(active.keySet());
-        ActivePetsState.set(new ActivePetsState.Snapshot(names, PetStatSum.sum(all)));
+        ActivePetsState.set(new ActivePetsState.Snapshot(activePets, PetStatSum.sum(allStats)));
 
+        List<String> names = activePets.stream().map(ActivePetsState.ActivePet::name).toList();
         if (!names.equals(lastLoggedNames)) {
             lastLoggedNames = names;
             MinepieceEssentialsClient.LOGGER.info("[ActivePets] {} actif(s): {}", names.size(), names);
         }
+    }
+
+    private static String nbt(ItemStack stack) {
+        NbtComponent data = stack.get(DataComponentTypes.CUSTOM_DATA);
+        return data == null ? "" : data.copyNbt().toString();
+    }
+
+    /** First explicit colour in the pet's name Text, as ARGB; 0 if none. */
+    private static int nameColor(Text name) {
+        int[] found = {0};
+        name.visit((style, str) -> {
+            TextColor c = style.getColor();
+            if (c != null && found[0] == 0) found[0] = 0xFF000000 | c.getRgb();
+            return Optional.empty();
+        }, Style.EMPTY);
+        return found[0];
+    }
+
+    /** Fallback colour derived from the rarity token in NBT. */
+    private static int rarityColor(String nbt) {
+        Matcher m = RARITY_TRACK.matcher(nbt);
+        if (m.find()) {
+            Rarity rarity = Rarity.fromTrack(m.group(1));
+            if (rarity != null) return rarity.color();
+        }
+        return DEFAULT_COLOR;
+    }
+
+    /** Pet level from the tooltip "Niveau:" line; "Max" → {@link #MAX_LEVEL}, 0 if absent. */
+    private static int levelOf(List<String> tip) {
+        for (String line : tip) {
+            Matcher m = NIVEAU.matcher(line);
+            if (m.find()) {
+                try {
+                    return Integer.parseInt(m.group(1));
+                } catch (NumberFormatException e) {
+                    return MAX_LEVEL; // "Max"
+                }
+            }
+        }
+        return 0;
     }
 
     private static List<PetEffect> combatStats(List<String> lines) {

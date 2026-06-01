@@ -4,7 +4,10 @@ import com.minepiece.essentials.boss.BossTimerHud;
 import com.minepiece.essentials.boss.BossTracker;
 import com.minepiece.essentials.boss.ModSounds;
 import com.minepiece.essentials.boss.WaypointManager;
+import com.minepiece.essentials.ascension.AscensionHud;
 import com.minepiece.essentials.config.ConfigManager;
+import com.minepiece.essentials.haki.HakiHud;
+import com.minepiece.essentials.haki.HakiTimer;
 import com.minepiece.essentials.help.HelpScreen;
 import com.minepiece.essentials.hud.HudEditScreen;
 import com.minepiece.essentials.hud.HudElementRegistry;
@@ -58,6 +61,10 @@ public class MinepieceEssentialsClient implements ClientModInitializer {
         HudElementRegistry.register(new BossTimerHud());
         HudElementRegistry.register(new ParcheminHud());
         HudElementRegistry.register(new ActivePetsHud());
+        HudElementRegistry.register(new AscensionHud());
+        HudElementRegistry.register(new HakiHud());
+
+        HakiTimer.init();
 
         PetStatTooltip.register();
         MinionTooltip.register();

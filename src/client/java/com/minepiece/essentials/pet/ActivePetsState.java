@@ -6,9 +6,12 @@ import java.util.Map;
 /** Latest snapshot of the active pets and their summed combat-stat bonuses. */
 public final class ActivePetsState {
 
-    public record Snapshot(List<String> petNames, Map<PetStat, Double> totals) {
+    /** An active pet with its rarity-coloured name and level. */
+    public record ActivePet(String name, int color, int level) {}
+
+    public record Snapshot(List<ActivePet> pets, Map<PetStat, Double> totals) {
         public boolean isEmpty() {
-            return petNames.isEmpty() && totals.isEmpty();
+            return pets.isEmpty() && totals.isEmpty();
         }
     }
 

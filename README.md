@@ -2,12 +2,15 @@
 
 A lightweight Fabric mod for the MinePiece server with passive quality-of-life features:
 
-- **Boss timers** — auto-tracks boss respawns per island, plays a sound alert when one is close. Click the refresh button to update timers (don't move during a "Refresh All").
+- **Boss timers** — auto-tracks boss respawns per island, plays a sound alert when one is close. Click the refresh button to update timers (don't move during a "Refresh All"). Click an island header (in edit mode) to collapse/expand it.
 - **Parchment reader** — scans quest parchments in your inventory and shows their objectives in a HUD.
 - **Pet stat quality** — shows the roll quality (`%` of the max for the rarity & level) next to each pet stat in the `/pets` tooltip.
 - **Minion calculator** — shows the resources left to reach the next prestige and the max prestige (P10), in stacks, in the minion tooltip. Resource XP values are learned automatically from the feeding screen.
-- **Active pets panel** — a HUD listing your active pets and the total combat stats they grant.
+- **Active pets panel** — a HUD listing your active pets (rarity-coloured names + level) and the total combat stats they grant.
+- **Ascension panel** — a HUD listing your fruits and weapons with their level, XP to the next level, and a marker when an ascension is available.
+- **Haki timer** — shows the remaining haki cooldown after activation (display only).
 - **In-game help** — a guide popup shown on first join and reopenable with `H`.
+- **Update notifier** — tells you in chat when a newer version is available on GitHub.
 
 All HUDs are draggable. Press `K` to enter edit mode, drag with the mouse, scroll to resize, press `Esc` to save.
 

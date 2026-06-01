@@ -1,5 +1,6 @@
 package com.minepiece.essentials.boss;
 
+import com.minepiece.essentials.MinepieceEssentialsClient;
 import com.minepiece.essentials.hud.HudElement;
 import com.minepiece.essentials.hud.ParchmentRenderer;
 import com.minepiece.essentials.island.Island;
@@ -20,6 +21,7 @@ public class BossTimerHud extends HudElement {
 
     // Track clickable positions for click detection (element-local coords)
     private final Map<Island, int[]> refreshButtonPositions = new HashMap<>();
+    private final Map<Island, int[]> islandHeaderClickAreas = new HashMap<>();
     private final List<BossClickArea> bossClickAreas = new ArrayList<>();
     private int[] refreshAllButtonPos = null;
 
@@ -52,6 +54,7 @@ public class BossTimerHud extends HudElement {
     @Override
     public void render(DrawContext ctx, float tickDelta) {
         refreshButtonPositions.clear();
+        islandHeaderClickAreas.clear();
         bossClickAreas.clear();
         refreshAllButtonPos = null;
 
@@ -72,6 +75,7 @@ public class BossTimerHud extends HudElement {
         Map<Island, List<BossData>> allData = BossTracker.getInstance().getAllBossData();
         int totalLines = 0;
         for (Island island : orderedIslands) {
+            if (isCollapsed(island)) continue;
             List<BossData> bosses = allData.getOrDefault(island, List.of());
             long bossCount = bosses.stream().filter(b -> b.hasCoords).count();
             totalLines += (int) Math.max(bossCount, 1);
@@ -115,8 +119,17 @@ public class BossTimerHud extends HudElement {
 
         for (Island island : orderedIslands) {
             boolean isCurrent = island == currentIsland;
+            boolean collapsed = isCollapsed(island);
             int headerColor = isCurrent ? 0xFFFFAA00 : 0xFF8B6914;
-            String islandName = isCurrent ? "> " + island.displayName : island.displayName;
+            String islandName = (collapsed ? "▶ " : "▼ ")
+                    + (isCurrent ? "> " : "") + island.displayName;
+
+            // Header is clickable (in HUD edit mode) to collapse/expand the island.
+            int headerW = WIDTH - 24;
+            if (isHovered(2, y - 1, headerW, ISLAND_HEADER_HEIGHT)) {
+                ctx.fill(2, y - 1, 2 + headerW, y - 1 + ISLAND_HEADER_HEIGHT, 0x22FFFFFF);
+            }
+            islandHeaderClickAreas.put(island, new int[]{2, y - 1, headerW, ISLAND_HEADER_HEIGHT});
 
             RenderUtils.drawText(ctx, islandName, 4, y, headerColor);
 
@@ -153,6 +166,8 @@ public class BossTimerHud extends HudElement {
 
             ctx.fill(4, y + 10, WIDTH - 4, y + 11, headerColor);
             y += ISLAND_HEADER_HEIGHT;
+
+            if (collapsed) continue;
 
             List<BossData> bosses = allData.getOrDefault(island, List.of()).stream()
                     .filter(b -> b.hasCoords)
@@ -258,6 +273,20 @@ public class BossTimerHud extends HudElement {
             }
         }
 
+        // Island header clicks — collapse/expand the island
+        for (Map.Entry<Island, int[]> entry : islandHeaderClickAreas.entrySet()) {
+            int[] area = entry.getValue();
+            int areaScreenX = hudX + (int)(area[0] * scale);
+            int areaScreenY = hudY + (int)(area[1] * scale);
+            int areaW = (int)(area[2] * scale);
+            int areaH = (int)(area[3] * scale);
+            if (mouseX >= areaScreenX && mouseX <= areaScreenX + areaW
+                && mouseY >= areaScreenY && mouseY <= areaScreenY + areaH) {
+                toggleIslandCollapsed(entry.getKey());
+                return true;
+            }
+        }
+
         // Check boss name clicks — toggle waypoint
         for (BossClickArea area : bossClickAreas) {
             int areaScreenX = hudX + (int)(area.x * scale);
@@ -307,6 +336,24 @@ public class BossTimerHud extends HudElement {
     @Override
     public void tick() {
         BossTracker.getInstance().tick();
+    }
+
+    private static Set<String> collapsedSet() {
+        var config = MinepieceEssentialsClient.getInstance().getConfigManager().config();
+        if (config.collapsedBossIslands == null) config.collapsedBossIslands = new HashSet<>();
+        return config.collapsedBossIslands;
+    }
+
+    private boolean isCollapsed(Island island) {
+        return collapsedSet().contains(island.id);
+    }
+
+    private void toggleIslandCollapsed(Island island) {
+        Set<String> collapsed = collapsedSet();
+        if (!collapsed.remove(island.id)) {
+            collapsed.add(island.id);
+        }
+        MinepieceEssentialsClient.getInstance().getConfigManager().save();
     }
 
     private record BossClickArea(int x, int y, int w, int h, BossData boss, Island island) {}
