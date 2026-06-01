@@ -10,8 +10,14 @@ import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.text.Text;
 
 public class HudEditScreen extends Screen {
+    private static final int BTN_W = 180;
+    private static final int BTN_H = 16;
+
     private HudElement dragging = null;
     private int dragOffsetX, dragOffsetY;
+
+    private int resetBtnX, resetBtnY;
+    private long resetMsgUntil = 0;
 
     public HudEditScreen() {
         super(Text.literal("HUD Editor"));
@@ -20,6 +26,23 @@ public class HudEditScreen extends Screen {
     @Override
     protected void init() {
         HudElementRegistry.setEditMode(true);
+        resetBtnX = (width - BTN_W) / 2;
+        resetBtnY = 28;
+    }
+
+    private boolean overResetButton(double mx, double my) {
+        return mx >= resetBtnX && mx <= resetBtnX + BTN_W
+                && my >= resetBtnY && my <= resetBtnY + BTN_H;
+    }
+
+    private void resetPlacement() {
+        // Clearing the profile drops every saved position/scale/visibility; each
+        // HUD's getLayout() then recreates it at its default. Fixes HUDs that
+        // ended up off-screen on very small or very large resolutions.
+        var cfg = MinepieceEssentialsClient.getInstance().getConfigManager();
+        cfg.layout().activeProfile().elements.clear();
+        cfg.save();
+        resetMsgUntil = System.currentTimeMillis() + 2500;
     }
 
     @Override
@@ -77,6 +100,17 @@ public class HudEditScreen extends Screen {
             element.render(ctx, delta);
             ctx.getMatrices().popMatrix();
         }
+
+        // Reset-placement button, drawn last so it stays on top of the HUDs.
+        boolean hover = overResetButton(mouseX, mouseY);
+        ctx.fill(resetBtnX, resetBtnY, resetBtnX + BTN_W, resetBtnY + BTN_H, hover ? 0xFF6A4A2C : 0xFF3A2A1C);
+        ctx.fill(resetBtnX, resetBtnY, resetBtnX + BTN_W, resetBtnY + 1, 0xFF8A6A44);
+        ctx.fill(resetBtnX, resetBtnY + BTN_H - 1, resetBtnX + BTN_W, resetBtnY + BTN_H, 0xFF8A6A44);
+        RenderUtils.drawCenteredText(ctx, "Reinitialiser le placement", width / 2, resetBtnY + 4, 0xFFFFE9D5);
+
+        if (System.currentTimeMillis() < resetMsgUntil) {
+            RenderUtils.drawCenteredText(ctx, "Placement reinitialise !", width / 2, resetBtnY + BTN_H + 4, 0xFF7CFC55);
+        }
     }
 
     @Override
@@ -84,6 +118,11 @@ public class HudEditScreen extends Screen {
         double mouseX = click.x();
         double mouseY = click.y();
         int button = click.button();
+
+        if (button == 0 && overResetButton(mouseX, mouseY)) {
+            resetPlacement();
+            return true;
+        }
 
         if (button == 0) {
             for (HudElement element : HudElementRegistry.getElements()) {
