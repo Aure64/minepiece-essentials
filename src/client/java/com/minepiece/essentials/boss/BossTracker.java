@@ -17,16 +17,20 @@ public class BossTracker {
     private static BossTracker instance;
     private final Map<Island, List<BossData>> bossMap = new ConcurrentHashMap<>();
 
-    public static final Set<Island> TRACKED_ISLANDS = Set.of(
-        Island.FUCHSIA,
-        Island.DRUM,
-        Island.ALABASTA,
-        Island.THRILLER_BARK,
-        Island.SABAODY,
-        Island.ILE_HOMMES_POISSONS,
-        Island.DRESSROSA,
-        Island.WHOLE_CAKE
-    );
+    // Ordered (LinkedHashSet) so the HUD can group region islands consecutively;
+    // Whole Cake & Komugi are adjacent (both in the Totto Land region).
+    public static final Set<Island> TRACKED_ISLANDS = Collections.unmodifiableSet(
+        new LinkedHashSet<>(List.of(
+            Island.FUCHSIA,
+            Island.DRUM,
+            Island.ALABASTA,
+            Island.THRILLER_BARK,
+            Island.SABAODY,
+            Island.ILE_HOMMES_POISSONS,
+            Island.DRESSROSA,
+            Island.WHOLE_CAKE,
+            Island.KOMUGI
+        )));
 
     private static final Pattern COORD_PATTERN =
         Pattern.compile("Coordonn[e\u00e9]es?\\s*:?\\s*([-\\d]+)\\s+([-\\d]+)\\s+([-\\d]+)");
@@ -143,6 +147,7 @@ public class BossTracker {
     }
 
     private int findMobSlot(Map<Integer, ItemStack> items) {
+        // Pass 1: by item name (islands whose mob item is named "Marine"/"Pirate"/…).
         for (Map.Entry<Integer, ItemStack> entry : items.entrySet()) {
             ItemStack stack = entry.getValue();
             if (stack.isEmpty()) continue;
@@ -154,7 +159,36 @@ public class BossTracker {
                 return entry.getKey();
             }
         }
+        // Pass 2: the mini-boss CATEGORY — its lore says "Mini-Boss(es) présents",
+        // e.g. Komugi's "Soldats biscuits". This list has spawn coords/timers; the
+        // single island boss ("le Boss de cette île") only leads to its loot.
+        int byLore = loreSlot(items, true);
+        if (byLore >= 0) return byLore;
+        // Pass 3: fallback — any "Voir les loots" category.
+        byLore = loreSlot(items, false);
+        if (byLore >= 0) return byLore;
         return 16;
+    }
+
+    /** First slot whose lore matches: mini-boss category if {@code miniBossOnly}, else any mob category. */
+    private int loreSlot(Map<Integer, ItemStack> items, boolean miniBossOnly) {
+        for (Map.Entry<Integer, ItemStack> entry : items.entrySet()) {
+            ItemStack stack = entry.getValue();
+            if (stack == null || stack.isEmpty()) continue;
+            StringBuilder lore = new StringBuilder();
+            for (net.minecraft.text.Text line : stack.getTooltip(
+                    net.minecraft.item.Item.TooltipContext.DEFAULT, null,
+                    net.minecraft.item.tooltip.TooltipType.BASIC)) {
+                lore.append(line.getString().toLowerCase()).append('\n');
+            }
+            String l = lore.toString();
+            boolean match = miniBossOnly
+                ? l.contains("mini-boss") || l.contains("présents sur cette île")
+                : l.contains("voir les loots") || l.contains("chasseur")
+                    || l.contains("pirate") || l.contains("monstre");
+            if (match) return entry.getKey();
+        }
+        return -1;
     }
 
     private void parseBossItems(Island island, Map<Integer, ItemStack> items) {

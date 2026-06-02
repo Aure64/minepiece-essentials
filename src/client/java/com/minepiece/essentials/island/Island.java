@@ -22,6 +22,7 @@ public enum Island {
     PUNK_HAZARD("Punk Hazard", "punk_hazard", "nouveau_monde"),
     DRESSROSA("Dressrosa", "dressrosa", "nouveau_monde"),
     WHOLE_CAKE("Whole Cake", "whole_cake", "nouveau_monde"),
+    KOMUGI("Komugi", "komugi", "nouveau_monde"),
     UNKNOWN("Unknown", "unknown", "unknown");
 
     public final String displayName;
@@ -46,6 +47,7 @@ public enum Island {
         BOSSBAR_MAP.put("ile des hommes poissons", ILE_HOMMES_POISSONS);
         BOSSBAR_MAP.put("ile des hommes-poissons", ILE_HOMMES_POISSONS);
         BOSSBAR_MAP.put("whole cake island", WHOLE_CAKE);
+        BOSSBAR_MAP.put("komugi island", KOMUGI);
         BOSSBAR_MAP.put("royaume de drum", DRUM);
     }
 

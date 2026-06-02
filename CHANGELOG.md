@@ -3,6 +3,14 @@
 Les notes des versions antérieures sont disponibles sur les
 [Releases GitHub](https://github.com/Aure64/minepiece-essentials/releases) et sur Modrinth.
 
+## 1.5.1
+
+### ✨ Nouveautés
+- **Île Komugi** ajoutée au suivi des boss, avec son mini-boss **Charlotte Perospero** (coords + timer de respawn).
+
+### 🩹 Corrections
+- **Détection des mini-boss améliorée** : sur les îles dont l'item de catégorie ne porte pas un nom standard (ex. Komugi « Soldats biscuits »), le mod trouve désormais la liste des mini-boss (avec coords/timers) au lieu de tomber sur le mauvais menu. Corrige aussi des mini-boss manquants sur Whole Cake (Capone Bege).
+
 ## 1.5.0
 
 ### ✨ Nouvelles fonctionnalités

@@ -19,6 +19,18 @@ public class BossTimerHud extends HudElement {
     private static final int HEADER_HEIGHT = 18;
     private static final int REFRESH_BTN_SIZE = 12;
 
+    /** Tracked islands ordered for display: the current island first, then the rest. */
+    private static List<Island> orderedIslands(Island current) {
+        List<Island> ordered = new ArrayList<>();
+        if (current != Island.UNKNOWN && BossTracker.TRACKED_ISLANDS.contains(current)) {
+            ordered.add(current);
+        }
+        for (Island island : BossTracker.TRACKED_ISLANDS) {
+            if (island != current) ordered.add(island);
+        }
+        return ordered;
+    }
+
     // Track clickable positions for click detection (element-local coords)
     private final Map<Island, int[]> refreshButtonPositions = new HashMap<>();
     private final Map<Island, int[]> islandHeaderClickAreas = new HashMap<>();
@@ -60,16 +72,7 @@ public class BossTimerHud extends HudElement {
 
         Island currentIsland = IslandDetector.getInstance().getCurrentIsland();
 
-        List<Island> orderedIslands = new ArrayList<>();
-        if (currentIsland != Island.UNKNOWN && BossTracker.TRACKED_ISLANDS.contains(currentIsland)) {
-            orderedIslands.add(currentIsland);
-        }
-        for (Island island : BossTracker.TRACKED_ISLANDS) {
-            if (island != currentIsland) {
-                orderedIslands.add(island);
-            }
-        }
-
+        List<Island> orderedIslands = orderedIslands(currentIsland);
         if (orderedIslands.isEmpty()) return;
 
         Map<Island, List<BossData>> allData = BossTracker.getInstance().getAllBossData();
