@@ -3,6 +3,18 @@
 Les notes des versions antérieures sont disponibles sur les
 [Releases GitHub](https://github.com/Aure64/minepiece-essentials/releases) et sur Modrinth.
 
+## 1.5.0
+
+### ✨ Nouvelles fonctionnalités
+- **Prix à l'unité dans l'Hôtel des Ventes** — sur un lot de plusieurs items, le tooltip affiche le **prix de vente à l'unité** et le **prix moyen à l'unité** (ex. lot de 8 à 400K → « Prix/u: 50K 🪙 »), avec l'icône berry du serveur.
+- **Support de Minecraft 1.21.8** — le mod est maintenant disponible aussi pour les clients 1.21.8 (en plus de 1.21.11).
+
+### 🔧 Améliorations
+- **HUD Quêtes du jour** : les quêtes complétées disparaissent au fur et à mesure ; quand tout est terminé, une simple ligne « Quêtes du jour terminées » ; remise à zéro automatique à minuit (réouvre /pass pour les quêtes du jour suivant).
+
+### Prérequis
+Minecraft 1.21.11 ou 1.21.8 · Fabric Loader ≥ 0.16.0 · Fabric API · Java 21
+
 ## 1.4.0
 
 Grosse mise à jour : qualité des pets recalibrée, fonds de HUD personnalisables,

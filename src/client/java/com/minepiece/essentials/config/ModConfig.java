@@ -40,4 +40,6 @@ public class ModConfig {
     public boolean jobHudEnabled = true;
 
     public boolean passQuestHudEnabled = true;
+
+    public boolean ahPricePerUnitEnabled = true;
 }

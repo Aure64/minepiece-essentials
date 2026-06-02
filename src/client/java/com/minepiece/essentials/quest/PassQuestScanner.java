@@ -10,6 +10,7 @@ import net.minecraft.item.tooltip.TooltipType;
 import net.minecraft.screen.slot.Slot;
 import net.minecraft.text.Text;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
@@ -26,6 +27,8 @@ public final class PassQuestScanner {
 
     private static final int SCAN_INTERVAL = 4; // ticks
     private static int ticks;
+    // Day the current snapshot was scanned; daily quests reset at local midnight.
+    private static LocalDate scannedDay;
 
     private PassQuestScanner() {}
 
@@ -38,6 +41,14 @@ public final class PassQuestScanner {
 
     public static void tick() {
         if (ticks++ % SCAN_INTERVAL != 0) return;
+
+        // Daily reset: at local midnight, drop the snapshot so the HUD prompts
+        // the player to reopen /pass for the new day's quests.
+        if (scannedDay != null && !LocalDate.now().equals(scannedDay)) {
+            PassQuestState.set(List.of());
+            scannedDay = null;
+        }
+
         MinecraftClient client = MinecraftClient.getInstance();
         if (client.currentScreen instanceof HandledScreen<?> screen && ServerDetector.isOnMinePiece()) {
             scan(screen, client);
@@ -62,6 +73,7 @@ public final class PassQuestScanner {
                 .sorted(Comparator.comparingInt(PassQuest::number))
                 .toList();
         PassQuestState.set(quests);
+        scannedDay = LocalDate.now();
     }
 
     private static List<String> tooltipLines(ItemStack stack, MinecraftClient client) {

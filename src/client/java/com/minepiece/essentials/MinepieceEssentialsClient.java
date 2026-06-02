@@ -73,6 +73,7 @@ public class MinepieceEssentialsClient implements ClientModInitializer {
 
         PetStatTooltip.register();
         MinionTooltip.register();
+        com.minepiece.essentials.ah.AhTooltip.register();
 
         UpdateChecker.init();
 
