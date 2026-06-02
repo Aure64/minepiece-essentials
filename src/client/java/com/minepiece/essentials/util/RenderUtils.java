@@ -2,20 +2,50 @@ package com.minepiece.essentials.util;
 
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.gl.RenderPipelines;
+import net.minecraft.util.Identifier;
 
 public final class RenderUtils {
     private RenderUtils() {}
 
+    /**
+     * Draws a square texture (referenced by its resource path, e.g. one provided
+     * by the server resource pack) at {@code (x, y)} scaled to {@code size} px.
+     * Assumes a 16×16 source. Renders nothing visible if the pack isn't loaded.
+     */
+    public static void drawIcon(DrawContext ctx, Identifier texture, int x, int y, int size) {
+        float s = size / 16f;
+        ctx.getMatrices().pushMatrix();
+        ctx.getMatrices().translate(x, y);
+        ctx.getMatrices().scale(s, s);
+        ctx.drawTexture(RenderPipelines.GUI_TEXTURED, texture, 0, 0, 0f, 0f, 16, 16, 16, 16);
+        ctx.getMatrices().popMatrix();
+    }
+
+    /** Parchment-style box with the classic colours. */
     public static void drawParchmentBox(DrawContext ctx, int x, int y, int w, int h) {
-        ctx.fill(x + 2, y + 2, x + w - 2, y + h - 2, ColorUtils.PARCHMENT_BG);
-        ctx.fill(x, y, x + w, y + 2, ColorUtils.PARCHMENT_BORDER);
-        ctx.fill(x, y + h - 2, x + w, y + h, ColorUtils.PARCHMENT_BORDER);
-        ctx.fill(x, y, x + 2, y + h, ColorUtils.PARCHMENT_BORDER);
-        ctx.fill(x + w - 2, y, x + w, y + h, ColorUtils.PARCHMENT_BORDER);
-        ctx.fill(x, y, x + 4, y + 4, ColorUtils.PARCHMENT_BORDER);
-        ctx.fill(x + w - 4, y, x + w, y + 4, ColorUtils.PARCHMENT_BORDER);
-        ctx.fill(x, y + h - 4, x + 4, y + h, ColorUtils.PARCHMENT_BORDER);
-        ctx.fill(x + w - 4, y + h - 4, x + w, y + h, ColorUtils.PARCHMENT_BORDER);
+        drawParchmentBox(ctx, x, y, w, h, ColorUtils.PARCHMENT_BG, ColorUtils.PARCHMENT_BORDER);
+    }
+
+    /**
+     * Panel box with explicit fill and border colours. A fully-transparent
+     * (alpha 0) fill or border is skipped, so a "transparent" preset draws nothing.
+     */
+    public static void drawParchmentBox(DrawContext ctx, int x, int y, int w, int h,
+                                        int bgColor, int borderColor) {
+        if ((bgColor >>> 24) != 0) {
+            ctx.fill(x + 2, y + 2, x + w - 2, y + h - 2, bgColor);
+        }
+        if ((borderColor >>> 24) != 0) {
+            ctx.fill(x, y, x + w, y + 2, borderColor);
+            ctx.fill(x, y + h - 2, x + w, y + h, borderColor);
+            ctx.fill(x, y, x + 2, y + h, borderColor);
+            ctx.fill(x + w - 2, y, x + w, y + h, borderColor);
+            ctx.fill(x, y, x + 4, y + 4, borderColor);
+            ctx.fill(x + w - 4, y, x + w, y + 4, borderColor);
+            ctx.fill(x, y + h - 4, x + 4, y + h, borderColor);
+            ctx.fill(x + w - 4, y + h - 4, x + w, y + h, borderColor);
+        }
     }
 
     public static void drawProgressBar(DrawContext ctx, int x, int y, int w, int h,

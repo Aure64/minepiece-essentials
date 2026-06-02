@@ -26,7 +26,7 @@ public class ParcheminHud extends HudElement {
 
         int h = 20 + parchemins.size() * 24 + 4;
         this.height = h;
-        ParchmentRenderer.renderPanel(ctx, 0, 0, WIDTH, h, "Parchemins");
+        ParchmentRenderer.renderPanel(ctx, 0, 0, WIDTH, h, "Parchemins", getBackground());
 
         int lineY = 20;
         for (var quest : parchemins) {

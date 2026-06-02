@@ -88,7 +88,7 @@ public class BossTimerHud extends HudElement {
         if (queueActive) h += 12;
         this.height = h;
 
-        ParchmentRenderer.renderPanel(ctx, 0, 0, WIDTH, h, "Boss Timers");
+        ParchmentRenderer.renderPanel(ctx, 0, 0, WIDTH, h, "Boss Timers", getBackground());
 
         // Refresh All button — top-right of header
         int allBtnW = 18;
@@ -205,7 +205,7 @@ public class BossTimerHud extends HudElement {
                     }
 
                     boolean bossHovered = isHovered(4, y, WIDTH - 20, LINE_HEIGHT);
-                    int nameColor = hasWaypoint ? 0xFF44CCFF : ColorUtils.TEXT_DARK;
+                    int nameColor = hasWaypoint ? 0xFF44CCFF : getBackground().textColor();
                     String prefix = hasWaypoint ? "  \u25C6 " : "  ";
 
                     // Hover highlight

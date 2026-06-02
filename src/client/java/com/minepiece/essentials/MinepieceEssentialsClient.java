@@ -66,8 +66,10 @@ public class MinepieceEssentialsClient implements ClientModInitializer {
         HudElementRegistry.register(new AscensionHud());
         HudElementRegistry.register(new HakiHud());
         HudElementRegistry.register(new JobHud());
+        HudElementRegistry.register(new com.minepiece.essentials.quest.PassQuestHud());
 
         HakiTimer.init();
+        com.minepiece.essentials.quest.PassQuestScanner.init();
 
         PetStatTooltip.register();
         MinionTooltip.register();
@@ -77,6 +79,7 @@ public class MinepieceEssentialsClient implements ClientModInitializer {
         // Reset transient state (queues, last island) on every server join/disconnect.
         // Without this, refreshQueue can persist across reconnects and resume firing.
         ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> {
+            ServerDetector.reset();
             IslandDetector.getInstance().reset();
             BossTracker.getInstance().onConnectionChange();
             JobTracker.reset();

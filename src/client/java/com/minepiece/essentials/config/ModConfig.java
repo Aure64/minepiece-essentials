@@ -38,4 +38,6 @@ public class ModConfig {
     public boolean hakiTimerEnabled = true;
 
     public boolean jobHudEnabled = true;
+
+    public boolean passQuestHudEnabled = true;
 }

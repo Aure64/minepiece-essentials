@@ -26,7 +26,7 @@ public class ActivePetsHud extends HudElement {
         ActivePetsState.Snapshot snap = ActivePetsState.get();
         if (snap.isEmpty()) {
             this.height = 32;
-            ParchmentRenderer.renderPanel(ctx, 0, 0, WIDTH, 32, "Pets actifs");
+            ParchmentRenderer.renderPanel(ctx, 0, 0, WIDTH, 32, "Pets actifs", getBackground());
             RenderUtils.drawText(ctx, "Ouvre /pets pour afficher", 6, 20, 0xFFCBC8C7);
             return;
         }
@@ -36,7 +36,7 @@ public class ActivePetsHud extends HudElement {
         int h = 20 + count * 10 + 6 + stats * 10 + 4;
         this.height = h;
 
-        ParchmentRenderer.renderPanel(ctx, 0, 0, WIDTH, h, "Pets actifs (" + count + ")");
+        ParchmentRenderer.renderPanel(ctx, 0, 0, WIDTH, h, "Pets actifs (" + count + ")", getBackground());
 
         int y = 20;
         for (ActivePetsState.ActivePet pet : snap.pets()) {

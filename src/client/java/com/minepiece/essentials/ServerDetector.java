@@ -29,6 +29,12 @@ public final class ServerDetector {
     private static boolean lastState = false;
     private static String lastReason = "";
 
+    // Once any signal confirms MinePiece on a connection, stay active until the
+    // next join/disconnect. This survives the personal island (/is), where the
+    // island boss bar disappears and players who joined via a non-"minepiece"
+    // host would otherwise have the whole mod switch off.
+    private static boolean latched = false;
+
     // isOnMinePiece() is polled every render frame AND every tick; detect() does
     // string work (toLowerCase, hostname lookup). The answer only changes on
     // connect/disconnect/island-change, so cache it for a short window — this
@@ -58,6 +64,14 @@ public final class ServerDetector {
         return result;
     }
 
+    /** Clears the per-connection latch + cache. Call on every server join. */
+    public static void reset() {
+        latched = false;
+        cachedAt = 0;
+        cachedResult = false;
+        lastState = false;
+    }
+
     private static boolean detect() {
         MinecraftClient client = MinecraftClient.getInstance();
         if (client.world == null) {
@@ -65,6 +79,19 @@ public final class ServerDetector {
             return false;
         }
 
+        // Stay active once confirmed this connection (survives /is, where the
+        // island boss bar disappears).
+        if (latched) {
+            lastReason = "latched";
+            return true;
+        }
+
+        boolean ok = detectSignals(client);
+        if (ok) latched = true;
+        return ok;
+    }
+
+    private static boolean detectSignals(MinecraftClient client) {
         MinepieceEssentialsClient mod = MinepieceEssentialsClient.getInstance();
         if (mod != null && mod.getConfigManager() != null
                 && mod.getConfigManager().config().forceMinePieceDetection) {

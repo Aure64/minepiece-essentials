@@ -1,6 +1,7 @@
 package com.minepiece.essentials.hud;
 
 import com.minepiece.essentials.MinepieceEssentialsClient;
+import com.minepiece.essentials.config.HudBackground;
 import com.minepiece.essentials.config.LayoutConfig;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
@@ -40,6 +41,17 @@ public abstract class HudElement {
     }
     public float getScale() { return getLayout().scale; }
     public boolean isVisible() { return getLayout().visible; }
+
+    /** The panel background preset chosen for this HUD (never null). */
+    public HudBackground getBackground() {
+        HudBackground bg = getLayout().background;
+        return bg == null ? HudBackground.PARCHMENT : bg;
+    }
+
+    public void setBackground(HudBackground background) {
+        getLayout().background = background;
+    }
+
     public String getId() { return id; }
     public int getWidth() { return (int)(width * getScale()); }
     public int getHeight() { return (int)(height * getScale()); }

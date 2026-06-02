@@ -2,7 +2,7 @@ package com.minepiece.essentials.hud;
 
 import com.minepiece.essentials.MinepieceEssentialsClient;
 import com.minepiece.essentials.boss.BossTimerHud;
-import com.minepiece.essentials.util.ColorUtils;
+import com.minepiece.essentials.config.HudBackground;
 import com.minepiece.essentials.util.RenderUtils;
 import net.minecraft.client.gui.Click;
 import net.minecraft.client.gui.DrawContext;
@@ -12,10 +12,17 @@ import net.minecraft.text.Text;
 public class HudEditScreen extends Screen {
     private static final int BTN_W = 180;
     private static final int BTN_H = 16;
+    private static final int TAB_W = 120;
+    private static final int TAB_H = 16;
+    private static final int TAB_GAP = 4;
+
+    private enum Tab { PLACEMENT, CUSTOMIZE }
+    private Tab tab = Tab.PLACEMENT;
 
     private HudElement dragging = null;
     private int dragOffsetX, dragOffsetY;
 
+    private int tabsX, tabsY;
     private int resetBtnX, resetBtnY;
     private long resetMsgUntil = 0;
 
@@ -26,18 +33,28 @@ public class HudEditScreen extends Screen {
     @Override
     protected void init() {
         HudElementRegistry.setEditMode(true);
+        tabsY = 26;
+        tabsX = (width - (TAB_W * 2 + TAB_GAP)) / 2;
         resetBtnX = (width - BTN_W) / 2;
-        resetBtnY = 28;
+        resetBtnY = tabsY + TAB_H + 6;
+    }
+
+    // --- geometry helpers ----------------------------------------------------
+
+    private int placementTabX() { return tabsX; }
+    private int customizeTabX() { return tabsX + TAB_W + TAB_GAP; }
+
+    private boolean inBox(double mx, double my, int x, int y, int w, int h) {
+        return mx >= x && mx <= x + w && my >= y && my <= y + h;
     }
 
     private boolean overResetButton(double mx, double my) {
-        return mx >= resetBtnX && mx <= resetBtnX + BTN_W
-                && my >= resetBtnY && my <= resetBtnY + BTN_H;
+        return inBox(mx, my, resetBtnX, resetBtnY, BTN_W, BTN_H);
     }
 
     private void resetPlacement() {
-        // Clearing the profile drops every saved position/scale/visibility; each
-        // HUD's getLayout() then recreates it at its default. Fixes HUDs that
+        // Clearing the profile drops every saved position/scale/visibility/style;
+        // each HUD's getLayout() then recreates it at its default. Fixes HUDs that
         // ended up off-screen on very small or very large resolutions.
         var cfg = MinepieceEssentialsClient.getInstance().getConfigManager();
         cfg.layout().activeProfile().elements.clear();
@@ -48,7 +65,6 @@ public class HudEditScreen extends Screen {
     @Override
     public void removed() {
         HudElementRegistry.setEditMode(false);
-        // Reset hover state
         for (HudElement element : HudElementRegistry.getElements()) {
             if (element instanceof BossTimerHud bossHud) {
                 bossHud.setMousePos(-1, -1);
@@ -57,25 +73,50 @@ public class HudEditScreen extends Screen {
         MinepieceEssentialsClient.getInstance().getConfigManager().save();
     }
 
+    // --- rendering -----------------------------------------------------------
+
     @Override
     public void render(DrawContext ctx, int mouseX, int mouseY, float delta) {
         ctx.fill(0, 0, width, height, 0x44000000);
 
-        RenderUtils.drawCenteredText(ctx, "Mode Edition HUD - Clic gauche: deplacer | Clic droit: toggle | Scroll: resize",
-                width / 2, 5, 0xFFFFFFFF);
-        RenderUtils.drawCenteredText(ctx, "Echap pour sauvegarder et quitter",
-                width / 2, 17, 0xFFAAAAAA);
+        String hint = tab == Tab.PLACEMENT
+                ? "Placement - Clic gauche: deplacer | Clic droit: ON/OFF | Scroll: taille"
+                : "Personnaliser - Clic sur un HUD: change son fond (Parchemin -> Sombre -> Transparent)";
+        RenderUtils.drawCenteredText(ctx, hint, width / 2, 5, 0xFFFFFFFF);
+        RenderUtils.drawCenteredText(ctx, "Echap pour sauvegarder et quitter", width / 2, 16, 0xFFAAAAAA);
 
+        drawTabs(ctx, mouseX, mouseY);
+
+        if (tab == Tab.PLACEMENT) {
+            renderPlacement(ctx, mouseX, mouseY, delta);
+        } else {
+            renderCustomize(ctx, mouseX, mouseY, delta);
+        }
+    }
+
+    private void drawTabs(DrawContext ctx, int mouseX, int mouseY) {
+        drawTab(ctx, placementTabX(), "Placement", tab == Tab.PLACEMENT,
+                inBox(mouseX, mouseY, placementTabX(), tabsY, TAB_W, TAB_H));
+        drawTab(ctx, customizeTabX(), "Personnaliser", tab == Tab.CUSTOMIZE,
+                inBox(mouseX, mouseY, customizeTabX(), tabsY, TAB_W, TAB_H));
+    }
+
+    private void drawTab(DrawContext ctx, int x, String label, boolean active, boolean hover) {
+        int bg = active ? 0xFF6A4A2C : (hover ? 0xFF4A3422 : 0xFF2A1E14);
+        ctx.fill(x, tabsY, x + TAB_W, tabsY + TAB_H, bg);
+        ctx.fill(x, tabsY, x + TAB_W, tabsY + 1, 0xFF8A6A44);
+        RenderUtils.drawCenteredText(ctx, label, x + TAB_W / 2, tabsY + 4,
+                active ? 0xFFFFE9D5 : 0xFFBFae9C);
+    }
+
+    private void renderPlacement(DrawContext ctx, int mouseX, int mouseY, float delta) {
         for (HudElement element : HudElementRegistry.getElements()) {
-            // Pass mouse position for hover effects
             if (element instanceof BossTimerHud bossHud) {
                 bossHud.setMousePos(mouseX, mouseY);
             }
 
-            int x = element.getX();
-            int y = element.getY();
-            int w = element.getWidth();
-            int h = element.getHeight();
+            int x = element.getX(), y = element.getY();
+            int w = element.getWidth(), h = element.getHeight();
 
             int borderColor = element.isVisible() ? 0xFF00FF00 : 0xFFFF0000;
             if (element == dragging) borderColor = 0xFFFFFF00;
@@ -85,7 +126,6 @@ public class HudEditScreen extends Screen {
             ctx.fill(x - 1, y, x, y + h, borderColor);
             ctx.fill(x + w, y, x + w + 1, y + h, borderColor);
 
-            // Label with visibility status
             String status = element.isVisible() ? " [ON]" : " [OFF]";
             int statusColor = element.isVisible() ? 0xFF00FF00 : 0xFFFF4444;
             RenderUtils.drawText(ctx, element.getId(), x + 2, y - 10, 0xFFFFFFFF);
@@ -93,15 +133,9 @@ public class HudEditScreen extends Screen {
 
             ctx.fill(x + w - 6, y + h - 6, x + w, y + h, 0xCCFFFFFF);
 
-            ctx.getMatrices().pushMatrix();
-            float scale = element.getScale();
-            ctx.getMatrices().translate(x, y);
-            ctx.getMatrices().scale(scale, scale);
-            element.render(ctx, delta);
-            ctx.getMatrices().popMatrix();
+            drawElement(ctx, element, delta);
         }
 
-        // Reset-placement button, drawn last so it stays on top of the HUDs.
         boolean hover = overResetButton(mouseX, mouseY);
         ctx.fill(resetBtnX, resetBtnY, resetBtnX + BTN_W, resetBtnY + BTN_H, hover ? 0xFF6A4A2C : 0xFF3A2A1C);
         ctx.fill(resetBtnX, resetBtnY, resetBtnX + BTN_W, resetBtnY + 1, 0xFF8A6A44);
@@ -113,12 +147,74 @@ public class HudEditScreen extends Screen {
         }
     }
 
+    private void renderCustomize(DrawContext ctx, int mouseX, int mouseY, float delta) {
+        for (HudElement element : HudElementRegistry.getElements()) {
+            int x = element.getX(), y = element.getY();
+            int w = element.getWidth(), h = element.getHeight();
+
+            // Faint clickable outline so even an empty HUD can be targeted.
+            boolean hover = element.isMouseOver(mouseX, mouseY);
+            int border = hover ? 0xFFFFFF66 : 0x66FFFFFF;
+            ctx.fill(x - 1, y - 1, x + w + 1, y, border);
+            ctx.fill(x - 1, y + h, x + w + 1, y + h + 1, border);
+            ctx.fill(x - 1, y, x, y + h, border);
+            ctx.fill(x + w, y, x + w + 1, y + h, border);
+
+            RenderUtils.drawText(ctx, element.getId() + " : " + element.getBackground().label(),
+                    x + 2, y - 10, hover ? 0xFFFFFF66 : 0xFFFFFFFF);
+
+            drawElement(ctx, element, delta);
+        }
+    }
+
+    /** Renders a HUD at its position with its scale applied. */
+    private void drawElement(DrawContext ctx, HudElement element, float delta) {
+        ctx.getMatrices().pushMatrix();
+        ctx.getMatrices().translate(element.getX(), element.getY());
+        ctx.getMatrices().scale(element.getScale(), element.getScale());
+        element.render(ctx, delta);
+        ctx.getMatrices().popMatrix();
+    }
+
+    // --- input ---------------------------------------------------------------
+
     @Override
     public boolean mouseClicked(Click click, boolean doubled) {
         double mouseX = click.x();
         double mouseY = click.y();
         int button = click.button();
 
+        // Tab switching is available in both tabs.
+        if (button == 0 && inBox(mouseX, mouseY, placementTabX(), tabsY, TAB_W, TAB_H)) {
+            tab = Tab.PLACEMENT;
+            return true;
+        }
+        if (button == 0 && inBox(mouseX, mouseY, customizeTabX(), tabsY, TAB_W, TAB_H)) {
+            tab = Tab.CUSTOMIZE;
+            return true;
+        }
+
+        if (tab == Tab.CUSTOMIZE) {
+            return clickCustomize(mouseX, mouseY, button);
+        }
+        return clickPlacement(mouseX, mouseY, button, click, doubled);
+    }
+
+    private boolean clickCustomize(double mouseX, double mouseY, int button) {
+        for (HudElement element : HudElementRegistry.getElements()) {
+            if (element.isMouseOver(mouseX, mouseY)) {
+                // Left cycles forward, right cycles backward (= forward ×2 of 3).
+                HudBackground bg = element.getBackground().next();
+                if (button == 1) bg = bg.next();
+                element.setBackground(bg);
+                MinepieceEssentialsClient.getInstance().getConfigManager().save();
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean clickPlacement(double mouseX, double mouseY, int button, Click click, boolean doubled) {
         if (button == 0 && overResetButton(mouseX, mouseY)) {
             resetPlacement();
             return true;
@@ -126,10 +222,8 @@ public class HudEditScreen extends Screen {
 
         if (button == 0) {
             for (HudElement element : HudElementRegistry.getElements()) {
-                if (element instanceof BossTimerHud bossHud) {
-                    if (bossHud.handleClick(mouseX, mouseY)) {
-                        return true;
-                    }
+                if (element instanceof BossTimerHud bossHud && bossHud.handleClick(mouseX, mouseY)) {
+                    return true;
                 }
             }
         }
@@ -172,6 +266,7 @@ public class HudEditScreen extends Screen {
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double horizontalAmount, double verticalAmount) {
+        if (tab != Tab.PLACEMENT) return super.mouseScrolled(mouseX, mouseY, horizontalAmount, verticalAmount);
         for (HudElement element : HudElementRegistry.getElements()) {
             if (element.isMouseOver(mouseX, mouseY)) {
                 var layout = element.getLayout();

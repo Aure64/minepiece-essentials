@@ -64,9 +64,16 @@ public class HelpScreen extends Screen {
         new Feature("Progression métier", new Line[]{
             info("Niveau, XP et % du métier en cours de récolte."),
         }),
+        new Feature("Quêtes du jour", new Line[]{
+            info("Quêtes de pass + progression en HUD."),
+            important("Ouvre /pass, onglet Quêtes pour remplir."),
+            info("Pas de refresh auto : rouvre l'écran (la complétion"),
+            info("est tout de même détectée en direct via le chat)."),
+        }),
         new Feature("Éditeur de HUD", new Line[]{
             important("Touche K"),
-            info("pour déplacer/redimensionner les panneaux."),
+            info("Onglet Placement : déplacer / redimensionner / cacher."),
+            info("Onglet Personnaliser : fond des panneaux."),
         }),
         new Feature("Cette aide", new Line[]{
             info("Touche H pour rouvrir ce guide à tout moment."),

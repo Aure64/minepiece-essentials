@@ -94,7 +94,7 @@ public class AscensionHud extends HudElement {
         int h = 20 + (snapshot.size() + headers) * 10 + 4;
         this.height = h;
 
-        ParchmentRenderer.renderPanel(ctx, 0, 0, WIDTH, h, "Ascensions");
+        ParchmentRenderer.renderPanel(ctx, 0, 0, WIDTH, h, "Ascensions", getBackground());
 
         int y = 20;
         for (AscensionItem item : snapshot) {

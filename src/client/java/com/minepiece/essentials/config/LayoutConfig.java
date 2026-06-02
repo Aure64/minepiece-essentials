@@ -24,6 +24,7 @@ public class LayoutConfig {
         public int y;
         public float scale = 1.0f;
         public boolean visible = true;
+        public HudBackground background = HudBackground.PARCHMENT;
 
         public ElementLayout() {}
 

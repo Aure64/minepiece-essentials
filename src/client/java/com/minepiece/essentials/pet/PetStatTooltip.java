@@ -73,14 +73,7 @@ public final class PetStatTooltip {
         int percent = (int) Math.round(quality * 100);
         return Text.empty()
             .append(line)
-            .append(Text.literal(" (" + percent + "%)").withColor(colorFor(quality)));
-    }
-
-    private static int colorFor(double quality) {
-        if (quality < 0.25) return 0xFF5555; // red
-        if (quality < 0.50) return 0xFFAA00; // orange
-        if (quality < 0.75) return 0xFFFF55; // yellow
-        return 0x55FF55;                     // green
+            .append(Text.literal(" (" + percent + "%)").withColor(QualityColor.of(quality)));
     }
 
     private static int indexOfLine(List<Text> lines, String needle) {

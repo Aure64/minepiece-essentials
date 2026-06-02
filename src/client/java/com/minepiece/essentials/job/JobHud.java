@@ -36,14 +36,14 @@ public class JobHud extends HudElement {
         if (!JobTracker.hasData()) {
             int h = 32;
             this.height = h;
-            ParchmentRenderer.renderPanel(ctx, 0, 0, WIDTH, h, "Métier");
+            ParchmentRenderer.renderPanel(ctx, 0, 0, WIDTH, h, "Métier", getBackground());
             RenderUtils.drawText(ctx, "Récolte pour voir", 8, 20, SUB_COLOR);
             return;
         }
 
         int h = 62;
         this.height = h;
-        ParchmentRenderer.renderPanel(ctx, 0, 0, WIDTH, h, "Métier");
+        ParchmentRenderer.renderPanel(ctx, 0, 0, WIDTH, h, "Métier", getBackground());
 
         float p = JobTracker.progress();
 
