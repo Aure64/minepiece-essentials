@@ -5,6 +5,7 @@
     "client": [
         "BossBarHudMixin",
         "ClientPlayNetworkHandlerMixin",
+        "HandledScreenMixin",
         "InGameHudMixin",
         "MinecraftClientMixin"
     ],
