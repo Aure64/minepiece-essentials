@@ -5,6 +5,7 @@ import java.util.List;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
 import net.minecraft.item.ItemStack;
+import net.minecraft.registry.Registries;
 import net.minecraft.screen.GenericContainerScreenHandler;
 import net.minecraft.screen.ScreenHandler;
 import net.minecraft.screen.ShulkerBoxScreenHandler;
@@ -42,7 +43,7 @@ public final class RaritySorter {
                 entries.add(new RaritySort.Entry(-1, ""));
             } else {
                 ItemRarity r = RarityDetector.detect(s);
-                String id = s.getItem().toString();
+                String id = Registries.ITEM.getId(s.getItem()).toString();
                 entries.add(new RaritySort.Entry(r == null ? -1 : r.rank, id));
             }
         }

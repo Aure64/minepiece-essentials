@@ -67,10 +67,8 @@ public final class RarityScreenOverlay {
         }
         if (present.isEmpty()) return;
 
-        int barX = bgX + screen.getScreenHandler().slots.stream()
-                .mapToInt(s -> s.x).max().orElse(0) + 16 + PAD; // bord droit des slots + marge
-        // approximation simple : à droite du fond. Ajustable en test.
-        barX = bgX + 176 + PAD; // largeur de fond vanilla standard
+        // Collée à droite du fond (largeur vanilla standard 176px). Ajustable en test.
+        int barX = bgX + 176 + PAD;
         int y = bgY;
 
         if (c.rarityFilterEnabled) {
@@ -80,11 +78,9 @@ public final class RarityScreenOverlay {
                 int border = act ? 0xFFFFFFFF : 0xFF000000;
                 ctx.fill(barX - 1, y - 1, barX + BTN + 1, y + BTN + 1, border);
                 ctx.fill(barX, y, barX + BTN, y + BTN, r.color);
-                if (RarityDetector.detect(ItemStack.EMPTY) == null && r != null) {
-                    float sc = 10f / Math.max(r.nativeW, r.nativeH);
-                    RenderUtils.drawTextureScaled(ctx, r.texture(), barX + 2, y + 2, sc,
-                            r.nativeW, r.nativeH);
-                }
+                float sc = 10f / Math.max(r.nativeW, r.nativeH);
+                RenderUtils.drawTextureScaled(ctx, r.texture(), barX + 2, y + 2, sc,
+                        r.nativeW, r.nativeH);
                 HITS.add(new Hit(barX, y, BTN, BTN, r, false, false));
                 y += BTN + GAP;
             }
