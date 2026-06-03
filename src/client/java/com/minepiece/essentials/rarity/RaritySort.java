@@ -9,11 +9,12 @@ public final class RaritySort {
     private RaritySort() {}
 
     /**
-     * RARITY : par rareté seulement (identiques regroupés par itemId).
-     * RARITY_ALPHA : par rareté, PUIS alphabétique (A→Z) dans chaque rareté — chaque
-     * type d'item côte à côte au sein de sa gamme.
+     * RARITY : clé primaire = rareté (identiques regroupés par itemId).
+     * ITEM : clé primaire = nom de l'objet (alphabétique), secondaire = rareté → chaque
+     * objet regroupé avec TOUTES ses raretés à la suite (ex. Boulon épique collé au Boulon
+     * légendaire).
      */
-    public enum Mode { RARITY, RARITY_ALPHA }
+    public enum Mode { RARITY, ITEM }
 
     /**
      * Une entrée par slot. {@code empty} = slot vide (toujours placé en fin).
@@ -24,11 +25,11 @@ public final class RaritySort {
 
     /**
      * Renvoie la liste des index source dans l'ordre cible (permutation stable).
-     * Les slots vides finissent toujours en dernier. {@code rankAscending} contrôle le
-     * sens des raretés (true = commun d'abord). Dans RARITY_ALPHA, le nom est toujours
-     * trié A→Z à l'intérieur d'une rareté.
+     * Les slots vides finissent toujours en dernier. {@code ascending} contrôle le sens
+     * de la clé primaire (RARITY : commun d'abord ; ITEM : A→Z). En mode ITEM, au sein
+     * d'un même objet les raretés sont toujours triées de la plus haute à la plus basse.
      */
-    public static List<Integer> targetOrder(List<Entry> entries, Mode mode, boolean rankAscending) {
+    public static List<Integer> targetOrder(List<Entry> entries, Mode mode, boolean ascending) {
         List<Integer> idx = new ArrayList<>();
         for (int i = 0; i < entries.size(); i++) idx.add(i);
 
@@ -36,14 +37,18 @@ public final class RaritySort {
             Entry ea = entries.get(a), eb = entries.get(b);
             if (ea.empty() != eb.empty()) return ea.empty() ? 1 : -1; // vides en dernier
             if (!ea.empty()) {
-                int byRank = rankAscending ? Integer.compare(ea.rank(), eb.rank())
+                if (mode == Mode.RARITY) {
+                    int byRank = ascending ? Integer.compare(ea.rank(), eb.rank())
                                            : Integer.compare(eb.rank(), ea.rank());
-                if (byRank != 0) return byRank;
-                if (mode == Mode.RARITY_ALPHA) {
-                    int byName = ea.name().compareToIgnoreCase(eb.name()); // toujours A→Z
-                    if (byName != 0) return byName;
+                    if (byRank != 0) return byRank;
+                } else { // ITEM : nom d'abord, puis rareté décroissante
+                    int byName = ea.name().compareToIgnoreCase(eb.name());
+                    if (ascending) { if (byName != 0) return byName; }
+                    else           { if (byName != 0) return -byName; }
+                    int byRank = Integer.compare(eb.rank(), ea.rank()); // plus haute rareté d'abord
+                    if (byRank != 0) return byRank;
                 }
-                int byId = ea.itemId().compareTo(eb.itemId());            // regroupe les identiques
+                int byId = ea.itemId().compareTo(eb.itemId());          // regroupe les identiques
                 if (byId != 0) return byId;
             }
             return Integer.compare(a, b);              // stable

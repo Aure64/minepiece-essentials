@@ -76,6 +76,7 @@ public class MinepieceEssentialsClient implements ClientModInitializer {
         com.minepiece.essentials.ah.AhTooltip.register();
 
         com.minepiece.essentials.rarity.RarityHotbarOverlay.register();
+        registerRarityScreenHooks();
 
         UpdateChecker.init();
 
@@ -124,6 +125,27 @@ public class MinepieceEssentialsClient implements ClientModInitializer {
 
         LOGGER.info("Minepiece Essentials initialized with {} HUD elements",
                 HudElementRegistry.getElements().size());
+    }
+
+    /**
+     * Branche l'overlay rareté sur TOUS les HandledScreen via les events Fabric
+     * (afterRender + clic), ce qui couvre aussi l'inventaire joueur (E) — contrairement
+     * à un mixin sur HandledScreen.render que les sous-classes peuvent court-circuiter.
+     */
+    private void registerRarityScreenHooks() {
+        net.fabricmc.fabric.api.client.screen.v1.ScreenEvents.AFTER_INIT.register((client, screen, sw, sh) -> {
+            if (screen instanceof net.minecraft.client.gui.screen.ingame.HandledScreen<?> hs) {
+                net.fabricmc.fabric.api.client.screen.v1.ScreenEvents.afterRender(screen)
+                    .register((s, ctx, mx, my, delta) -> {
+                        var acc = (com.minepiece.essentials.mixin.HandledScreenAccessor) hs;
+                        com.minepiece.essentials.rarity.RarityScreenOverlay.render(
+                            hs, ctx, acc.minepiece$getBgX(), acc.minepiece$getBgY(), mx, my);
+                    });
+                net.fabricmc.fabric.api.client.screen.v1.ScreenMouseEvents.allowMouseClick(screen)
+                    .register((s, click) ->
+                        !com.minepiece.essentials.rarity.RarityScreenOverlay.onClick(hs, click.x(), click.y()));
+            }
+        });
     }
 
     private void registerKeybinds() {
