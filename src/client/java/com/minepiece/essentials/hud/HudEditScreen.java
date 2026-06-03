@@ -26,6 +26,10 @@ public class HudEditScreen extends Screen {
     private int resetBtnX, resetBtnY;
     private long resetMsgUntil = 0;
 
+    // Toggles de la fonctionnalité Raretés (onglet Placement).
+    private int rarityTogglesX, rarityTogglesY;
+    private static final int TOGGLE_STEP = BTN_H + 4;
+
     public HudEditScreen() {
         super(Text.literal("HUD Editor"));
     }
@@ -37,6 +41,8 @@ public class HudEditScreen extends Screen {
         tabsX = (width - (TAB_W * 2 + TAB_GAP)) / 2;
         resetBtnX = (width - BTN_W) / 2;
         resetBtnY = tabsY + TAB_H + 6;
+        rarityTogglesX = (width - BTN_W) / 2;
+        rarityTogglesY = resetBtnY + BTN_H + 28;
     }
 
     // --- geometry helpers ----------------------------------------------------
@@ -145,6 +151,23 @@ public class HudEditScreen extends Screen {
         if (System.currentTimeMillis() < resetMsgUntil) {
             RenderUtils.drawCenteredText(ctx, "Placement reinitialise !", width / 2, resetBtnY + BTN_H + 4, 0xFF7CFC55);
         }
+
+        // Toggles Raretés (emblèmes / filtre / tri, affichés dans les inventaires & coffres).
+        var cfg = MinepieceEssentialsClient.getInstance().getConfigManager().config();
+        RenderUtils.drawCenteredText(ctx, "Raretes (inventaire & coffres)", width / 2, rarityTogglesY - 12, 0xFFFFE9D5);
+        drawToggle(ctx, mouseX, mouseY, 0, "Emblemes de rarete", cfg.rarityIconsEnabled);
+        drawToggle(ctx, mouseX, mouseY, 1, "Barre de filtre", cfg.rarityFilterEnabled);
+        drawToggle(ctx, mouseX, mouseY, 2, "Boutons de tri", cfg.raritySorterEnabled);
+    }
+
+    private void drawToggle(DrawContext ctx, int mouseX, int mouseY, int index, String label, boolean on) {
+        int y = rarityTogglesY + index * TOGGLE_STEP;
+        boolean hover = inBox(mouseX, mouseY, rarityTogglesX, y, BTN_W, BTN_H);
+        ctx.fill(rarityTogglesX, y, rarityTogglesX + BTN_W, y + BTN_H, hover ? 0xFF6A4A2C : 0xFF3A2A1C);
+        ctx.fill(rarityTogglesX, y, rarityTogglesX + BTN_W, y + 1, 0xFF8A6A44);
+        ctx.fill(rarityTogglesX, y + BTN_H - 1, rarityTogglesX + BTN_W, y + BTN_H, 0xFF8A6A44);
+        RenderUtils.drawCenteredText(ctx, label + (on ? "  [ON]" : "  [OFF]"),
+                width / 2, y + 4, on ? 0xFF7CFC55 : 0xFFFF6666);
     }
 
     private void renderCustomize(DrawContext ctx, int mouseX, int mouseY, float delta) {
@@ -218,6 +241,21 @@ public class HudEditScreen extends Screen {
         if (button == 0 && overResetButton(mouseX, mouseY)) {
             resetPlacement();
             return true;
+        }
+
+        if (button == 0) {
+            for (int i = 0; i < 3; i++) {
+                int ty = rarityTogglesY + i * TOGGLE_STEP;
+                if (inBox(mouseX, mouseY, rarityTogglesX, ty, BTN_W, BTN_H)) {
+                    var mgr = MinepieceEssentialsClient.getInstance().getConfigManager();
+                    var cfg = mgr.config();
+                    if (i == 0) cfg.rarityIconsEnabled = !cfg.rarityIconsEnabled;
+                    else if (i == 1) cfg.rarityFilterEnabled = !cfg.rarityFilterEnabled;
+                    else cfg.raritySorterEnabled = !cfg.raritySorterEnabled;
+                    mgr.save();
+                    return true;
+                }
+            }
         }
 
         if (button == 0) {

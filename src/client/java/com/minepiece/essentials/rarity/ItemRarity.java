@@ -9,13 +9,13 @@ import net.minecraft.util.Identifier;
  * (codepoint inconnu, cf. spec — à ajouter après dump en jeu).
  */
 public enum ItemRarity {
-    COMMON   ('孔', "common",    11, 10, 0xFFFFFFFF, 0),
-    RARE     ('桥', "rare",      11, 10, 0xFF5599FF, 1),
-    EPIC     ('恨', "epic",      11, 10, 0xFFB24BFF, 2),
-    LEGENDARY('伴', "legendary", 11, 10, 0xFFFFAA00, 3),
-    MYTHIC   ('愈', "mythic",    11, 11, 0xFFFF5577, 4),
-    LUNAR    ('灰', "lunar",     12, 10, 0xFF7FE0FF, 5),
-    VALENTINE('挑', "valentine", 11, 11, 0xFFFF8FC8, 6);
+    COMMON   ('孔', "common",    11, 10, 0xFFFFFFFF, 0, "Commun"),
+    RARE     ('桥', "rare",      11, 10, 0xFF5599FF, 1, "Rare"),
+    EPIC     ('恨', "epic",      11, 10, 0xFFB24BFF, 2, "Épique"),
+    LEGENDARY('伴', "legendary", 11, 10, 0xFFFFAA00, 3, "Légendaire"),
+    MYTHIC   ('愈', "mythic",    11, 11, 0xFFFF5577, 4, "Mythique"),
+    LUNAR    ('灰', "lunar",     12, 10, 0xFF7FE0FF, 5, "Lunaire"),
+    VALENTINE('挑', "valentine", 11, 11, 0xFFFF8FC8, 6, "Saint-Valentin");
 
     public final int glyph;
     public final String key;
@@ -23,14 +23,16 @@ public enum ItemRarity {
     public final int nativeH;
     public final int color;   // ARGB, pour le bouton de filtre
     public final int rank;    // ordre de tri
+    public final String label; // libellé FR pour les tooltips
 
-    ItemRarity(char glyph, String key, int nativeW, int nativeH, int color, int rank) {
+    ItemRarity(char glyph, String key, int nativeW, int nativeH, int color, int rank, String label) {
         this.glyph = glyph;
         this.key = key;
         this.nativeW = nativeW;
         this.nativeH = nativeH;
         this.color = color;
         this.rank = rank;
+        this.label = label;
     }
 
     public Identifier texture() {

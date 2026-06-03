@@ -21,7 +21,7 @@ public abstract class HandledScreenMixin {
     @Inject(method = "render", at = @At("TAIL"))
     private void minepiece$rarityOverlay(DrawContext ctx, int mouseX, int mouseY,
                                          float delta, CallbackInfo ci) {
-        RarityScreenOverlay.render((HandledScreen<?>) (Object) this, ctx, this.x, this.y);
+        RarityScreenOverlay.render((HandledScreen<?>) (Object) this, ctx, this.x, this.y, mouseX, mouseY);
     }
 
     @Inject(method = "mouseClicked", at = @At("HEAD"), cancellable = true)

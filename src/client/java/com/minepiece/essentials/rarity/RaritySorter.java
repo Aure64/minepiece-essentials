@@ -26,7 +26,7 @@ public final class RaritySorter {
         return containerSize(screen.getScreenHandler()) > 0;
     }
 
-    public static void sort(HandledScreen<?> screen, boolean descending) {
+    public static void sort(HandledScreen<?> screen, RaritySort.Mode mode, boolean ascending) {
         MinecraftClient mc = MinecraftClient.getInstance();
         if (mc.player == null || mc.interactionManager == null) return;
         ScreenHandler h = screen.getScreenHandler();
@@ -40,16 +40,17 @@ public final class RaritySorter {
             ItemStack s = h.getSlot(i).getStack();
             cur[i] = s;
             if (s.isEmpty()) {
-                entries.add(new RaritySort.Entry(-1, ""));
+                entries.add(new RaritySort.Entry(true, -1, "", ""));
             } else {
                 ItemRarity r = RarityDetector.detect(s);
                 String id = Registries.ITEM.getId(s.getItem()).toString();
-                entries.add(new RaritySort.Entry(r == null ? -1 : r.rank, id));
+                String name = s.getName().getString();
+                entries.add(new RaritySort.Entry(false, r == null ? -1 : r.rank, id, name));
             }
         }
 
         // Ordre cible : la pile qui doit finir au slot i.
-        List<Integer> order = RaritySort.targetOrder(entries, descending);
+        List<Integer> order = RaritySort.targetOrder(entries, mode, ascending);
         ItemStack[] desired = new ItemStack[n];
         for (int i = 0; i < n; i++) desired[i] = cur[order.get(i)];
 

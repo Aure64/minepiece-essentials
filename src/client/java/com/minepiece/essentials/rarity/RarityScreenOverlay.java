@@ -8,10 +8,12 @@ import com.minepiece.essentials.ServerDetector;
 import com.minepiece.essentials.MinepieceEssentialsClient;
 import com.minepiece.essentials.config.ModConfig;
 import com.minepiece.essentials.util.RenderUtils;
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
 import net.minecraft.item.ItemStack;
 import net.minecraft.screen.slot.Slot;
+import net.minecraft.text.Text;
 
 /** Rendu de l'overlay rareté sur un HandledScreen + gestion des clics de la barre. */
 public final class RarityScreenOverlay {
@@ -24,8 +26,10 @@ public final class RarityScreenOverlay {
     private static final int GAP = 2;        // espace entre boutons
     private static final int PAD = 4;        // marge barre <-> conteneur
 
-    /** Hitbox d'un bouton : type SORT (toggle direction), CLEAR (reset), ou une rareté. */
-    public record Hit(int x, int y, int w, int h, ItemRarity rarity, boolean sort, boolean clear) {}
+    enum HitKind { FILTER, CLEAR, SORT_RARITY, SORT_ALPHA }
+
+    /** Hitbox d'un bouton, avec son infobulle. */
+    record Hit(int x, int y, int w, int h, ItemRarity rarity, HitKind kind, String tip) {}
 
     private static final List<Hit> HITS = new ArrayList<>();
 
@@ -34,7 +38,8 @@ public final class RarityScreenOverlay {
     }
 
     // ---- Rendu (appelé en TAIL de HandledScreen.render) ----
-    public static void render(HandledScreen<?> screen, DrawContext ctx, int bgX, int bgY) {
+    public static void render(HandledScreen<?> screen, DrawContext ctx,
+                              int bgX, int bgY, int mouseX, int mouseY) {
         HITS.clear();
         if (!ServerDetector.isOnMinePiece()) return;
         ModConfig c = cfg();
@@ -59,19 +64,17 @@ public final class RarityScreenOverlay {
             }
         }
 
-        // 2) Barre verticale à droite : raretés présentes + Trier + Clear.
-        Set<ItemRarity> present = EnumSet.noneOf(ItemRarity.class);
-        for (Slot slot : screen.getScreenHandler().slots) {
-            ItemRarity r = RarityDetector.detect(slot.getStack());
-            if (r != null) present.add(r);
-        }
-        if (present.isEmpty()) return;
-
-        // Collée à droite du fond (largeur vanilla standard 176px). Ajustable en test.
+        // 2) Barre verticale à droite. Collée au bord du fond (176px vanilla).
         int barX = bgX + 176 + PAD;
         int y = bgY;
 
+        // Boutons de filtre : une rareté présente = un bouton.
         if (c.rarityFilterEnabled) {
+            Set<ItemRarity> present = EnumSet.noneOf(ItemRarity.class);
+            for (Slot slot : screen.getScreenHandler().slots) {
+                ItemRarity r = RarityDetector.detect(slot.getStack());
+                if (r != null) present.add(r);
+            }
             for (ItemRarity r : ItemRarity.values()) {
                 if (!present.contains(r)) continue;
                 boolean act = FILTER.isActive(r);
@@ -81,24 +84,46 @@ public final class RarityScreenOverlay {
                 float sc = 10f / Math.max(r.nativeW, r.nativeH);
                 RenderUtils.drawTextureScaled(ctx, r.texture(), barX + 2, y + 2, sc,
                         r.nativeW, r.nativeH);
-                HITS.add(new Hit(barX, y, BTN, BTN, r, false, false));
+                HITS.add(new Hit(barX, y, BTN, BTN, r, HitKind.FILTER, "Filtrer : " + r.label));
                 y += BTN + GAP;
             }
             if (FILTER.any()) {
                 ctx.fill(barX, y, barX + BTN, y + BTN, 0xFF802020);
                 RenderUtils.drawText(ctx, "x", barX + 4, y + 3, 0xFFFFFFFF);
-                HITS.add(new Hit(barX, y, BTN, BTN, null, false, true));
+                HITS.add(new Hit(barX, y, BTN, BTN, null, HitKind.CLEAR, "Réinitialiser le filtre"));
                 y += BTN + GAP;
             }
         }
 
-        // Bouton Trier (seulement sur conteneur de stockage).
+        // Boutons de tri (seulement sur un conteneur de stockage).
         if (c.raritySorterEnabled && RaritySorter.canSort(screen)) {
-            y += GAP;
-            ctx.fill(barX, y, barX + BTN, y + BTN, 0xFF2A2A2A);
-            RenderUtils.drawText(ctx, SORT.descending() ? "↓" : "↑",
-                    barX + 4, y + 3, 0xFFFFFFFF); // flèche ↓ / ↑
-            HITS.add(new Hit(barX, y, BTN, BTN, null, true, false));
+            if (y > bgY) y += GAP; // petit séparateur sous les filtres
+
+            // Tri par rareté
+            ctx.fill(barX, y, barX + BTN, y + BTN, 0xFF3A2E10);
+            RenderUtils.drawText(ctx, SORT.rarityDescending() ? "↓" : "↑", barX + 4, y + 3, 0xFFFFD27F);
+            String rTip = SORT.rarityDescending()
+                    ? "Trier par rareté : mythique → commun"
+                    : "Trier par rareté : commun → mythique";
+            HITS.add(new Hit(barX, y, BTN, BTN, null, HitKind.SORT_RARITY, rTip));
+            y += BTN + GAP;
+
+            // Tri alphabétique
+            ctx.fill(barX, y, barX + BTN, y + BTN, 0xFF10283A);
+            RenderUtils.drawText(ctx, SORT.alphaAscending() ? "A" : "Z", barX + 4, y + 3, 0xFF8FD0FF);
+            String aTip = SORT.alphaAscending() ? "Trier de A à Z" : "Trier de Z à A";
+            HITS.add(new Hit(barX, y, BTN, BTN, null, HitKind.SORT_ALPHA, aTip));
+            y += BTN + GAP;
+        }
+
+        // 3) Infobulle du bouton survolé (dessinée en dernier, au-dessus).
+        for (Hit h : HITS) {
+            if (mouseX >= h.x() && mouseX < h.x() + h.w()
+                    && mouseY >= h.y() && mouseY < h.y() + h.h()) {
+                ctx.drawTooltip(MinecraftClient.getInstance().textRenderer,
+                        Text.literal(h.tip()), mouseX, mouseY);
+                break;
+            }
         }
     }
 
@@ -108,13 +133,18 @@ public final class RarityScreenOverlay {
         if (!ServerDetector.isOnMinePiece()) return false;
         for (Hit h : HITS) {
             if (mx >= h.x() && mx < h.x() + h.w() && my >= h.y() && my < h.y() + h.h()) {
-                if (h.sort()) {
-                    SORT.toggle();
-                    RaritySorter.sort(screen, SORT.descending());
-                } else if (h.clear()) {
-                    FILTER.clear();
-                } else if (h.rarity() != null) {
-                    FILTER.toggle(h.rarity());
+                switch (h.kind()) {
+                    case FILTER -> FILTER.toggle(h.rarity());
+                    case CLEAR -> FILTER.clear();
+                    case SORT_RARITY -> {
+                        // trie dans le sens affiché, puis bascule l'indicateur.
+                        RaritySorter.sort(screen, RaritySort.Mode.RARITY, !SORT.rarityDescending());
+                        SORT.toggleRarity();
+                    }
+                    case SORT_ALPHA -> {
+                        RaritySorter.sort(screen, RaritySort.Mode.ALPHABETICAL, SORT.alphaAscending());
+                        SORT.toggleAlpha();
+                    }
                 }
                 return true;
             }

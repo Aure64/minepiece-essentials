@@ -4,30 +4,42 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
-/** Calcul pur de l'ordre cible d'un conteneur trié par rareté. */
+/** Calcul pur de l'ordre cible d'un conteneur trié (par rareté ou alphabétique). */
 public final class RaritySort {
     private RaritySort() {}
 
-    /** rank = -1 ⇒ pas de rareté (placé en fin). itemId pour regrouper les identiques. */
-    public record Entry(int rank, String itemId) {}
+    public enum Mode { RARITY, ALPHABETICAL }
+
+    /**
+     * Une entrée par slot. {@code empty} = slot vide (toujours placé en fin).
+     * {@code rank} = rang de rareté (mode RARITY), {@code name} = nom affiché (mode
+     * ALPHABETICAL), {@code itemId} = id de registre pour regrouper les identiques.
+     */
+    public record Entry(boolean empty, int rank, String itemId, String name) {}
 
     /**
      * Renvoie la liste des index source dans l'ordre cible (permutation stable).
-     * Les entrées sans rareté (rank < 0) finissent toujours en dernier, quel que soit
-     * le sens. Au sein d'un même rang, regroupement par itemId (asc) ; tri stable.
+     * Les slots vides finissent toujours en dernier, quel que soit le mode/sens.
+     * - RARITY : par rang (ascending = commun d'abord), puis itemId, stable.
+     * - ALPHABETICAL : par nom insensible à la casse (ascending = A→Z), puis itemId, stable.
      */
-    public static List<Integer> targetOrder(List<Entry> entries, boolean descending) {
+    public static List<Integer> targetOrder(List<Entry> entries, Mode mode, boolean ascending) {
         List<Integer> idx = new ArrayList<>();
         for (int i = 0; i < entries.size(); i++) idx.add(i);
 
         Comparator<Integer> cmp = (a, b) -> {
             Entry ea = entries.get(a), eb = entries.get(b);
-            boolean na = ea.rank() < 0, nb = eb.rank() < 0;
-            if (na != nb) return na ? 1 : -1;          // sans-rareté en dernier
-            if (!na) {                                  // les deux ont une rareté
-                int c = descending ? Integer.compare(eb.rank(), ea.rank())
-                                   : Integer.compare(ea.rank(), eb.rank());
-                if (c != 0) return c;
+            if (ea.empty() != eb.empty()) return ea.empty() ? 1 : -1; // vides en dernier
+            if (!ea.empty()) {
+                int primary;
+                if (mode == Mode.RARITY) {
+                    primary = ascending ? Integer.compare(ea.rank(), eb.rank())
+                                        : Integer.compare(eb.rank(), ea.rank());
+                } else {
+                    int byName = ea.name().compareToIgnoreCase(eb.name());
+                    primary = ascending ? byName : -byName;
+                }
+                if (primary != 0) return primary;
                 int byId = ea.itemId().compareTo(eb.itemId());
                 if (byId != 0) return byId;            // regroupe les identiques
             }
