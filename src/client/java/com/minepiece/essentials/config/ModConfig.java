@@ -42,4 +42,8 @@ public class ModConfig {
     public boolean passQuestHudEnabled = true;
 
     public boolean ahPricePerUnitEnabled = true;
+
+    public boolean rarityIconsEnabled = true;
+    public boolean rarityFilterEnabled = true;
+    public boolean raritySorterEnabled = true;
 }
