@@ -6,13 +6,20 @@
 
 ## Contexte & contrainte
 
-Mod **public** MinePiece Essentials. Ligne rouge : **aucune automatisation ni injection
-d'inputs**. Cette feature est **100 % passive** — elle lit l'état du jeu (lore des items)
-et **dessine** par-dessus les cases. Elle ne déplace, ne clique et ne range **aucun** item.
+Mod **public** MinePiece Essentials. La ligne rouge habituelle est « aucune automatisation »,
+mais une **exception assumée** a été décidée le 2026-06-03 (cf. CLAUDE.md) : le **trieur de
+coffre par rareté** est autorisé ici, à titre de QoL, avec **rollback prévu** si un staff
+RIVRS le juge interdit.
 
-> Le « trieur de coffre automatique » demandé initialement est **hors périmètre** ici
-> (il simulerait des clics = automatisation). Il appartient au mod privé. On le remplace
-> par une **aide visuelle au tri** : emblèmes + filtre de surbrillance.
+Donc deux natures de code dans ce module :
+- **Affichage passif** (emblèmes + filtre de surbrillance) — lit le lore et dessine.
+- **Trieur** (la seule automatisation tolérée) — réordonne le conteneur ouvert via des
+  clics d'inventaire simulés, déclenché **uniquement** par un clic explicite de l'utilisateur
+  sur le bouton « Trier ».
+
+> Règlement serveur (vérifié) : le tri d'inventaire/coffre n'est **pas** nommé en interdit ;
+> l'article G vise les automatisations à avantage (AutoSell/AutoMine/AutoPêche…). Zone grise
+> assumée. Si retrait demandé → supprimer au moins la partie tri du module `rarity/`.
 
 ## Objectif
 
@@ -20,6 +27,8 @@ et **dessine** par-dessus les cases. Elle ne déplace, ne clique et ne range **a
    l'inventaire joueur, les coffres/conteneurs et les GUI serveur (AH, shops).
 2. **Barre de filtres** : boutons (1 par rareté) ; activer une ou plusieurs raretés
    estompe visuellement les cases qui ne correspondent pas. Purement visuel.
+3. **Trieur de coffre** : un bouton « Trier » qui réordonne le conteneur ouvert par
+   rareté. Un seul bouton, qui **bascule croissant ⇄ décroissant** à chaque clic.
 
 ## Décisions de design (issues du brainstorming)
 
@@ -33,6 +42,10 @@ et **dessine** par-dessus les cases. Elle ne déplace, ne clique et ne range **a
 | Fallback hors MinePiece | **Rien** (pack absent → emblèmes ne chargent pas → on ne dessine rien) |
 | Position emblème | Coin **haut-gauche** de la case (le nombre est en bas-droite → pas de collision) |
 | Persistance du filtre | État de session uniquement (non sauvegardé) |
+| Trieur — cible | **Conteneur ouvert uniquement** (pas l'inventaire perso) |
+| Trieur — ordre | Un bouton « Trier » qui **toggle croissant ⇄ décroissant** ; libellé/flèche reflète l'état |
+| Trieur — sécurité | Bouton **affiché seulement sur un vrai conteneur de stockage** (coffre/shulker/`GenericContainerScreen` standard) ; **jamais** sur un GUI menu serveur (AH/shop) où un clic auto pourrait acheter/valider |
+| Trieur — placement non-raretés | Items sans rareté regroupés à la fin ; stacks identiques regroupés |
 
 ## Détection de rareté
 
@@ -85,6 +98,30 @@ Premier match → `ItemRarity`. Aucun match → `null` (item ignoré).
   à droite du conteneur (sinon au-dessus si pas la place). Bouton actif mis en évidence.
 - Bouton « ✕ » pour tout réinitialiser.
 - Renvoie les hitboxes pour que le mixin route les clics.
+- **Bouton « Trier »** intégré à la barre (visible seulement sur un conteneur de stockage,
+  cf. `RaritySorter.canSort`). Affiche une flèche ↑/↓ selon `RaritySortState.direction`.
+
+### `RaritySortState`
+- `enum Direction { ASC, DESC }`, état de session, défaut `DESC` (mythique d'abord).
+- `toggle()` : bascule la direction (appelé à chaque clic du bouton « Trier »).
+
+### `RaritySorter` (la seule automatisation du module)
+- `static boolean canSort(HandledScreen<?> screen)` : true **uniquement** pour un vrai
+  conteneur de stockage (ex. `GenericContainerScreenHandler`/`ShulkerBoxScreenHandler` ;
+  pas l'inventaire de craft, **pas** les GUI menu serveur). Liste blanche de types de
+  `ScreenHandler` → garantit qu'on ne clique jamais dans un shop/AH.
+- `static void sort(HandledScreen<?> screen, Direction dir)` :
+  1. Lit les slots du **conteneur** (partie haute, hors inventaire joueur) : pour chaque
+     slot, `(ItemStack, ItemRarity?)`.
+  2. Calcule l'ordre cible : tri par rang de rareté (selon `dir`), non-raretés à la fin,
+     stacks identiques regroupés, ordre stable secondaire (id d'item + count).
+  3. Réalise la permutation par **swaps** : `client.interactionManager.clickSlot(syncId,
+     slotId, 0, SlotActionType.PICKUP, player)` (prise → dépose) pour amener chaque item à
+     sa position cible. Algorithme type tri-sélection sur les slots du conteneur.
+  4. Ne touche **jamais** aux slots de l'inventaire joueur ni au curseur en fin (curseur
+     vide à la fin).
+- Robustesse : borne le nombre de clics (taille du conteneur), s'arrête proprement si la
+  taille/els slots changent en cours (resync serveur).
 
 ### `HandledScreenMixin` (mixin client)
 Cible `HandledScreen` (couvre `InventoryScreen`, `GenericContainerScreen`, GUI serveur).
@@ -92,12 +129,17 @@ Cible `HandledScreen` (couvre `InventoryScreen`, `GenericContainerScreen`, GUI s
   1. pour chaque slot non vide → `RarityDetector.detect` → si filtre actif et estompé,
      poser un voile sombre sur la case ; puis `RarityIconRenderer.drawEmblem`.
   2. dessiner `RarityFilterBar`.
-- `mouseClicked` : si le clic tombe sur une hitbox de la barre → `toggle` et **annuler**
-  l'événement (sinon laisser passer). Aucun autre clic n'est touché.
+- `mouseClicked` : si le clic tombe sur une hitbox de la barre :
+  - bouton de rareté → `RarityFilterState.toggle(r)` ;
+  - bouton « Trier » → `RaritySortState.toggle()` puis `RaritySorter.sort(screen, dir)` ;
+  - bouton « ✕ » → reset filtre ;
+  - puis **annuler** l'événement. Aucun autre clic n'est touché (drag/dépose manuelle
+    de l'utilisateur intacts).
 
 ### `ModConfig` (ajouts)
 - `rarityIconsEnabled` (def. true)
 - `rarityFilterEnabled` (def. true)
+- `raritySorterEnabled` (def. true) — masque le bouton « Trier » si false
 - `rarityIconScale` (def. 1.0)
 - exposés dans le menu config existant, sous la logique de gating MinePiece.
 
@@ -110,9 +152,11 @@ ouverture HandledScreen
             RarityDetector.detect(stack)  ── cache ──> ItemRarity?
             ├─ filtre actif & estompé  → voile sombre
             └─ ItemRarity != null      → drawEmblem(coin HG)
-       └─ RarityFilterBar.render(raretés présentes, état)
+       └─ RarityFilterBar.render(raretés présentes, état, bouton Trier si canSort)
   └─ mouseClicked()
-       └─ hit bouton filtre → RarityFilterState.toggle() ; cancel
+       ├─ hit bouton filtre → RarityFilterState.toggle() ; cancel
+       └─ hit bouton Trier  → RaritySortState.toggle()
+                               └─ RaritySorter.sort() → clickSlot(PICKUP) × N ; cancel
 ```
 
 ## Gestion d'erreurs / cas limites
@@ -125,18 +169,34 @@ ouverture HandledScreen
 - **GUI serveur custom** : la barre peut chevaucher la mise en page → position calculée à
   droite du conteneur ; option de repli au-dessus. Vérifier sur l'AH en jeu.
 - **Perf** : LORE lu une fois par stack puis caché ; pas de `getTooltip` en boucle.
+- **Trieur — sécurité GUI serveur** : `canSort` = liste blanche de `ScreenHandler` de
+  stockage. Sur un AH/shop, le bouton « Trier » **n'apparaît pas** → impossible de cliquer
+  par erreur sur un item d'achat.
+- **Trieur — resync** : si le serveur renvoie un état pendant le tri (slots changent), on
+  arrête la séquence proprement (pas de clic sur slot invalide), curseur laissé vide.
+- **Trieur — conteneurs en lecture seule / restreints** : si un slot refuse la prise, on
+  passe au suivant sans bloquer.
 
 ## Tests
 
 - **Détection** : unit test `RarityDetector` avec des `ItemStack` montés avec des lignes de
   lore contenant chaque glyphe → vérifie le bon `ItemRarity` (et `null` sans glyphe).
 - **État filtre** : unit test `RarityFilterState` (toggle multiple, `isDimmed`).
-- **Rendu** : test manuel en jeu (build → deploy Prism → ouvrir inventaire/coffre/AH),
-  selon le workflow de test habituel (cf. memory testing-workflow).
+- **Tri (logique pure)** : unit test sur le calcul de l'**ordre cible** (`RaritySorter`
+  factorisé : une fonction pure `List<slot> → List<slot>` testable sans Minecraft) pour
+  ASC/DESC, non-raretés à la fin, regroupement des stacks identiques.
+- **`canSort`** : test que les types menu serveur sont exclus (au minimum vérification
+  manuelle de la liste blanche).
+- **Rendu + tri réel** : test manuel en jeu (build → deploy Prism → ouvrir inventaire /
+  coffre / shulker / AH), selon le workflow de test habituel (cf. memory testing-workflow).
+  Vérifier : bouton Trier absent sur l'AH, présent sur un coffre ; tri correct ; toggle
+  croissant/décroissant ; aucun item perdu ; curseur vide après tri.
 
 ## Hors périmètre (YAGNI)
 
-- Tri/déplacement automatique d'items (= automatisation, interdit ici).
+- Tri de l'inventaire **joueur** (le trieur ne touche que le conteneur ouvert).
+- Tri sur les GUI menu serveur (AH/shop) — volontairement exclu pour sécurité.
 - Emblèmes sur la hotbar.
-- Persistance du filtre entre sessions.
+- Persistance du filtre / de la direction de tri entre sessions.
 - Support multi-langue de la détection (la détection par glyphe est langue-agnostique).
+- Critères de tri autres que la rareté (alpha, quantité…) — possibles plus tard.
