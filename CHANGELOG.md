@@ -3,6 +3,19 @@
 Les notes des versions antérieures sont disponibles sur les
 [Releases GitHub](https://github.com/Aure64/minepiece-essentials/releases) et sur Modrinth.
 
+## 1.6.0
+
+### ✨ Nouvelles fonctionnalités
+- **Emblèmes de rareté dans l'inventaire** — les petits logos de rareté (commun → mythique, et les raretés spéciales) s'affichent directement dans le coin de chaque case d'objet : dans les **coffres / conteneurs**, dans ton **inventaire** (touche E) et sur la **hotbar** en jeu. Chaque contexte a son propre **interrupteur On/Off** dans l'éditeur (touche **K**). *(Emblèmes fournis par le pack du serveur : visibles uniquement sur MinePiece.)*
+- **Barre de filtre par rareté** — une barre verticale à droite des conteneurs : clique une ou plusieurs raretés pour **estomper** les objets qui ne correspondent pas, bouton **✕** pour tout réinitialiser. Pur affichage, aucune action sur les objets.
+- **Tri des coffres** — deux boutons (présents uniquement sur les **coffres** et **shulkers**, jamais sur l'HV ou les shops) :
+  - **Trier par rareté** (↓/↑) — regroupe les objets par palier de rareté, du plus rare au plus commun (rappuie pour inverser).
+  - **Regrouper par objet** (A↓/A↑) — range les objets par ordre **alphabétique (toujours A→Z)** en plaçant **toutes les raretés d'un même objet à la suite** (ton boulon épique collé à ton boulon légendaire) ; le bouton bascule juste le sens des raretés à l'intérieur de chaque groupe.
+- **Infobulles** sur chaque bouton de la barre pour expliquer son effet.
+
+### Prérequis
+Minecraft 1.21.11 ou 1.21.8 · Fabric Loader ≥ 0.16.0 · Fabric API · Java 21
+
 ## 1.5.1
 
 ### ✨ Nouveautés
