@@ -22,6 +22,19 @@ public final class RenderUtils {
         ctx.getMatrices().popMatrix();
     }
 
+    /**
+     * Dessine une texture de taille native arbitraire ({@code texW}×{@code texH}),
+     * mise à l'échelle par {@code scale}, en haut-gauche de {@code (x, y)}.
+     */
+    public static void drawTextureScaled(DrawContext ctx, Identifier texture,
+                                         int x, int y, float scale, int texW, int texH) {
+        ctx.getMatrices().pushMatrix();
+        ctx.getMatrices().translate(x, y);
+        ctx.getMatrices().scale(scale, scale);
+        ctx.drawTexture(RenderPipelines.GUI_TEXTURED, texture, 0, 0, 0f, 0f, texW, texH, texW, texH);
+        ctx.getMatrices().popMatrix();
+    }
+
     /** Parchment-style box with the classic colours. */
     public static void drawParchmentBox(DrawContext ctx, int x, int y, int w, int h) {
         drawParchmentBox(ctx, x, y, w, h, ColorUtils.PARCHMENT_BG, ColorUtils.PARCHMENT_BORDER);
