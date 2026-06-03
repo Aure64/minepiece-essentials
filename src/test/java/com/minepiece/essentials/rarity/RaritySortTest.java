@@ -38,31 +38,38 @@ class RaritySortTest {
         assertEquals(List.of(1, 0, 2), RaritySort.targetOrder(in, RaritySort.Mode.RARITY, false));
     }
 
-    // ---- mode ITEM (objet en primaire, ses raretés à la suite) ----
+    // ---- mode ITEM (objet en primaire ; noms TOUJOURS A→Z ; ascending = sens des raretés) ----
 
     @Test
-    void itemGroupsSameObjectWithRaritiesConsecutiveHighestFirst() {
+    void itemGroupsObjectsAtoZ_rarityDescWithinGroup() {
         // 0 = Boulon épique (rang 2), 1 = Boulon légendaire (rang 3), 2 = Ancre commune (rang 0)
         List<RaritySort.Entry> in = List.of(
                 it(2, "boulon", "Boulon"), it(3, "boulon", "Boulon"), it(0, "ancre", "Ancre"));
-        // A→Z : Ancre, puis le groupe Boulon (légendaire avant épique)
-        assertEquals(List.of(2, 1, 0), RaritySort.targetOrder(in, RaritySort.Mode.ITEM, true));
+        // ascending=false : noms A→Z (Ancre puis Boulon), raretés plus rare d'abord (lég. avant épique)
+        assertEquals(List.of(2, 1, 0), RaritySort.targetOrder(in, RaritySort.Mode.ITEM, false));
     }
 
     @Test
-    void itemWithinObjectHigherRarityFirstRegardlessOfDirection() {
-        List<RaritySort.Entry> in = List.of(it(2, "boulon", "Boulon"), it(3, "boulon", "Boulon"));
-        // dans les deux sens, la plus haute rareté (index 1) reste devant
+    void itemGroupsObjectsAtoZ_rarityAscWithinGroup() {
+        List<RaritySort.Entry> in = List.of(
+                it(2, "boulon", "Boulon"), it(3, "boulon", "Boulon"), it(0, "ancre", "Ancre"));
+        // ascending=true : noms toujours A→Z, mais raretés moins rare d'abord (épique avant lég.)
+        assertEquals(List.of(2, 0, 1), RaritySort.targetOrder(in, RaritySort.Mode.ITEM, true));
+    }
+
+    @Test
+    void itemNameAlwaysAtoZ_bothDirections() {
+        List<RaritySort.Entry> in = List.of(it(0, "a", "Banane"), it(0, "b", "Avocat"));
+        // Avocat avant Banane quel que soit le sens (les noms ne s'inversent jamais)
         assertEquals(List.of(1, 0), RaritySort.targetOrder(in, RaritySort.Mode.ITEM, true));
         assertEquals(List.of(1, 0), RaritySort.targetOrder(in, RaritySort.Mode.ITEM, false));
     }
 
     @Test
-    void itemDescNameZtoA() {
-        List<RaritySort.Entry> in = List.of(
-                it(2, "boulon", "Boulon"), it(3, "boulon", "Boulon"), it(0, "ancre", "Ancre"));
-        // Z→A : groupe Boulon (légendaire, épique) puis Ancre
-        assertEquals(List.of(1, 0, 2), RaritySort.targetOrder(in, RaritySort.Mode.ITEM, false));
+    void itemWithinGroupRarityDirectionFlips() {
+        List<RaritySort.Entry> in = List.of(it(2, "boulon", "Boulon"), it(3, "boulon", "Boulon"));
+        assertEquals(List.of(1, 0), RaritySort.targetOrder(in, RaritySort.Mode.ITEM, false)); // plus rare d'abord
+        assertEquals(List.of(0, 1), RaritySort.targetOrder(in, RaritySort.Mode.ITEM, true));  // moins rare d'abord
     }
 
     @Test

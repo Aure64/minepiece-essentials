@@ -13,7 +13,6 @@ import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
 import net.minecraft.item.ItemStack;
 import net.minecraft.screen.slot.Slot;
-import net.minecraft.text.Text;
 
 /** Rendu de l'overlay rareté sur un HandledScreen + gestion des clics de la barre. */
 public final class RarityScreenOverlay {
@@ -110,24 +109,45 @@ public final class RarityScreenOverlay {
             HITS.add(new Hit(barX, y, BTN, BTN, null, HitKind.SORT_RARITY, rTip));
             y += BTN + GAP;
 
-            // Regrouper par objet : chaque objet avec toutes ses raretés à la suite.
+            // Regrouper par objet : noms toujours A→Z, bascule le sens des raretés du groupe.
             ctx.fill(barX, y, barX + BTN, y + BTN, 0xFF2A1038);
-            RenderUtils.drawText(ctx, SORT.itemDescending() ? "Z" : "A", barX + 4, y + 3, 0xFFD9B8FF);
-            String aTip = "Regrouper par objet (ses raretés à la suite) : "
-                    + (SORT.itemDescending() ? "Z→A" : "A→Z");
+            RenderUtils.drawText(ctx, "A" + (SORT.itemRarityDescending() ? "↓" : "↑"),
+                    barX + 1, y + 3, 0xFFD9B8FF);
+            String aTip = "Regrouper par objet (A→Z) — raretés : "
+                    + (SORT.itemRarityDescending() ? "plus rare → moins rare"
+                                                   : "moins rare → plus rare");
             HITS.add(new Hit(barX, y, BTN, BTN, null, HitKind.SORT_ITEM, aTip));
             y += BTN + GAP;
         }
 
         // 3) Infobulle du bouton survolé (dessinée en dernier, au-dessus).
+        // Rendu manuel : drawTooltip() est différé et vidé pendant le render de l'écran,
+        // donc trop tôt pour notre hook afterRender → on dessine la bulle nous-mêmes.
         for (Hit h : HITS) {
             if (mouseX >= h.x() && mouseX < h.x() + h.w()
                     && mouseY >= h.y() && mouseY < h.y() + h.h()) {
-                ctx.drawTooltip(MinecraftClient.getInstance().textRenderer,
-                        Text.literal(h.tip()), mouseX, mouseY);
+                drawBarTooltip(ctx, h.tip(), mouseX, mouseY);
                 break;
             }
         }
+    }
+
+    /** Infobulle simple (une ligne), dessinée en draws immédiats pour passer par afterRender. */
+    private static void drawBarTooltip(DrawContext ctx, String text, int mouseX, int mouseY) {
+        MinecraftClient mc = MinecraftClient.getInstance();
+        int w = mc.textRenderer.getWidth(text);
+        int sw = mc.getWindow().getScaledWidth();
+        int x = mouseX + 10;
+        if (x + w + 3 > sw) x = mouseX - w - 10;   // bascule à gauche si ça déborde
+        int y = mouseY - 12;
+        if (y < 2) y = mouseY + 14;
+        ctx.fill(x - 3, y - 3, x + w + 3, y + 12, 0xF01A0A28);     // fond
+        int b = 0xFF5A3A7A;                                        // bord violacé
+        ctx.fill(x - 3, y - 3, x + w + 3, y - 2, b);
+        ctx.fill(x - 3, y + 11, x + w + 3, y + 12, b);
+        ctx.fill(x - 3, y - 3, x - 2, y + 12, b);
+        ctx.fill(x + w + 2, y - 3, x + w + 3, y + 12, b);
+        RenderUtils.drawText(ctx, text, x, y, 0xFFE8DAFF);
     }
 
     // ---- Clic (appelé en HEAD de HandledScreen.mouseClicked) ----
@@ -145,7 +165,8 @@ public final class RarityScreenOverlay {
                         SORT.toggleRarity();
                     }
                     case SORT_ITEM -> {
-                        RaritySorter.sort(screen, RaritySort.Mode.ITEM, !SORT.itemDescending());
+                        // noms A→Z (fixe) ; ascending = sens des raretés dans le groupe.
+                        RaritySorter.sort(screen, RaritySort.Mode.ITEM, !SORT.itemRarityDescending());
                         SORT.toggleItem();
                     }
                 }
