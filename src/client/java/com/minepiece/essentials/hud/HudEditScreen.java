@@ -152,12 +152,14 @@ public class HudEditScreen extends Screen {
             RenderUtils.drawCenteredText(ctx, "Placement reinitialise !", width / 2, resetBtnY + BTN_H + 4, 0xFF7CFC55);
         }
 
-        // Toggles Raretés (emblèmes / filtre / tri, affichés dans les inventaires & coffres).
+        // Toggles de la fonctionnalité Raretés.
         var cfg = MinepieceEssentialsClient.getInstance().getConfigManager().config();
-        RenderUtils.drawCenteredText(ctx, "Raretes (inventaire & coffres)", width / 2, rarityTogglesY - 12, 0xFFFFE9D5);
-        drawToggle(ctx, mouseX, mouseY, 0, "Emblemes de rarete", cfg.rarityIconsEnabled);
-        drawToggle(ctx, mouseX, mouseY, 1, "Barre de filtre", cfg.rarityFilterEnabled);
-        drawToggle(ctx, mouseX, mouseY, 2, "Boutons de tri", cfg.raritySorterEnabled);
+        RenderUtils.drawCenteredText(ctx, "Raretes", width / 2, rarityTogglesY - 12, 0xFFFFE9D5);
+        drawToggle(ctx, mouseX, mouseY, 0, "Emblemes - coffres", cfg.rarityIconsEnabled);
+        drawToggle(ctx, mouseX, mouseY, 1, "Emblemes - inventaire", cfg.rarityInventoryEnabled);
+        drawToggle(ctx, mouseX, mouseY, 2, "Emblemes - hotbar", cfg.rarityHotbarEnabled);
+        drawToggle(ctx, mouseX, mouseY, 3, "Barre de filtre", cfg.rarityFilterEnabled);
+        drawToggle(ctx, mouseX, mouseY, 4, "Boutons de tri", cfg.raritySorterEnabled);
     }
 
     private void drawToggle(DrawContext ctx, int mouseX, int mouseY, int index, String label, boolean on) {
@@ -244,14 +246,18 @@ public class HudEditScreen extends Screen {
         }
 
         if (button == 0) {
-            for (int i = 0; i < 3; i++) {
+            for (int i = 0; i < 5; i++) {
                 int ty = rarityTogglesY + i * TOGGLE_STEP;
                 if (inBox(mouseX, mouseY, rarityTogglesX, ty, BTN_W, BTN_H)) {
                     var mgr = MinepieceEssentialsClient.getInstance().getConfigManager();
                     var cfg = mgr.config();
-                    if (i == 0) cfg.rarityIconsEnabled = !cfg.rarityIconsEnabled;
-                    else if (i == 1) cfg.rarityFilterEnabled = !cfg.rarityFilterEnabled;
-                    else cfg.raritySorterEnabled = !cfg.raritySorterEnabled;
+                    switch (i) {
+                        case 0 -> cfg.rarityIconsEnabled = !cfg.rarityIconsEnabled;
+                        case 1 -> cfg.rarityInventoryEnabled = !cfg.rarityInventoryEnabled;
+                        case 2 -> cfg.rarityHotbarEnabled = !cfg.rarityHotbarEnabled;
+                        case 3 -> cfg.rarityFilterEnabled = !cfg.rarityFilterEnabled;
+                        default -> cfg.raritySorterEnabled = !cfg.raritySorterEnabled;
+                    }
                     mgr.save();
                     return true;
                 }

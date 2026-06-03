@@ -38,15 +38,15 @@ class RarityStateTest {
     }
 
     @Test
-    void sortDirectionsTogglePerMode() {
+    void sortDirectionsTogglePerButton() {
         RaritySortState s = new RaritySortState();
-        assertTrue(s.rarityDescending()); // défaut : mythique d'abord
-        assertTrue(s.alphaAscending());   // défaut : A→Z
+        assertTrue(s.rarityDescending());      // défaut : mythique d'abord
+        assertTrue(s.rarityAlphaDescending());
         s.toggleRarity();
         assertFalse(s.rarityDescending());
-        assertTrue(s.alphaAscending());   // indépendant
-        s.toggleAlpha();
-        assertFalse(s.alphaAscending());
+        assertTrue(s.rarityAlphaDescending()); // indépendant
+        s.toggleRarityAlpha();
+        assertFalse(s.rarityAlphaDescending());
         assertFalse(s.rarityDescending());
     }
 }

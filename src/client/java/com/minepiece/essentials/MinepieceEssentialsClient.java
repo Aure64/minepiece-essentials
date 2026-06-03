@@ -75,6 +75,8 @@ public class MinepieceEssentialsClient implements ClientModInitializer {
         MinionTooltip.register();
         com.minepiece.essentials.ah.AhTooltip.register();
 
+        com.minepiece.essentials.rarity.RarityHotbarOverlay.register();
+
         UpdateChecker.init();
 
         // Reset transient state (queues, last island) on every server join/disconnect.

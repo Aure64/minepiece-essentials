@@ -1,16 +1,17 @@
 package com.minepiece.essentials.rarity;
 
 /**
- * Direction de tri par mode, basculée à chaque clic du bouton correspondant.
- * Défauts : rareté décroissante (mythique d'abord), alphabétique croissant (A→Z).
+ * Sens de tri par bouton, basculé à chaque clic. Les deux boutons trient par rareté ;
+ * RARITY_ALPHA range en plus alphabétiquement (A→Z) dans chaque rareté.
+ * Défaut : décroissant (mythique d'abord).
  */
 public final class RaritySortState {
     private boolean rarityDescending = true;
-    private boolean alphaAscending = true;
+    private boolean rarityAlphaDescending = true;
 
     public boolean rarityDescending() { return rarityDescending; }
-    public boolean alphaAscending() { return alphaAscending; }
+    public boolean rarityAlphaDescending() { return rarityAlphaDescending; }
 
     public void toggleRarity() { rarityDescending = !rarityDescending; }
-    public void toggleAlpha() { alphaAscending = !alphaAscending; }
+    public void toggleRarityAlpha() { rarityAlphaDescending = !rarityAlphaDescending; }
 }

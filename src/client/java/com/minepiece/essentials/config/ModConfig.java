@@ -43,7 +43,9 @@ public class ModConfig {
 
     public boolean ahPricePerUnitEnabled = true;
 
-    public boolean rarityIconsEnabled = true;
+    public boolean rarityIconsEnabled = true;      // emblèmes dans les coffres/conteneurs
+    public boolean rarityInventoryEnabled = true;  // emblèmes dans l'inventaire joueur (E)
+    public boolean rarityHotbarEnabled = true;     // emblèmes sur la hotbar (en jeu)
     public boolean rarityFilterEnabled = true;
     public boolean raritySorterEnabled = true;
 }

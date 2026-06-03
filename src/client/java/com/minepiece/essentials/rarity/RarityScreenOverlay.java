@@ -26,7 +26,7 @@ public final class RarityScreenOverlay {
     private static final int GAP = 2;        // espace entre boutons
     private static final int PAD = 4;        // marge barre <-> conteneur
 
-    enum HitKind { FILTER, CLEAR, SORT_RARITY, SORT_ALPHA }
+    enum HitKind { FILTER, CLEAR, SORT_RARITY, SORT_RARITY_ALPHA }
 
     /** Hitbox d'un bouton, avec son infobulle. */
     record Hit(int x, int y, int w, int h, ItemRarity rarity, HitKind kind, String tip) {}
@@ -45,7 +45,9 @@ public final class RarityScreenOverlay {
         ModConfig c = cfg();
 
         // 1) Emblèmes + voile sur chaque slot.
-        boolean icons = c.rarityIconsEnabled;
+        // L'inventaire joueur (E) et les coffres ont chacun leur toggle.
+        boolean isPlayerInv = screen instanceof net.minecraft.client.gui.screen.ingame.InventoryScreen;
+        boolean icons = isPlayerInv ? c.rarityInventoryEnabled : c.rarityIconsEnabled;
         boolean filterOn = c.rarityFilterEnabled && FILTER.any();
         if (icons || filterOn) {
             for (Slot slot : screen.getScreenHandler().slots) {
@@ -108,11 +110,13 @@ public final class RarityScreenOverlay {
             HITS.add(new Hit(barX, y, BTN, BTN, null, HitKind.SORT_RARITY, rTip));
             y += BTN + GAP;
 
-            // Tri alphabétique
-            ctx.fill(barX, y, barX + BTN, y + BTN, 0xFF10283A);
-            RenderUtils.drawText(ctx, SORT.alphaAscending() ? "A" : "Z", barX + 4, y + 3, 0xFF8FD0FF);
-            String aTip = SORT.alphaAscending() ? "Trier de A à Z" : "Trier de Z à A";
-            HITS.add(new Hit(barX, y, BTN, BTN, null, HitKind.SORT_ALPHA, aTip));
+            // Tri par rareté PUIS alphabétique (chaque type côte à côte dans sa rareté)
+            ctx.fill(barX, y, barX + BTN, y + BTN, 0xFF2A1038);
+            RenderUtils.drawText(ctx, SORT.rarityAlphaDescending() ? "↓A" : "↑A", barX + 2, y + 3, 0xFFD9B8FF);
+            String aTip = (SORT.rarityAlphaDescending()
+                    ? "Trier par rareté (mythique → commun)"
+                    : "Trier par rareté (commun → mythique)") + " puis A→Z dans chaque rareté";
+            HITS.add(new Hit(barX, y, BTN, BTN, null, HitKind.SORT_RARITY_ALPHA, aTip));
             y += BTN + GAP;
         }
 
@@ -141,9 +145,9 @@ public final class RarityScreenOverlay {
                         RaritySorter.sort(screen, RaritySort.Mode.RARITY, !SORT.rarityDescending());
                         SORT.toggleRarity();
                     }
-                    case SORT_ALPHA -> {
-                        RaritySorter.sort(screen, RaritySort.Mode.ALPHABETICAL, SORT.alphaAscending());
-                        SORT.toggleAlpha();
+                    case SORT_RARITY_ALPHA -> {
+                        RaritySorter.sort(screen, RaritySort.Mode.RARITY_ALPHA, !SORT.rarityAlphaDescending());
+                        SORT.toggleRarityAlpha();
                     }
                 }
                 return true;

@@ -6,65 +6,67 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class RaritySortTest {
 
-    private static RaritySort.Entry r(int rank, String id) {
-        return new RaritySort.Entry(false, rank, id, "");
-    }
-    private static RaritySort.Entry n(String name, String id) {
-        return new RaritySort.Entry(false, 0, id, name);
+    private static RaritySort.Entry it(int rank, String id, String name) {
+        return new RaritySort.Entry(false, rank, id, name);
     }
     private static final RaritySort.Entry EMPTY = new RaritySort.Entry(true, -1, "", "");
 
-    // ---- mode RARITY ----
+    // ---- mode RARITY (rareté seule, identiques regroupés par itemId) ----
 
     @Test
     void rarityDescPutsHighestRankFirst() {
-        List<RaritySort.Entry> in = List.of(r(1, "a"), r(4, "b"), r(0, "c"));
+        List<RaritySort.Entry> in = List.of(it(1, "a", ""), it(4, "b", ""), it(0, "c", ""));
         assertEquals(List.of(1, 0, 2), RaritySort.targetOrder(in, RaritySort.Mode.RARITY, false));
     }
 
     @Test
     void rarityAscPutsLowestRankFirst() {
-        List<RaritySort.Entry> in = List.of(r(1, "a"), r(4, "b"), r(0, "c"));
+        List<RaritySort.Entry> in = List.of(it(1, "a", ""), it(4, "b", ""), it(0, "c", ""));
         assertEquals(List.of(2, 0, 1), RaritySort.targetOrder(in, RaritySort.Mode.RARITY, true));
     }
 
     @Test
     void emptyAlwaysLastInBothDirections() {
-        List<RaritySort.Entry> in = List.of(r(4, "a"), EMPTY, r(0, "c"));
+        List<RaritySort.Entry> in = List.of(it(4, "a", ""), EMPTY, it(0, "c", ""));
         assertEquals(List.of(0, 2, 1), RaritySort.targetOrder(in, RaritySort.Mode.RARITY, false));
         assertEquals(List.of(2, 0, 1), RaritySort.targetOrder(in, RaritySort.Mode.RARITY, true));
     }
 
     @Test
-    void sameRankGroupedByItemIdThenStable() {
-        List<RaritySort.Entry> in = List.of(r(3, "zz"), r(3, "aa"), r(0, "c"));
+    void sameRankGroupedByItemId() {
+        List<RaritySort.Entry> in = List.of(it(3, "zz", ""), it(3, "aa", ""), it(0, "c", ""));
         assertEquals(List.of(1, 0, 2), RaritySort.targetOrder(in, RaritySort.Mode.RARITY, false));
     }
 
-    // ---- mode ALPHABETICAL ----
+    // ---- mode RARITY_ALPHA (rareté PUIS alphabétique dans chaque rareté) ----
 
     @Test
-    void alphaAscIsAtoZ() {
-        // index: 0="Banane", 1="Avocat", 2="Cerise"
-        List<RaritySort.Entry> in = List.of(n("Banane", "a"), n("Avocat", "b"), n("Cerise", "c"));
-        assertEquals(List.of(1, 0, 2), RaritySort.targetOrder(in, RaritySort.Mode.ALPHABETICAL, true));
+    void rarityAlphaSortsByNameWithinSameRank() {
+        // tous rang 3 : noms Banane / Avocat / Cerise → A, B, C
+        List<RaritySort.Entry> in = List.of(
+                it(3, "x", "Banane"), it(3, "y", "Avocat"), it(3, "z", "Cerise"));
+        assertEquals(List.of(1, 0, 2), RaritySort.targetOrder(in, RaritySort.Mode.RARITY_ALPHA, false));
     }
 
     @Test
-    void alphaDescIsZtoA() {
-        List<RaritySort.Entry> in = List.of(n("Banane", "a"), n("Avocat", "b"), n("Cerise", "c"));
-        assertEquals(List.of(2, 0, 1), RaritySort.targetOrder(in, RaritySort.Mode.ALPHABETICAL, false));
+    void rarityAlphaKeepsRarityAsPrimary() {
+        // index 0: rang4 "Zoro", 1: rang3 "Ace", 2: rang4 "Ace"
+        // desc rang : rang4 d'abord (Ace=2 puis Zoro=0), puis rang3 (Ace=1)
+        List<RaritySort.Entry> in = List.of(
+                it(4, "a", "Zoro"), it(3, "b", "Ace"), it(4, "c", "Ace"));
+        assertEquals(List.of(2, 0, 1), RaritySort.targetOrder(in, RaritySort.Mode.RARITY_ALPHA, false));
     }
 
     @Test
-    void alphaIsCaseInsensitive() {
-        List<RaritySort.Entry> in = List.of(n("banane", "a"), n("Avocat", "b"));
-        assertEquals(List.of(1, 0), RaritySort.targetOrder(in, RaritySort.Mode.ALPHABETICAL, true));
+    void rarityAlphaNameIsCaseInsensitiveAndAlwaysAtoZ() {
+        // même si rang desc, le nom reste A→Z dans la rareté
+        List<RaritySort.Entry> in = List.of(it(3, "a", "banane"), it(3, "b", "Avocat"));
+        assertEquals(List.of(1, 0), RaritySort.targetOrder(in, RaritySort.Mode.RARITY_ALPHA, false));
     }
 
     @Test
-    void alphaEmptyLast() {
-        List<RaritySort.Entry> in = List.of(n("Banane", "a"), EMPTY, n("Avocat", "b"));
-        assertEquals(List.of(2, 0, 1), RaritySort.targetOrder(in, RaritySort.Mode.ALPHABETICAL, true));
+    void rarityAlphaEmptyLast() {
+        List<RaritySort.Entry> in = List.of(it(3, "a", "Banane"), EMPTY, it(3, "b", "Avocat"));
+        assertEquals(List.of(2, 0, 1), RaritySort.targetOrder(in, RaritySort.Mode.RARITY_ALPHA, false));
     }
 }
