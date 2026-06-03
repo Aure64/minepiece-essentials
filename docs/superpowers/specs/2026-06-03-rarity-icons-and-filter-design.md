@@ -46,6 +46,7 @@ Donc deux natures de code dans ce module :
 | Trieur — ordre | Un bouton « Trier » qui **toggle croissant ⇄ décroissant** ; libellé/flèche reflète l'état |
 | Trieur — sécurité | Bouton **affiché seulement sur un vrai conteneur de stockage** (coffre/shulker/`GenericContainerScreen` standard) ; **jamais** sur un GUI menu serveur (AH/shop) où un clic auto pourrait acheter/valider |
 | Trieur — placement non-raretés | Items sans rareté regroupés à la fin ; stacks identiques regroupés |
+| Position de la barre | **Verticale, collée à droite** du conteneur (filtres + bouton Trier) |
 
 ## Détection de rareté
 
