@@ -72,6 +72,25 @@ public final class RenderUtils {
         ctx.drawText(MinecraftClient.getInstance().textRenderer, text, x, y, color, true);
     }
 
+    /**
+     * Draws text shrunk uniformly so its full content fits within {@code maxWidth}
+     * (never enlarged). Lets long lines stay readable instead of being clipped to "..".
+     */
+    public static void drawTextFit(DrawContext ctx, String text, int x, int y, int maxWidth, int color) {
+        var tr = MinecraftClient.getInstance().textRenderer;
+        int w = tr.getWidth(text);
+        if (w <= maxWidth || w == 0) {
+            ctx.drawText(tr, text, x, y, color, true);
+            return;
+        }
+        float scale = (float) maxWidth / w;
+        ctx.getMatrices().pushMatrix();
+        ctx.getMatrices().translate(x, y);
+        ctx.getMatrices().scale(scale, scale);
+        ctx.drawText(tr, text, 0, 0, color, true);
+        ctx.getMatrices().popMatrix();
+    }
+
     public static void drawCenteredText(DrawContext ctx, String text, int centerX, int y, int color) {
         int w = MinecraftClient.getInstance().textRenderer.getWidth(text);
         drawText(ctx, text, centerX - w / 2, y, color);

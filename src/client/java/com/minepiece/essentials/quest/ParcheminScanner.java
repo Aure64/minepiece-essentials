@@ -122,9 +122,11 @@ public class ParcheminScanner {
             else if (line.contains("\u6865\u6de1")) quest.rarity = "RARE";      // 桥淡
             else if (line.contains("\u6108\u6f6e")) quest.rarity = "MYTHIQUE";  // 愈潮
 
-            // Objective: any line containing (X/Y) progress pattern is the objective
+            // Objective: any line containing (X/Y) progress pattern is the objective.
+            // Strip the trailing "(X/Y)" — the counter is rendered separately, so
+            // keeping it here just wastes width and forces the text to be truncated.
             if (quest.objective == null && PROGRESS_PATTERN.matcher(line).find()) {
-                quest.objective = line.trim();
+                quest.objective = PROGRESS_PATTERN.matcher(line).replaceAll("").trim();
             }
             // Also catch "Objectif:" label line
             if (line.contains("Objectif") && !line.contains("(")) {

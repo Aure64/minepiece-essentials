@@ -9,9 +9,11 @@ import java.util.regex.Pattern;
  * SNBT.
  *
  * <p>Ascendable gear carries {@code items:experience-xp = "level:xp:maxXp"}; the
- * next ascension is available when {@code maxXp == 0}. Items with a
- * {@code stats:damage} component are weapons, otherwise fruits. Anything without
- * the experience field is not ascendable.
+ * next ascension is available when {@code maxXp == 0}. Type is decided by name:
+ * a "fruit" {@code items:internal-name} (or a display name starting with "Fruit")
+ * is a devil fruit, everything else ascendable is a weapon — relying on
+ * {@code stats:damage} alone misclassifies ranged weapons (e.g. Usopp's Kabuto)
+ * that carry no damage stat. Anything without the experience field is not ascendable.
  */
 public final class AscensionParser {
 
@@ -25,6 +27,8 @@ public final class AscensionParser {
         Pattern.compile("items:rarity\":\"([a-z_]+)\"");
     private static final Pattern NIVEAU_SUFFIX =
         Pattern.compile("\\s*\\(Niveau\\s*\\d+\\)\\s*$");
+    private static final Pattern INTERNAL_NAME =
+        Pattern.compile("items:internal-name\":\"([^\"]+)\"");
 
     private AscensionParser() {}
 
@@ -43,8 +47,12 @@ public final class AscensionParser {
         Matcher asc = ASCENSION.matcher(nbt);
         if (asc.find()) ascension = Integer.parseInt(asc.group(1));
 
-        AscensionItem.Type type = nbt.contains("stats:damage")
-            ? AscensionItem.Type.WEAPON : AscensionItem.Type.FRUIT;
+        String internal = "";
+        Matcher in = INTERNAL_NAME.matcher(nbt);
+        if (in.find()) internal = in.group(1).toLowerCase();
+        boolean isFruit = internal.contains("fruit")
+            || (displayName != null && displayName.stripLeading().toLowerCase().startsWith("fruit"));
+        AscensionItem.Type type = isFruit ? AscensionItem.Type.FRUIT : AscensionItem.Type.WEAPON;
 
         String rarity = null;
         Matcher r = RARITY_LORE.matcher(nbt);

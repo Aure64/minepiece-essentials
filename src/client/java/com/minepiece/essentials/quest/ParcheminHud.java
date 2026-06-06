@@ -32,18 +32,16 @@ public class ParcheminHud extends HudElement {
         for (var quest : parchemins) {
             int rarityColor = quest.getRarityColor();
 
-            String obj = quest.objective;
-            if (RenderUtils.textWidth(obj) > WIDTH - 12) {
-                obj = obj.substring(0, Math.min(obj.length(), 20)) + "..";
-            }
-            RenderUtils.drawText(ctx, obj, 6, lineY, rarityColor);
+            // Counter right-aligned on the objective line; the objective fills the
+            // space to its left, shrinking to fit so it never overlaps the counter.
+            String progText = quest.current + "/" + quest.target;
+            int progX = WIDTH - 6 - RenderUtils.textWidth(progText);
+            RenderUtils.drawText(ctx, progText, progX, lineY, rarityColor);
+            RenderUtils.drawTextFit(ctx, quest.objective, 6, lineY, progX - 10, rarityColor);
 
             float progress = quest.progress();
             int barColor = quest.isCompleted() ? 0xFF00CC00 : rarityColor;
-            RenderUtils.drawProgressBar(ctx, 6, lineY + 10, WIDTH - 50, 5, progress, barColor);
-
-            String progText = quest.current + "/" + quest.target;
-            RenderUtils.drawText(ctx, progText, WIDTH - 40, lineY + 7, rarityColor);
+            RenderUtils.drawProgressBar(ctx, 6, lineY + 10, WIDTH - 12, 5, progress, barColor);
 
             lineY += 24;
         }

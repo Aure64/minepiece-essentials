@@ -63,6 +63,25 @@ class AscensionParserTest {
         assertEquals(AscensionItem.Type.FRUIT, AscensionParser.parse("x", FRUIT_NBT).orElseThrow().type());
     }
 
+    // Usopp's Kabuto is a ranged weapon with no stats:damage component — it used to
+    // fall through to FRUIT. Type is now decided by the (non-fruit) name.
+    private static final String KABUTO_NBT =
+        "{\"items:experience-xp\":\"89:0:0\",\"items:internal-name\":\"skypiea-usopp-kabuto\","
+      + "\"squidcore:items_experience_ascension\":{\"squidcore:type\":\"string\",\"squidcore:value\":\"4\"}}";
+
+    @Test
+    void rangedWeaponWithoutDamageStatIsWeapon() {
+        AscensionItem item = AscensionParser.parse("Kabuto Noir d'Usopp (Niveau 89)", KABUTO_NBT).orElseThrow();
+        assertEquals(AscensionItem.Type.WEAPON, item.type());
+    }
+
+    @Test
+    void fruitNamedItemIsFruitEvenWithoutInternalName() {
+        String nbt = "{\"items:experience-xp\":\"19:0:0\"}";
+        assertEquals(AscensionItem.Type.FRUIT,
+            AscensionParser.parse("Fruit du Château", nbt).orElseThrow().type());
+    }
+
     @Test
     void nonAscendableItemReturnsEmpty() {
         Optional<AscensionItem> item = AscensionParser.parse("Cristal",
