@@ -23,6 +23,12 @@ class ServerTextTest {
         var en = ServerText.QUEST_NAME.matcher("Quest #3 (Hard)");
         assertTrue(fr.find()); assertTrue(en.find());
     }
+    @Test void petEffectsSectionVariants() {
+        assertTrue(ServerText.matches("Familiar Effects", ServerText.PET_EFFECTS));
+        assertTrue(ServerText.matches("Familier Effects", ServerText.PET_EFFECTS));
+        assertTrue(ServerText.matches("Pet Effects", ServerText.PET_EFFECTS), "pets fusionnes");
+        assertFalse(ServerText.matches("Minion Effects:", ServerText.PET_EFFECTS), "ne doit pas matcher la fin de section");
+    }
     @Test void bossRespawnBilingual() {
         assertTrue(ServerText.BOSS_RESPAWN.matcher("Respawn: 0s (15 Minutes)").find());
         assertTrue(ServerText.BOSS_RESPAWN.matcher("Réapparition: 2m 30s").find());

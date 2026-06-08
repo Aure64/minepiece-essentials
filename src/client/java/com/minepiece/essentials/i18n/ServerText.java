@@ -16,7 +16,8 @@ public final class ServerText {
     public static final String[] AVG_PRICE  = {"Prix moyen", "Average price"};
 
     // Pets
-    public static final String[] PET_EFFECTS = {"Familier Effects", "Familiar Effects"};
+    // "Familiar/Familier Effects" = pet équipé ; "Pet Effects" = pet fusionné/passif (même section de stats).
+    public static final String[] PET_EFFECTS = {"Familier Effects", "Familiar Effects", "Pet Effects", "Effets Pet"};
     public static final String[] PET_ACTIVE_ACTION = {"Désactiver", "Disable"};
     public static final String[] PET_INACTIVE_ACTION = {"Activer", "Activate"};
     public static final String[] PET_NOT_DISCOVERED = {"Non découvert", "Not discovered"};
