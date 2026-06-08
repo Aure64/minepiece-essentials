@@ -26,7 +26,7 @@ public final class AscensionParser {
     private static final Pattern RARITY_FIELD =
         Pattern.compile("items:rarity\":\"([a-z_]+)\"");
     private static final Pattern NIVEAU_SUFFIX =
-        Pattern.compile("\\s*\\(Niveau\\s*\\d+\\)\\s*$");
+        Pattern.compile("\\s*\\((?:Niveau|Level)\\s*\\d+\\)\\s*$");
     private static final Pattern INTERNAL_NAME =
         Pattern.compile("items:internal-name\":\"([^\"]+)\"");
 

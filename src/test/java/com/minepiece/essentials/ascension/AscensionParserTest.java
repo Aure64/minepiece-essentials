@@ -83,6 +83,12 @@ class AscensionParserTest {
     }
 
     @Test
+    void stripsEnglishLevelSuffix() {
+        AscensionItem item = AscensionParser.parse("Fruit du Nightmare (Level 89)", FRUIT_NBT).orElseThrow();
+        assertEquals("Fruit du Nightmare", item.name(), "should strip the (Level N) suffix too");
+    }
+
+    @Test
     void nonAscendableItemReturnsEmpty() {
         Optional<AscensionItem> item = AscensionParser.parse("Cristal",
             "{\"items:internal-name\":\"crystal\",\"items:rarity\":\"rare\"}");
