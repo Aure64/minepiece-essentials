@@ -1,5 +1,6 @@
 package com.minepiece.essentials.haki;
 
+import com.minepiece.essentials.i18n.ServerText;
 import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents;
 
 /**
@@ -9,8 +10,6 @@ import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents;
  */
 public final class HakiTimer {
 
-    private static final String ACTIVATED = "Vous avez activé le haki";
-    private static final String READY = "Vous pouvez de nouveau utiliser votre haki";
     private static final int DURATION_TICKS = 30 * 20; // 30 seconds
 
     private static int remainingTicks = 0;
@@ -21,10 +20,10 @@ public final class HakiTimer {
     public static void init() {
         ClientReceiveMessageEvents.GAME.register((message, overlay) -> {
             String text = message.getString();
-            if (text.contains(ACTIVATED)) {
+            if (ServerText.matches(text, ServerText.HAKI_ACTIVATED)) {
                 remainingTicks = DURATION_TICKS;
                 active = true;
-            } else if (text.contains(READY)) {
+            } else if (ServerText.matches(text, ServerText.HAKI_READY)) {
                 remainingTicks = 0;
                 active = false;
             }
