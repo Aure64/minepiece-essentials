@@ -1,6 +1,7 @@
 package com.minepiece.essentials.quest;
 
 import com.minepiece.essentials.MinepieceEssentialsClient;
+import com.minepiece.essentials.i18n.ServerText;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.item.ItemStack;
 import net.minecraft.text.Text;
@@ -17,9 +18,7 @@ public class ParcheminScanner {
     // Match (0/1133) or similar
     private static final Pattern PROGRESS_PATTERN =
         Pattern.compile("\\((\\d+)/(\\d+)\\)");
-    // Match "Expire le 23/03/2026 11h04" format
-    private static final Pattern EXPIRE_PATTERN =
-        Pattern.compile("Expire le (\\d{2}/\\d{2}/\\d{4} \\d{1,2}h\\d{2})");
+    // EXPIRE_PATTERN moved to ServerText.EXPIRE (bilingual: "Expire le" / "Expires on")
     private static final DateTimeFormatter EXPIRE_FORMAT =
         DateTimeFormatter.ofPattern("dd/MM/yyyy H'h'mm");
 
@@ -40,9 +39,8 @@ public class ParcheminScanner {
             if (stack.isEmpty()) continue;
 
             String name = stack.getName().getString();
-            String nameLower = name.toLowerCase();
 
-            if (!nameLower.contains("parchemin")) continue;
+            if (!ServerText.matches(name, ServerText.SCROLL_NAME)) continue;
 
             if (shouldLog) {
                 MinepieceEssentialsClient.LOGGER.info("[ParcheminScan] Found parchemin: '{}' in slot {}", name, i);
@@ -62,8 +60,7 @@ public class ParcheminScanner {
         quest.name = stack.getName().getString();
 
         // Detect rarity from name
-        String nameLower = quest.name.toLowerCase();
-        if (nameLower.contains("lunaire")) {
+        if (ServerText.matches(quest.name, ServerText.LUNAR)) {
             quest.rarity = "LUNAIRE";
         } else {
             // Detect rarity from Unicode prefix character in name
@@ -101,8 +98,8 @@ public class ParcheminScanner {
                 quest.target = Integer.parseInt(progressMatch.group(2));
             }
 
-            // Expiration date: "Expire le 23/03/2026 11h04"
-            Matcher expireMatch = EXPIRE_PATTERN.matcher(line);
+            // Expiration date: "Expire le 23/03/2026 11h04" / "Expires on 23/03/2026 11h04"
+            Matcher expireMatch = ServerText.EXPIRE.matcher(line);
             if (expireMatch.find()) {
                 try {
                     LocalDateTime expireDate = LocalDateTime.parse(expireMatch.group(1), EXPIRE_FORMAT);
@@ -129,7 +126,7 @@ public class ParcheminScanner {
                 quest.objective = PROGRESS_PATTERN.matcher(line).replaceAll("").trim();
             }
             // Also catch "Objectif:" label line
-            if (line.contains("Objectif") && !line.contains("(")) {
+            if (ServerText.matches(line, ServerText.OBJECTIVE) && !line.contains("(")) {
                 // Next line with progress will be caught above
             }
         }
