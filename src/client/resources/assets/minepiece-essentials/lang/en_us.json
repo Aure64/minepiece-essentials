@@ -15,6 +15,7 @@
     "minepiece.ui.haki.ready": "Ready!",
 
     "minepiece.ui.pets.title": "Active pets",
+    "minepiece.ui.pets.hint": "Open /pets to display",
 
     "minepiece.ui.boss.title": "Boss Timers",
 

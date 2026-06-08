@@ -37,7 +37,18 @@ public final class PetEffectParser {
         if (!m.find()) return Optional.empty();
         double value = Double.parseDouble(m.group(1).replace(',', '.'));
 
-        return Optional.of(new PetEffect(tier, stat, value));
+        String pre = line.substring(0, plus).trim();
+        String[] toks = pre.split("\\s+");
+        StringBuilder lbl = new StringBuilder();
+        for (int i = 1; i < toks.length; i++) {
+            String t = toks[i];
+            boolean hasLatin = t.chars().anyMatch(c ->
+                (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || (c >= 0x00C0 && c <= 0x024F));
+            if (hasLatin) { if (lbl.length() > 0) lbl.append(' '); lbl.append(t); }
+        }
+        String label = lbl.toString();
+
+        return Optional.of(new PetEffect(tier, stat, value, label));
     }
 
     /** Concatenates the digits in a token: {@code "S.1.5.E"} → 15, {@code "S.1.E"} → 1. */

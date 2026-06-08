@@ -16,4 +16,18 @@ public final class PetStatSum {
         }
         return totals;
     }
+
+    /**
+     * Returns a representative server-side display label for each {@link PetStat} present
+     * in the given effects (the first non-empty label encountered for that stat).
+     */
+    public static Map<PetStat, String> labels(Collection<PetEffect> effects) {
+        Map<PetStat, String> result = new EnumMap<>(PetStat.class);
+        for (PetEffect e : effects) {
+            if (!e.label().isBlank()) {
+                result.putIfAbsent(e.stat(), e.label());
+            }
+        }
+        return result;
+    }
 }

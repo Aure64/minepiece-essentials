@@ -28,7 +28,7 @@ public class ActivePetsHud extends HudElement {
         if (snap.isEmpty()) {
             this.height = 32;
             ParchmentRenderer.renderPanel(ctx, 0, 0, WIDTH, 32, Text.translatable("minepiece.ui.pets.title").getString(), getBackground());
-            RenderUtils.drawText(ctx, "Ouvre /pets pour afficher", 6, 20, 0xFFCBC8C7);
+            RenderUtils.drawText(ctx, Text.translatable("minepiece.ui.pets.hint").getString(), 6, 20, 0xFFCBC8C7);
             return;
         }
 
@@ -52,7 +52,9 @@ public class ActivePetsHud extends HudElement {
         for (PetStat stat : PetStat.values()) {
             Double value = snap.totals().get(stat);
             if (value == null || value == 0.0) continue;
-            RenderUtils.drawText(ctx, stat.fr(), 6, y, stat.color());
+            String name = snap.labels().get(stat);
+            if (name == null || name.isBlank()) name = stat.fr();
+            RenderUtils.drawText(ctx, name, 6, y, stat.color());
             String v = "+" + fmt(value);
             RenderUtils.drawText(ctx, v, WIDTH - 6 - RenderUtils.textWidth(v), y, stat.color());
             y += 10;

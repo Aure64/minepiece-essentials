@@ -9,13 +9,13 @@ public final class ActivePetsState {
     /** An active pet with its rarity-coloured name and level. */
     public record ActivePet(String name, int color, int level) {}
 
-    public record Snapshot(List<ActivePet> pets, Map<PetStat, Double> totals) {
+    public record Snapshot(List<ActivePet> pets, Map<PetStat, Double> totals, Map<PetStat, String> labels) {
         public boolean isEmpty() {
             return pets.isEmpty() && totals.isEmpty();
         }
     }
 
-    private static volatile Snapshot current = new Snapshot(List.of(), Map.of());
+    private static volatile Snapshot current = new Snapshot(List.of(), Map.of(), Map.of());
 
     private ActivePetsState() {}
 

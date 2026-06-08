@@ -80,7 +80,7 @@ public final class ActivePetsScanner {
         // Not the /pets screen, or a page with no active pets → keep the last total.
         if (!isPetsScreen || activePets.isEmpty()) return;
 
-        ActivePetsState.set(new ActivePetsState.Snapshot(activePets, PetStatSum.sum(allStats)));
+        ActivePetsState.set(new ActivePetsState.Snapshot(activePets, PetStatSum.sum(allStats), PetStatSum.labels(allStats)));
 
         List<String> names = activePets.stream().map(ActivePetsState.ActivePet::name).toList();
         if (!names.equals(lastLoggedNames)) {

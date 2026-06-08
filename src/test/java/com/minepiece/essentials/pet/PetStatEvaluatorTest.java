@@ -17,7 +17,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class PetStatEvaluatorTest {
 
     private static double quality(Rarity rarity, PetStat stat, double value, int tier) {
-        OptionalDouble q = PetStatEvaluator.quality(rarity, new PetEffect(tier, stat, value));
+        OptionalDouble q = PetStatEvaluator.quality(rarity, new PetEffect(tier, stat, value, ""));
         assertTrue(q.isPresent(), "expected a quality for " + stat);
         return q.getAsDouble();
     }
@@ -132,7 +132,7 @@ class PetStatEvaluatorTest {
     void specialRollFarAboveMaxIsOffTable() {
         // Server "special" effects ignore the table; we show no % for them.
         OptionalDouble q = PetStatEvaluator.quality(
-                Rarity.LEGENDARY, new PetEffect(10, PetStat.POWER, 100.0));
+                Rarity.LEGENDARY, new PetEffect(10, PetStat.POWER, 100.0, ""));
         assertTrue(q.isEmpty());
     }
 }
