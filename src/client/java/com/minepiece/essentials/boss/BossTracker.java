@@ -1,6 +1,7 @@
 package com.minepiece.essentials.boss;
 
 import com.minepiece.essentials.MinepieceEssentialsClient;
+import com.minepiece.essentials.i18n.ServerText;
 import com.minepiece.essentials.island.Island;
 import com.minepiece.essentials.island.IslandDetector;
 import com.minepiece.essentials.network.BackgroundGuiRefresh;
@@ -32,10 +33,6 @@ public class BossTracker {
             Island.KOMUGI
         )));
 
-    private static final Pattern COORD_PATTERN =
-        Pattern.compile("Coordonn[e\u00e9]es?\\s*:?\\s*([-\\d]+)\\s+([-\\d]+)\\s+([-\\d]+)");
-    private static final Pattern TIMER_PATTERN =
-        Pattern.compile("(?:R[e\u00e9]a?parition|Apparition)\\s*:?\\s*(?:(\\d+)m)?\\s*(\\d+)s");
     private static final Pattern INTERVAL_PATTERN =
         Pattern.compile("Toutes les (\\d+) Minutes?", Pattern.CASE_INSENSITIVE);
 
@@ -152,10 +149,7 @@ public class BossTracker {
             ItemStack stack = entry.getValue();
             if (stack.isEmpty()) continue;
             String name = stack.getName().getString().toLowerCase();
-            if (name.contains("marine") || name.contains("monstre") || name.contains("mob")
-                || name.contains("ennemi") || name.contains("combat") || name.contains("bandit")
-                || name.contains("pirate") || name.contains("garde") || name.contains("zombie")
-                || name.contains("chasseur")) {
+            if (ServerText.matches(name, ServerText.BOSS_MOB_KEYWORDS)) {
                 return entry.getKey();
             }
         }
@@ -183,9 +177,8 @@ public class BossTracker {
             }
             String l = lore.toString();
             boolean match = miniBossOnly
-                ? l.contains("mini-boss") || l.contains("présents sur cette île")
-                : l.contains("voir les loots") || l.contains("chasseur")
-                    || l.contains("pirate") || l.contains("monstre");
+                ? ServerText.matches(l, ServerText.BOSS_MINIBOSS_CATEGORY)
+                : ServerText.matches(l, ServerText.BOSS_VIEW_LOOTS);
             if (match) return entry.getKey();
         }
         return -1;
@@ -201,7 +194,7 @@ public class BossTracker {
             if (name.isEmpty()) continue;
 
             String nameLower = name.toLowerCase();
-            if (nameLower.contains("retour") || nameLower.contains("page") || nameLower.contains("fermer")) continue;
+            if (ServerText.matches(nameLower, ServerText.BOSS_NAV)) continue;
 
             BossData boss = new BossData(name, island);
 
@@ -209,7 +202,7 @@ public class BossTracker {
                     null, net.minecraft.item.tooltip.TooltipType.BASIC);
             for (Text text : tooltip) {
                 String line = text.getString();
-                Matcher coordMatch = COORD_PATTERN.matcher(line);
+                Matcher coordMatch = ServerText.BOSS_COORDS.matcher(line);
                 if (coordMatch.find()) {
                     boss.x = Integer.parseInt(coordMatch.group(1));
                     boss.y = Integer.parseInt(coordMatch.group(2));
@@ -217,7 +210,7 @@ public class BossTracker {
                     boss.hasCoords = true;
                     boss.type = "mini_boss";
                 }
-                Matcher timerMatch = TIMER_PATTERN.matcher(line);
+                Matcher timerMatch = ServerText.BOSS_RESPAWN.matcher(line);
                 if (timerMatch.find()) {
                     String minStr = timerMatch.group(1);
                     int min = minStr != null ? Integer.parseInt(minStr) : 0;
