@@ -35,29 +35,41 @@ public enum PetStat {
     }
 
     /**
-     * Aliases as written in the in-game (French) tooltip, ordered most-specific
-     * first so that e.g. "Régénération Énergie" matches {@link #ENERGY_REGEN}
-     * before "Énergie"/"Régénération".
+     * Aliases as written in the in-game tooltip (FR + EN), ordered most-specific
+     * first so that e.g. "energy regen" / "Régénération Énergie" matches
+     * {@link #ENERGY_REGEN} before "energy"/"Énergie"/"Régénération".
      */
     private record Alias(String text, PetStat stat) {}
 
     private static final List<Alias> ALIASES = List.of(
+        new Alias("energy regen", ENERGY_REGEN),
         new Alias("régénération énergie", ENERGY_REGEN),
+        new Alias("critical chance", CRIT_CHANCE),
         new Alias("chance critique", CRIT_CHANCE),
+        new Alias("critical damage", CRIT_DAMAGE),
         new Alias("dégâts critiques", CRIT_DAMAGE),
         new Alias("dégât critique", CRIT_DAMAGE),
+        new Alias("regen", REGEN),
         new Alias("régénération", REGEN),
+        new Alias("power", POWER),
         new Alias("puissance", POWER),
+        new Alias("dexterity", DEXTERITY),
         new Alias("dextérité", DEXTERITY),
+        new Alias("defense", DEFENSE),
         new Alias("défense", DEFENSE),
+        new Alias("speed", SPEED),
         new Alias("vitesse", SPEED),
-        new Alias("énergie", ENERGY),
+        new Alias("strength", STRENGTH),
         new Alias("force", STRENGTH),
+        new Alias("energy", ENERGY),
+        new Alias("énergie", ENERGY),
+        new Alias("health", VITALITY),
+        new Alias("life", VITALITY),
         new Alias("vie", VITALITY)
     );
 
-    /** Finds the stat whose French label appears in {@code text}; null if none. */
-    public static PetStat fromFrench(String text) {
+    /** Finds the stat whose label (FR or EN) appears in {@code text}; null if none. */
+    public static PetStat fromLabel(String text) {
         if (text == null) return null;
         String lower = text.toLowerCase();
         for (Alias a : ALIASES) {

@@ -2,6 +2,7 @@ package com.minepiece.essentials.pet;
 
 import com.minepiece.essentials.MinepieceEssentialsClient;
 import com.minepiece.essentials.ServerDetector;
+import com.minepiece.essentials.i18n.ServerText;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
 import net.minecraft.component.DataComponentTypes;
@@ -32,15 +33,11 @@ import java.util.regex.Pattern;
  */
 public final class ActivePetsScanner {
 
-    private static final String ACTIVE_ACTION = "Désactiver";
-    private static final String INACTIVE_ACTION = "Activer";
-    private static final String SECTION_START = "Familier Effects";
     private static final String SECTION_END = "Minion Effects";
     private static final int SCAN_INTERVAL = 4; // ticks
 
     private static final Pattern RARITY_TRACK =
         Pattern.compile("tracks\\.==(COMMON|RARE|EPIC|LEGENDARY|MYTHIC)");
-    private static final Pattern NIVEAU = Pattern.compile("Niveau:\\s*(\\S+)");
     private static final int MAX_LEVEL = 20;
     private static final int DEFAULT_COLOR = 0xFFFFE9D5;
 
@@ -68,10 +65,10 @@ public final class ActivePetsScanner {
             if (!stack.isOf(Items.RABBIT_FOOT)) continue;
 
             List<String> tip = tooltipLines(stack, client);
-            if (containsLine(tip, ACTIVE_ACTION) || containsLine(tip, INACTIVE_ACTION)) {
+            if (containsAny(tip, ServerText.PET_ACTIVE_ACTION) || containsAny(tip, ServerText.PET_INACTIVE_ACTION)) {
                 isPetsScreen = true;
             }
-            if (!containsLine(tip, ACTIVE_ACTION)) continue;
+            if (!containsAny(tip, ServerText.PET_ACTIVE_ACTION)) continue;
 
             String nbt = nbt(stack);
             int color = nameColor(stack.getName());
@@ -118,10 +115,10 @@ public final class ActivePetsScanner {
         return DEFAULT_COLOR;
     }
 
-    /** Pet level from the tooltip "Niveau:" line; "Max" → {@link #MAX_LEVEL}, 0 if absent. */
+    /** Pet level from the tooltip "Niveau:"/"Level:" line; "Max" → {@link #MAX_LEVEL}, 0 if absent. */
     private static int levelOf(List<String> tip) {
         for (String line : tip) {
-            Matcher m = NIVEAU.matcher(line);
+            Matcher m = ServerText.PET_LEVEL.matcher(line);
             if (m.find()) {
                 try {
                     return Integer.parseInt(m.group(1));
@@ -137,7 +134,7 @@ public final class ActivePetsScanner {
         int start = -1;
         int end = lines.size();
         for (int i = 0; i < lines.size(); i++) {
-            if (lines.get(i).contains(SECTION_START)) {
+            if (ServerText.matches(lines.get(i), ServerText.PET_EFFECTS)) {
                 start = i;
             } else if (start >= 0 && lines.get(i).contains(SECTION_END)) {
                 end = i;
@@ -160,10 +157,8 @@ public final class ActivePetsScanner {
         return out;
     }
 
-    private static boolean containsLine(List<String> lines, String needle) {
-        for (String l : lines) {
-            if (l.contains(needle)) return true;
-        }
+    private static boolean containsAny(List<String> lines, String[] variants) {
+        for (String l : lines) if (ServerText.matches(l, variants)) return true;
         return false;
     }
 }

@@ -30,7 +30,7 @@ public final class PetEffectParser {
         int tier = digitsOf(tokens[0]);
         if (tier <= 0) return Optional.empty();
 
-        PetStat stat = PetStat.fromFrench(line.substring(0, plus));
+        PetStat stat = PetStat.fromLabel(line.substring(0, plus));
         if (stat == null) return Optional.empty();
 
         Matcher m = VALUE.matcher(line);
