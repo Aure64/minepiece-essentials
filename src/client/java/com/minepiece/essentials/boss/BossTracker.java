@@ -12,7 +12,6 @@ import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class BossTracker {
     private static BossTracker instance;
@@ -32,9 +31,6 @@ public class BossTracker {
             Island.WHOLE_CAKE,
             Island.KOMUGI
         )));
-
-    private static final Pattern INTERVAL_PATTERN =
-        Pattern.compile("Toutes les (\\d+) Minutes?", Pattern.CASE_INSENSITIVE);
 
     public static BossTracker getInstance() {
         if (instance == null) instance = new BossTracker();
@@ -218,7 +214,7 @@ public class BossTracker {
                     boss.lastKnownTimerSeconds = min * 60 + sec;
                     boss.lastKnownRespawnTimestamp = System.currentTimeMillis();
                 }
-                Matcher intervalMatch = INTERVAL_PATTERN.matcher(line);
+                Matcher intervalMatch = ServerText.BOSS_INTERVAL.matcher(line);
                 if (intervalMatch.find()) {
                     boss.respawnIntervalSeconds = Integer.parseInt(intervalMatch.group(1)) * 60;
                 }

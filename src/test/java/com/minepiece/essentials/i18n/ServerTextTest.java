@@ -27,6 +27,12 @@ class ServerTextTest {
         assertTrue(ServerText.BOSS_RESPAWN.matcher("Respawn: 0s (15 Minutes)").find());
         assertTrue(ServerText.BOSS_RESPAWN.matcher("Réapparition: 2m 30s").find());
     }
+    @Test void bossIntervalBilingual() {
+        var fr = ServerText.BOSS_INTERVAL.matcher("Toutes les 15 Minutes");
+        var en = ServerText.BOSS_INTERVAL.matcher("Respawn: 0s (15 Minutes)");
+        assertTrue(fr.find()); assertEquals("15", fr.group(1));
+        assertTrue(en.find()); assertEquals("15", en.group(1));
+    }
     private static String firstGroup(String s) {
         var m = ServerText.PET_LEVEL.matcher(s);
         return m.find() ? m.group(1) : null;

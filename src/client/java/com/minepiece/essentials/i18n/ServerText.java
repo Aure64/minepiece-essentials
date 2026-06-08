@@ -52,6 +52,9 @@ public final class ServerText {
     public static final String[] BOSS_MOB_KEYWORDS =
         {"marine", "mob", "monstre", "monster", "bandit", "combat", "fight", "ennemi",
          "enemy", "garde", "guard", "pirate", "zombie", "chasseur", "hunter", "soldat", "soldier"};
+    /** Intervalle de respawn : "Toutes les 15 Minutes" (FR) ou "(15 Minutes)" (EN). Groupe 1 = nombre de minutes. */
+    public static final Pattern BOSS_INTERVAL =
+        Pattern.compile("(?:Toutes les\\s*)?(\\d+)\\s*Minutes?");
 
     // Haki
     public static final String[] HAKI_ACTIVATED = {"Vous avez activé le haki", "You have activated haki"};
