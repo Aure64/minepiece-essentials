@@ -77,7 +77,6 @@ public class MinepieceEssentialsClient implements ClientModInitializer {
 
         com.minepiece.essentials.rarity.RarityHotbarOverlay.register();
         registerRarityScreenHooks();
-        registerDebugDumper(); // TEMP : à retirer avant release
 
         UpdateChecker.init();
 
@@ -140,19 +139,6 @@ public class MinepieceEssentialsClient implements ClientModInitializer {
                     .register((s, click) ->
                         !com.minepiece.essentials.rarity.RarityScreenOverlay.onClick(hs, click.x(), click.y()));
             }
-        });
-    }
-
-    /** TEMP — dump de l'écran conteneur ouvert (touche P) pour relever les chaînes serveur. À RETIRER avant release. */
-    private void registerDebugDumper() {
-        net.fabricmc.fabric.api.client.screen.v1.ScreenEvents.AFTER_INIT.register((client, screen, sw, sh) -> {
-            net.fabricmc.fabric.api.client.screen.v1.ScreenKeyboardEvents.afterKeyPress(screen)
-                .register((scr, keyInput) -> {
-                    if (keyInput.key() == GLFW.GLFW_KEY_P
-                            && scr instanceof net.minecraft.client.gui.screen.ingame.HandledScreen<?> hs) {
-                        com.minepiece.essentials.debug.DebugDumper.dump(hs);
-                    }
-                });
         });
     }
 
