@@ -2,6 +2,7 @@ package com.minepiece.essentials.pet;
 
 import com.minepiece.essentials.MinepieceEssentialsClient;
 import com.minepiece.essentials.ServerDetector;
+import com.minepiece.essentials.i18n.ServerText;
 import net.fabricmc.fabric.api.client.item.v1.ItemTooltipCallback;
 import net.minecraft.component.DataComponentTypes;
 import net.minecraft.component.type.NbtComponent;
@@ -27,7 +28,6 @@ public final class PetStatTooltip {
 
     private static final Pattern RARITY_TRACK =
         Pattern.compile("tracks\\.==(COMMON|RARE|EPIC|LEGENDARY|MYTHIC)");
-    private static final String SECTION_START = "Familier Effects";
     private static final String SECTION_END = "Minion Effects";
 
     private PetStatTooltip() {}
@@ -46,7 +46,7 @@ public final class PetStatTooltip {
         Rarity rarity = readRarity(stack);
         if (rarity == null) return;
 
-        int start = indexOfLine(lines, SECTION_START);
+        int start = indexOfSection(lines);
         if (start < 0) return;
         int end = indexOfLine(lines, SECTION_END);
         if (end < 0) end = lines.size();
@@ -74,6 +74,13 @@ public final class PetStatTooltip {
         return Text.empty()
             .append(line)
             .append(Text.literal(" (" + percent + "%)").withColor(QualityColor.of(quality)));
+    }
+
+    private static int indexOfSection(List<Text> lines) {
+        for (int i = 0; i < lines.size(); i++) {
+            if (ServerText.matches(lines.get(i).getString(), ServerText.PET_EFFECTS)) return i;
+        }
+        return -1;
     }
 
     private static int indexOfLine(List<Text> lines, String needle) {
