@@ -76,4 +76,17 @@ class PassQuestParserTest {
                 List.of("Complétez les différentes quêtes")).isEmpty());
         assertTrue(PassQuestParser.parse("Relance", List.of("距 → Relancer")).isEmpty());
     }
+
+    @Test
+    void parsesEnglishQuest() {
+        var lore = java.util.List.of(
+            "💡 Objective", " ▪ Defeat 1 Boss (Sabaody)",
+            "❦ Progress", "0 s m m e 1", "Status: Not completed");
+        PassQuest q = PassQuestParser.parse("Quest #1 (Easy)", lore).orElseThrow();
+        assertEquals(1, q.number());
+        assertEquals(Difficulty.FACILE, q.difficulty());
+        assertEquals("Defeat 1 Boss (Sabaody)", q.objective());
+        assertEquals(1, q.target());
+        assertFalse(q.completed());
+    }
 }

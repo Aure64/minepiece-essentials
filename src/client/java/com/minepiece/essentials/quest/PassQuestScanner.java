@@ -1,6 +1,7 @@
 package com.minepiece.essentials.quest;
 
 import com.minepiece.essentials.ServerDetector;
+import com.minepiece.essentials.i18n.ServerText;
 import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
@@ -62,7 +63,7 @@ public final class PassQuestScanner {
             ItemStack stack = slot.getStack();
             if (stack.isEmpty()) continue;
             String name = stack.getName().getString();
-            if (!name.contains("uête #") && !name.contains("uete #")) continue; // "Quête #N"
+            if (!ServerText.matches(name, ServerText.QUEST_NAME_FRAGMENT)) continue; // "Quête #N" / "Quest #N"
             PassQuestParser.parse(name, tooltipLines(stack, client))
                     .ifPresent(q -> byNumber.putIfAbsent(q.number(), q));
         }

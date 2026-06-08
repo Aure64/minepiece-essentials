@@ -1,5 +1,6 @@
 package com.minepiece.essentials.quest;
 
+import com.minepiece.essentials.i18n.ServerText;
 import java.util.List;
 import java.util.Optional;
 import java.util.regex.Matcher;
@@ -21,11 +22,10 @@ import java.util.regex.Pattern;
  */
 public final class PassQuestParser {
 
-    private static final Pattern NAME = Pattern.compile("Qu[eê]te #(\\d+)\\s*\\(([^)]+)\\)");
     private static final Pattern INT = Pattern.compile("\\d+");
     private static final String BULLET = "▪"; // ▪
-    // Chat line shown on completion: "Vous avez complété la quête: <objective>".
-    private static final Pattern COMPLETED = Pattern.compile("qu[eê]te\\s*:\\s*(.+)$");
+    // Chat line shown on completion: "Vous avez complété la quête: <objective>" or EN equivalent.
+    private static final Pattern COMPLETED = Pattern.compile("(?:qu[eê]te|quest)\\s*:\\s*(.+)$");
 
     private PassQuestParser() {}
 
@@ -37,7 +37,7 @@ public final class PassQuestParser {
     }
 
     public static Optional<PassQuest> parse(String name, List<String> lore) {
-        Matcher nm = NAME.matcher(name);
+        Matcher nm = ServerText.QUEST_NAME.matcher(name);
         if (!nm.find()) return Optional.empty();
 
         int number = Integer.parseInt(nm.group(1));
@@ -52,15 +52,15 @@ public final class PassQuestParser {
             String line = raw.trim();
             if (objective == null && line.startsWith(BULLET)) {
                 objective = line.substring(BULLET.length()).trim();
-            } else if (line.contains("Progression")) {
+            } else if (ServerText.matches(line, ServerText.PROGRESS)) {
                 expectProgress = true;
             } else if (expectProgress && INT.matcher(line).find()) {
                 int[] ct = firstAndLastInt(line);
                 current = ct[0];
                 target = ct[1];
                 expectProgress = false;
-            } else if (line.contains("Statut")) {
-                completed = !line.contains("Non compl");
+            } else if (ServerText.matches(line, ServerText.STATUS)) {
+                completed = !ServerText.matches(line, ServerText.NOT_COMPLETED);
             }
         }
 

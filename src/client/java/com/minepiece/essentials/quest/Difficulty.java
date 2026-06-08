@@ -24,9 +24,13 @@ public enum Difficulty {
     public static Difficulty fromLabel(String s) {
         if (s != null) {
             String t = s.trim().toLowerCase();
-            for (Difficulty d : values()) {
-                if (d.label.toLowerCase().equals(t)) return d;
+            switch (t) {
+                case "easy": return FACILE;
+                case "medium": return MOYENNE;
+                case "hard": return DIFFICILE;
             }
+            for (Difficulty d : values())
+                if (d.label.toLowerCase().equals(t)) return d;
         }
         return AUTRE;
     }
