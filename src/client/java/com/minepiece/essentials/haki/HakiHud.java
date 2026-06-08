@@ -5,6 +5,7 @@ import com.minepiece.essentials.hud.HudElement;
 import com.minepiece.essentials.hud.ParchmentRenderer;
 import com.minepiece.essentials.util.RenderUtils;
 import net.minecraft.client.gui.DrawContext;
+import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 
 /** Small always-on HUD: shows the remaining haki cooldown, or "Prêt !" when ready. */
@@ -40,17 +41,18 @@ public class HakiHud extends HudElement {
 
         // Header row: logo + "Haki", centred as a single group and vertically aligned.
         final int GAP = 3;
-        int titleW = RenderUtils.textWidth("Haki");
+        String hakiTitle = Text.translatable("minepiece.ui.haki.title").getString();
+        int titleW = RenderUtils.textWidth(hakiTitle);
         int groupX = (W - (ICON_SIZE + GAP + titleW)) / 2;
         int rowY = 5;
         RenderUtils.drawIcon(ctx, KING_HAKI, groupX, rowY - 1, ICON_SIZE);
-        RenderUtils.drawText(ctx, "Haki", groupX + ICON_SIZE + GAP, rowY, getBackground().textColor());
+        RenderUtils.drawText(ctx, hakiTitle, groupX + ICON_SIZE + GAP, rowY, getBackground().textColor());
 
         int textY = 18;
         if (HakiTimer.isActive()) {
             RenderUtils.drawCenteredText(ctx, HakiTimer.remainingSeconds() + "s", W / 2, textY, COLOR_TEXT);
         } else {
-            RenderUtils.drawCenteredText(ctx, "Prêt !", W / 2, textY, COLOR_READY);
+            RenderUtils.drawCenteredText(ctx, Text.translatable("minepiece.ui.haki.ready").getString(), W / 2, textY, COLOR_READY);
         }
     }
 }

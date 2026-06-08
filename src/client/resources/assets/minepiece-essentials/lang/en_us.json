@@ -2,5 +2,78 @@
     "category.minepiece-essentials.main": "Minepiece Essentials",
     "key.category.minepiece-essentials.main": "Minepiece Essentials",
     "key.minepiece-essentials.edit_hud": "Edit HUD",
-    "key.minepiece-essentials.help": "Help / Guide"
+    "key.minepiece-essentials.help": "Help / Guide",
+
+    "minepiece.ui.job.title": "Job",
+    "minepiece.ui.job.harvest_hint": "Harvest to see",
+
+    "minepiece.ui.quests.title": "Daily quests",
+    "minepiece.ui.quests.hint": "Open /pass, Quests tab",
+    "minepiece.ui.quests.done": "Daily quests done",
+
+    "minepiece.ui.haki.title": "Haki",
+    "minepiece.ui.haki.ready": "Ready!",
+
+    "minepiece.ui.pets.title": "Active pets",
+
+    "minepiece.ui.boss.title": "Boss Timers",
+
+    "minepiece.ui.ascensions.title": "Ascensions",
+    "minepiece.ui.ascensions.fruits": "Fruits",
+    "minepiece.ui.ascensions.weapons": "Weapons",
+
+    "minepiece.ui.scrolls.title": "Scrolls",
+
+    "minepiece.ui.editor.rarities": "Rarities",
+    "minepiece.ui.editor.emblems_chests": "Emblems - chests",
+    "minepiece.ui.editor.emblems_inventory": "Emblems - inventory",
+    "minepiece.ui.editor.emblems_hotbar": "Emblems - hotbar",
+    "minepiece.ui.editor.filter_bar": "Filter bar",
+    "minepiece.ui.editor.sort_buttons": "Sort buttons",
+    "minepiece.ui.editor.ah_price_color": "AH price color",
+    "minepiece.ui.editor.tab_placement": "Placement",
+    "minepiece.ui.editor.tab_customize": "Customize",
+    "minepiece.ui.editor.reset_placement": "Reset placement",
+    "minepiece.ui.editor.placement_reset": "Placement reset!",
+
+    "minepiece.ui.help.boss.title": "Boss Timers",
+    "minepiece.ui.help.boss.line1": "Island respawns, sound alerts & waypoints.",
+    "minepiece.ui.help.boss.line2": "Click the Refresh button to update timers.",
+    "minepiece.ui.help.boss.line3": "Don't move during a Refresh All!",
+
+    "minepiece.ui.help.scrolls.title": "Scrolls",
+    "minepiece.ui.help.scrolls.line1": "Quest objectives displayed as HUD (auto-scan).",
+
+    "minepiece.ui.help.pet_quality.title": "Pet quality",
+    "minepiece.ui.help.pet_quality.line1": "Shows the roll % of each stat in the tooltip.",
+    "minepiece.ui.help.pet_quality.line2": "Open /pets and hover a pet to see it.",
+
+    "minepiece.ui.help.minion_calc.title": "Minion calculator",
+    "minepiece.ui.help.minion_calc.line1": "Stacks remaining to max, in the minion tooltip.",
+    "minepiece.ui.help.minion_calc.line2": "Open the feeding screen once per resource",
+    "minepiece.ui.help.minion_calc.line3": "(the mod learns the XP per unit).",
+
+    "minepiece.ui.help.active_pets.title": "Active pets panel",
+    "minepiece.ui.help.active_pets.line1": "Total stats granted by your active pets.",
+    "minepiece.ui.help.active_pets.line2": "Run /pets once to fill the panel.",
+
+    "minepiece.ui.help.job.title": "Job progression",
+    "minepiece.ui.help.job.line1": "Level, XP and % of the current job while harvesting.",
+
+    "minepiece.ui.help.daily_quests.title": "Daily quests",
+    "minepiece.ui.help.daily_quests.line1": "Pass quests + progress as HUD.",
+    "minepiece.ui.help.daily_quests.line2": "Open /pass, Quests tab to populate.",
+    "minepiece.ui.help.daily_quests.line3": "No auto-refresh: reopen the screen (completion",
+    "minepiece.ui.help.daily_quests.line4": "is still detected live via chat).",
+
+    "minepiece.ui.help.hud_editor.title": "HUD Editor",
+    "minepiece.ui.help.hud_editor.line1": "Key K",
+    "minepiece.ui.help.hud_editor.line2": "Placement tab: move / resize / hide.",
+    "minepiece.ui.help.hud_editor.line3": "Customize tab: panel backgrounds.",
+
+    "minepiece.ui.help.this_help.title": "This help",
+    "minepiece.ui.help.this_help.line1": "Press H to reopen this guide at any time.",
+
+    "minepiece.ui.help.btn_dismiss": "Don't show again",
+    "minepiece.ui.help.btn_close": "Close"
 }

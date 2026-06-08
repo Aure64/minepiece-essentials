@@ -10,6 +10,7 @@ import com.minepiece.essentials.util.ColorUtils;
 import com.minepiece.essentials.util.RenderUtils;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
+import net.minecraft.text.Text;
 import java.util.*;
 
 public class BossTimerHud extends HudElement {
@@ -91,7 +92,7 @@ public class BossTimerHud extends HudElement {
         if (queueActive) h += 12;
         this.height = h;
 
-        ParchmentRenderer.renderPanel(ctx, 0, 0, WIDTH, h, "Boss Timers", getBackground());
+        ParchmentRenderer.renderPanel(ctx, 0, 0, WIDTH, h, Text.translatable("minepiece.ui.boss.title").getString(), getBackground());
 
         // Refresh All button — top-right of header
         int allBtnW = 18;

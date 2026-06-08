@@ -39,53 +39,62 @@ public class HelpScreen extends Screen {
         return new Line(t, true);
     }
 
-    private static final Feature[] FEATURES = {
-        new Feature("Boss Timers", new Line[]{
-            info("Respawns par île, alertes sonores & waypoints."),
-            important("Clique le bouton Refresh pour actualiser les timers."),
-            important("Ne bouge pas pendant un « Refresh All » !"),
-        }),
-        new Feature("Parchemins", new Line[]{
-            info("Objectifs de quêtes affichés en HUD (scan auto)."),
-        }),
-        new Feature("Qualité des pets", new Line[]{
-            info("Affiche le % de roll de chaque stat dans le tooltip."),
-            important("Ouvre /pets et survole un pet pour le voir."),
-        }),
-        new Feature("Calculateur de minions", new Line[]{
-            info("Stacks restants pour max, dans le tooltip du minion."),
-            important("Ouvre l'écran de nourrissage une fois par ressource"),
-            important("(le mod apprend l'XP par unité)."),
-        }),
-        new Feature("Panneau pets actifs", new Line[]{
-            info("Total des stats données par tes pets actifs."),
-            important("Fais /pets une fois pour remplir le panneau."),
-        }),
-        new Feature("Progression métier", new Line[]{
-            info("Niveau, XP et % du métier en cours de récolte."),
-        }),
-        new Feature("Quêtes du jour", new Line[]{
-            info("Quêtes de pass + progression en HUD."),
-            important("Ouvre /pass, onglet Quêtes pour remplir."),
-            info("Pas de refresh auto : rouvre l'écran (la complétion"),
-            info("est tout de même détectée en direct via le chat)."),
-        }),
-        new Feature("Éditeur de HUD", new Line[]{
-            important("Touche K"),
-            info("Onglet Placement : déplacer / redimensionner / cacher."),
-            info("Onglet Personnaliser : fond des panneaux."),
-        }),
-        new Feature("Cette aide", new Line[]{
-            info("Touche H pour rouvrir ce guide à tout moment."),
-        }),
-    };
+    private static String tr(String key) {
+        return Text.translatable(key).getString();
+    }
+
+    private static Feature[] buildFeatures() {
+        return new Feature[]{
+            new Feature(tr("minepiece.ui.help.boss.title"), new Line[]{
+                info(tr("minepiece.ui.help.boss.line1")),
+                important(tr("minepiece.ui.help.boss.line2")),
+                important(tr("minepiece.ui.help.boss.line3")),
+            }),
+            new Feature(tr("minepiece.ui.help.scrolls.title"), new Line[]{
+                info(tr("minepiece.ui.help.scrolls.line1")),
+            }),
+            new Feature(tr("minepiece.ui.help.pet_quality.title"), new Line[]{
+                info(tr("minepiece.ui.help.pet_quality.line1")),
+                important(tr("minepiece.ui.help.pet_quality.line2")),
+            }),
+            new Feature(tr("minepiece.ui.help.minion_calc.title"), new Line[]{
+                info(tr("minepiece.ui.help.minion_calc.line1")),
+                important(tr("minepiece.ui.help.minion_calc.line2")),
+                important(tr("minepiece.ui.help.minion_calc.line3")),
+            }),
+            new Feature(tr("minepiece.ui.help.active_pets.title"), new Line[]{
+                info(tr("minepiece.ui.help.active_pets.line1")),
+                important(tr("minepiece.ui.help.active_pets.line2")),
+            }),
+            new Feature(tr("minepiece.ui.help.job.title"), new Line[]{
+                info(tr("minepiece.ui.help.job.line1")),
+            }),
+            new Feature(tr("minepiece.ui.help.daily_quests.title"), new Line[]{
+                info(tr("minepiece.ui.help.daily_quests.line1")),
+                important(tr("minepiece.ui.help.daily_quests.line2")),
+                info(tr("minepiece.ui.help.daily_quests.line3")),
+                info(tr("minepiece.ui.help.daily_quests.line4")),
+            }),
+            new Feature(tr("minepiece.ui.help.hud_editor.title"), new Line[]{
+                important(tr("minepiece.ui.help.hud_editor.line1")),
+                info(tr("minepiece.ui.help.hud_editor.line2")),
+                info(tr("minepiece.ui.help.hud_editor.line3")),
+            }),
+            new Feature(tr("minepiece.ui.help.this_help.title"), new Line[]{
+                info(tr("minepiece.ui.help.this_help.line1")),
+            }),
+        };
+    }
+
+    // Line counts per feature (fixed, not language-dependent) used for layout.
+    private static final int[] FEATURE_LINE_COUNTS = {3, 1, 2, 3, 2, 1, 4, 3, 1};
 
     private static final int PANEL_H;
 
     static {
         int h = HEADER_H;
-        for (Feature f : FEATURES) {
-            h += TITLE_H + f.lines().length * LINE_H + FEATURE_GAP;
+        for (int lineCount : FEATURE_LINE_COUNTS) {
+            h += TITLE_H + lineCount * LINE_H + FEATURE_GAP;
         }
         PANEL_H = h + FOOTER_H;
     }
@@ -109,7 +118,7 @@ public class HelpScreen extends Screen {
         ParchmentRenderer.renderPanel(ctx, left, top, PANEL_W, PANEL_H, "Minepiece Essentials");
 
         int y = top + HEADER_H;
-        for (Feature f : FEATURES) {
+        for (Feature f : buildFeatures()) {
             RenderUtils.drawText(ctx, "» " + f.title(), left + 12, y, GOLD);
             y += TITLE_H;
             for (Line line : f.lines()) {
@@ -120,8 +129,8 @@ public class HelpScreen extends Screen {
         }
 
         int btnY = top + PANEL_H - 28;
-        drawButton(ctx, left + 12, btnY, 150, "Ne plus afficher", mouseX, mouseY);
-        drawButton(ctx, left + PANEL_W - 12 - 100, btnY, 100, "Fermer", mouseX, mouseY);
+        drawButton(ctx, left + 12, btnY, 150, tr("minepiece.ui.help.btn_dismiss"), mouseX, mouseY);
+        drawButton(ctx, left + PANEL_W - 12 - 100, btnY, 100, tr("minepiece.ui.help.btn_close"), mouseX, mouseY);
     }
 
     private void drawButton(DrawContext ctx, int x, int y, int w, String label, int mouseX, int mouseY) {

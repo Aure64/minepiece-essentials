@@ -6,11 +6,14 @@ import java.util.List;
 import java.util.Set;
 import com.minepiece.essentials.ServerDetector;
 import com.minepiece.essentials.MinepieceEssentialsClient;
+import com.minepiece.essentials.ah.AhPriceBand;
 import com.minepiece.essentials.config.ModConfig;
 import com.minepiece.essentials.util.RenderUtils;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
+import net.minecraft.component.DataComponentTypes;
+import net.minecraft.component.type.LoreComponent;
 import net.minecraft.item.ItemStack;
 import net.minecraft.screen.slot.Slot;
 import net.minecraft.text.Text;
@@ -37,6 +40,23 @@ public final class RarityScreenOverlay {
         return MinepieceEssentialsClient.getInstance().getConfigManager().config();
     }
 
+    /** Lignes de lore d'un item en texte brut (sans assembler toute l'infobulle). */
+    private static List<String> loreStrings(ItemStack st) {
+        LoreComponent lore = st.get(DataComponentTypes.LORE);
+        if (lore == null) return List.of();
+        List<String> out = new ArrayList<>(lore.lines().size());
+        for (Text t : lore.lines()) out.add(t.getString());
+        return out;
+    }
+
+    /** Liseré 1px collé autour de la case (à l'extérieur du 16×16), l'item reste net. */
+    private static void drawPriceBorder(DrawContext ctx, int x, int y, int color) {
+        ctx.fill(x - 1, y - 1, x + 17, y,      color); // haut
+        ctx.fill(x - 1, y + 16, x + 17, y + 17, color); // bas
+        ctx.fill(x - 1, y, x, y + 16,          color); // gauche
+        ctx.fill(x + 16, y, x + 17, y + 16,    color); // droite
+    }
+
     // ---- Rendu (appelé en TAIL de HandledScreen.render) ----
     public static void render(HandledScreen<?> screen, DrawContext ctx,
                               int bgX, int bgY, int mouseX, int mouseY) {
@@ -44,17 +64,24 @@ public final class RarityScreenOverlay {
         if (!ServerDetector.isOnMinePiece()) return;
         ModConfig c = cfg();
 
-        // 1) Emblèmes + voile sur chaque slot.
+        // 1) Emblèmes + voile + liseré prix sur chaque slot.
         // L'inventaire joueur (E) et les coffres ont chacun leur toggle.
         boolean isPlayerInv = screen instanceof net.minecraft.client.gui.screen.ingame.InventoryScreen;
         boolean icons = isPlayerInv ? c.rarityInventoryEnabled : c.rarityIconsEnabled;
         boolean filterOn = c.rarityFilterEnabled && FILTER.any();
-        if (icons || filterOn) {
+        boolean priceColor = c.ahPriceColorEnabled;
+        if (icons || filterOn || priceColor) {
             for (Slot slot : screen.getScreenHandler().slots) {
                 ItemStack st = slot.getStack();
                 if (st.isEmpty()) continue;
                 ItemRarity r = RarityDetector.detect(st);
                 int sx = bgX + slot.x, sy = bgY + slot.y;
+                // Liseré prix AH (sous le voile éventuel) : ne s'affiche que sur les items
+                // d'annonce (lore avec Prix de vente + Prix moyen), donc dans le /ah.
+                if (priceColor) {
+                    AhPriceBand.fromLore(loreStrings(st))
+                            .ifPresent(res -> drawPriceBorder(ctx, sx, sy, res.band().color));
+                }
                 if (filterOn && FILTER.isDimmed(r)) {
                     ctx.fill(sx, sy, sx + 16, sy + 16, 0xB0101010); // voile sombre
                 }

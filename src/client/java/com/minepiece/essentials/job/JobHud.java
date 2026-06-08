@@ -6,6 +6,7 @@ import com.minepiece.essentials.hud.HudElement;
 import com.minepiece.essentials.hud.ParchmentRenderer;
 import com.minepiece.essentials.util.RenderUtils;
 import net.minecraft.client.gui.DrawContext;
+import net.minecraft.text.Text;
 
 import java.util.Locale;
 
@@ -36,14 +37,14 @@ public class JobHud extends HudElement {
         if (!JobTracker.hasData()) {
             int h = 32;
             this.height = h;
-            ParchmentRenderer.renderPanel(ctx, 0, 0, WIDTH, h, "Métier", getBackground());
-            RenderUtils.drawText(ctx, "Récolte pour voir", 8, 20, SUB_COLOR);
+            ParchmentRenderer.renderPanel(ctx, 0, 0, WIDTH, h, Text.translatable("minepiece.ui.job.title").getString(), getBackground());
+            RenderUtils.drawText(ctx, Text.translatable("minepiece.ui.job.harvest_hint").getString(), 8, 20, SUB_COLOR);
             return;
         }
 
         int h = 62;
         this.height = h;
-        ParchmentRenderer.renderPanel(ctx, 0, 0, WIDTH, h, "Métier", getBackground());
+        ParchmentRenderer.renderPanel(ctx, 0, 0, WIDTH, h, Text.translatable("minepiece.ui.job.title").getString(), getBackground());
 
         float p = JobTracker.progress();
 

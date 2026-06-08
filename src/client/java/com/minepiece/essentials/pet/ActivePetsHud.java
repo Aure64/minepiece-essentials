@@ -5,6 +5,7 @@ import com.minepiece.essentials.hud.HudElement;
 import com.minepiece.essentials.hud.ParchmentRenderer;
 import com.minepiece.essentials.util.RenderUtils;
 import net.minecraft.client.gui.DrawContext;
+import net.minecraft.text.Text;
 
 import java.util.Map;
 
@@ -26,7 +27,7 @@ public class ActivePetsHud extends HudElement {
         ActivePetsState.Snapshot snap = ActivePetsState.get();
         if (snap.isEmpty()) {
             this.height = 32;
-            ParchmentRenderer.renderPanel(ctx, 0, 0, WIDTH, 32, "Pets actifs", getBackground());
+            ParchmentRenderer.renderPanel(ctx, 0, 0, WIDTH, 32, Text.translatable("minepiece.ui.pets.title").getString(), getBackground());
             RenderUtils.drawText(ctx, "Ouvre /pets pour afficher", 6, 20, 0xFFCBC8C7);
             return;
         }
@@ -36,7 +37,7 @@ public class ActivePetsHud extends HudElement {
         int h = 20 + count * 10 + 6 + stats * 10 + 4;
         this.height = h;
 
-        ParchmentRenderer.renderPanel(ctx, 0, 0, WIDTH, h, "Pets actifs (" + count + ")", getBackground());
+        ParchmentRenderer.renderPanel(ctx, 0, 0, WIDTH, h, Text.translatable("minepiece.ui.pets.title").getString() + " (" + count + ")", getBackground());
 
         int y = 20;
         for (ActivePetsState.ActivePet pet : snap.pets()) {

@@ -42,6 +42,7 @@ public class ModConfig {
     public boolean passQuestHudEnabled = true;
 
     public boolean ahPricePerUnitEnabled = true;
+    public boolean ahPriceColorEnabled = true;     // liseré couleur + écart % vs moyenne (AH)
 
     public boolean rarityIconsEnabled = true;      // emblèmes dans les coffres/conteneurs
     public boolean rarityInventoryEnabled = true;  // emblèmes dans l'inventaire joueur (E)

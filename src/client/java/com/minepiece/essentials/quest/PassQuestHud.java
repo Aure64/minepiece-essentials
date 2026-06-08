@@ -5,6 +5,7 @@ import com.minepiece.essentials.hud.HudElement;
 import com.minepiece.essentials.hud.ParchmentRenderer;
 import com.minepiece.essentials.util.RenderUtils;
 import net.minecraft.client.gui.DrawContext;
+import net.minecraft.text.Text;
 
 import java.util.List;
 
@@ -35,8 +36,8 @@ public class PassQuestHud extends HudElement {
         // No data yet (or after the daily midnight reset) → prompt to open /pass.
         if (quests.isEmpty()) {
             this.height = 32;
-            ParchmentRenderer.renderPanel(ctx, 0, 0, WIDTH, 32, "Quêtes du jour", getBackground());
-            RenderUtils.drawText(ctx, "Ouvre /pass, onglet Quêtes", 6, 20, getBackground().textColor());
+            ParchmentRenderer.renderPanel(ctx, 0, 0, WIDTH, 32, Text.translatable("minepiece.ui.quests.title").getString(), getBackground());
+            RenderUtils.drawText(ctx, Text.translatable("minepiece.ui.quests.hint").getString(), 6, 20, getBackground().textColor());
             return;
         }
 
@@ -47,13 +48,13 @@ public class PassQuestHud extends HudElement {
         if (pending.isEmpty()) {
             this.height = 16;
             ParchmentRenderer.renderPanel(ctx, 0, 0, WIDTH, 16, null, getBackground());
-            RenderUtils.drawText(ctx, "Quêtes du jour terminées", 6, 4, DONE_COLOR);
+            RenderUtils.drawText(ctx, Text.translatable("minepiece.ui.quests.done").getString(), 6, 4, DONE_COLOR);
             return;
         }
 
         int h = 20 + pending.size() * LINE_HEIGHT + 4;
         this.height = h;
-        ParchmentRenderer.renderPanel(ctx, 0, 0, WIDTH, h, "Quêtes du jour", getBackground());
+        ParchmentRenderer.renderPanel(ctx, 0, 0, WIDTH, h, Text.translatable("minepiece.ui.quests.title").getString(), getBackground());
 
         int y = 20;
         for (PassQuest q : pending) {

@@ -5,6 +5,7 @@ import com.minepiece.essentials.hud.ParchmentRenderer;
 import com.minepiece.essentials.util.ColorUtils;
 import com.minepiece.essentials.util.RenderUtils;
 import net.minecraft.client.gui.DrawContext;
+import net.minecraft.text.Text;
 import java.util.Comparator;
 import java.util.List;
 
@@ -26,7 +27,7 @@ public class ParcheminHud extends HudElement {
 
         int h = 20 + parchemins.size() * 24 + 4;
         this.height = h;
-        ParchmentRenderer.renderPanel(ctx, 0, 0, WIDTH, h, "Parchemins", getBackground());
+        ParchmentRenderer.renderPanel(ctx, 0, 0, WIDTH, h, Text.translatable("minepiece.ui.scrolls.title").getString(), getBackground());
 
         int lineY = 20;
         for (var quest : parchemins) {

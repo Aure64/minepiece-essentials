@@ -85,9 +85,12 @@ public class HudEditScreen extends Screen {
     public void render(DrawContext ctx, int mouseX, int mouseY, float delta) {
         ctx.fill(0, 0, width, height, 0x44000000);
 
+        String tabName = tab == Tab.PLACEMENT
+                ? Text.translatable("minepiece.ui.editor.tab_placement").getString()
+                : Text.translatable("minepiece.ui.editor.tab_customize").getString();
         String hint = tab == Tab.PLACEMENT
-                ? "Placement - Clic gauche: deplacer | Clic droit: ON/OFF | Scroll: taille"
-                : "Personnaliser - Clic sur un HUD: change son fond (Parchemin -> Sombre -> Transparent)";
+                ? tabName + " - Clic gauche: deplacer | Clic droit: ON/OFF | Scroll: taille"
+                : tabName + " - Clic sur un HUD: change son fond (Parchemin -> Sombre -> Transparent)";
         RenderUtils.drawCenteredText(ctx, hint, width / 2, 5, 0xFFFFFFFF);
         RenderUtils.drawCenteredText(ctx, "Echap pour sauvegarder et quitter", width / 2, 16, 0xFFAAAAAA);
 
@@ -101,9 +104,9 @@ public class HudEditScreen extends Screen {
     }
 
     private void drawTabs(DrawContext ctx, int mouseX, int mouseY) {
-        drawTab(ctx, placementTabX(), "Placement", tab == Tab.PLACEMENT,
+        drawTab(ctx, placementTabX(), Text.translatable("minepiece.ui.editor.tab_placement").getString(), tab == Tab.PLACEMENT,
                 inBox(mouseX, mouseY, placementTabX(), tabsY, TAB_W, TAB_H));
-        drawTab(ctx, customizeTabX(), "Personnaliser", tab == Tab.CUSTOMIZE,
+        drawTab(ctx, customizeTabX(), Text.translatable("minepiece.ui.editor.tab_customize").getString(), tab == Tab.CUSTOMIZE,
                 inBox(mouseX, mouseY, customizeTabX(), tabsY, TAB_W, TAB_H));
     }
 
@@ -146,20 +149,21 @@ public class HudEditScreen extends Screen {
         ctx.fill(resetBtnX, resetBtnY, resetBtnX + BTN_W, resetBtnY + BTN_H, hover ? 0xFF6A4A2C : 0xFF3A2A1C);
         ctx.fill(resetBtnX, resetBtnY, resetBtnX + BTN_W, resetBtnY + 1, 0xFF8A6A44);
         ctx.fill(resetBtnX, resetBtnY + BTN_H - 1, resetBtnX + BTN_W, resetBtnY + BTN_H, 0xFF8A6A44);
-        RenderUtils.drawCenteredText(ctx, "Reinitialiser le placement", width / 2, resetBtnY + 4, 0xFFFFE9D5);
+        RenderUtils.drawCenteredText(ctx, Text.translatable("minepiece.ui.editor.reset_placement").getString(), width / 2, resetBtnY + 4, 0xFFFFE9D5);
 
         if (System.currentTimeMillis() < resetMsgUntil) {
-            RenderUtils.drawCenteredText(ctx, "Placement reinitialise !", width / 2, resetBtnY + BTN_H + 4, 0xFF7CFC55);
+            RenderUtils.drawCenteredText(ctx, Text.translatable("minepiece.ui.editor.placement_reset").getString(), width / 2, resetBtnY + BTN_H + 4, 0xFF7CFC55);
         }
 
         // Toggles de la fonctionnalité Raretés.
         var cfg = MinepieceEssentialsClient.getInstance().getConfigManager().config();
-        RenderUtils.drawCenteredText(ctx, "Raretes", width / 2, rarityTogglesY - 12, 0xFFFFE9D5);
-        drawToggle(ctx, mouseX, mouseY, 0, "Emblemes - coffres", cfg.rarityIconsEnabled);
-        drawToggle(ctx, mouseX, mouseY, 1, "Emblemes - inventaire", cfg.rarityInventoryEnabled);
-        drawToggle(ctx, mouseX, mouseY, 2, "Emblemes - hotbar", cfg.rarityHotbarEnabled);
-        drawToggle(ctx, mouseX, mouseY, 3, "Barre de filtre", cfg.rarityFilterEnabled);
-        drawToggle(ctx, mouseX, mouseY, 4, "Boutons de tri", cfg.raritySorterEnabled);
+        RenderUtils.drawCenteredText(ctx, Text.translatable("minepiece.ui.editor.rarities").getString(), width / 2, rarityTogglesY - 12, 0xFFFFE9D5);
+        drawToggle(ctx, mouseX, mouseY, 0, Text.translatable("minepiece.ui.editor.emblems_chests").getString(), cfg.rarityIconsEnabled);
+        drawToggle(ctx, mouseX, mouseY, 1, Text.translatable("minepiece.ui.editor.emblems_inventory").getString(), cfg.rarityInventoryEnabled);
+        drawToggle(ctx, mouseX, mouseY, 2, Text.translatable("minepiece.ui.editor.emblems_hotbar").getString(), cfg.rarityHotbarEnabled);
+        drawToggle(ctx, mouseX, mouseY, 3, Text.translatable("minepiece.ui.editor.filter_bar").getString(), cfg.rarityFilterEnabled);
+        drawToggle(ctx, mouseX, mouseY, 4, Text.translatable("minepiece.ui.editor.sort_buttons").getString(), cfg.raritySorterEnabled);
+        drawToggle(ctx, mouseX, mouseY, 5, Text.translatable("minepiece.ui.editor.ah_price_color").getString(), cfg.ahPriceColorEnabled);
     }
 
     private void drawToggle(DrawContext ctx, int mouseX, int mouseY, int index, String label, boolean on) {
@@ -246,7 +250,7 @@ public class HudEditScreen extends Screen {
         }
 
         if (button == 0) {
-            for (int i = 0; i < 5; i++) {
+            for (int i = 0; i < 6; i++) {
                 int ty = rarityTogglesY + i * TOGGLE_STEP;
                 if (inBox(mouseX, mouseY, rarityTogglesX, ty, BTN_W, BTN_H)) {
                     var mgr = MinepieceEssentialsClient.getInstance().getConfigManager();
@@ -256,7 +260,8 @@ public class HudEditScreen extends Screen {
                         case 1 -> cfg.rarityInventoryEnabled = !cfg.rarityInventoryEnabled;
                         case 2 -> cfg.rarityHotbarEnabled = !cfg.rarityHotbarEnabled;
                         case 3 -> cfg.rarityFilterEnabled = !cfg.rarityFilterEnabled;
-                        default -> cfg.raritySorterEnabled = !cfg.raritySorterEnabled;
+                        case 4 -> cfg.raritySorterEnabled = !cfg.raritySorterEnabled;
+                        default -> cfg.ahPriceColorEnabled = !cfg.ahPriceColorEnabled;
                     }
                     mgr.save();
                     return true;

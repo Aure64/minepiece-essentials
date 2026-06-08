@@ -2,5 +2,78 @@
     "category.minepiece-essentials.main": "Minepiece Essentials",
     "key.category.minepiece-essentials.main": "Minepiece Essentials",
     "key.minepiece-essentials.edit_hud": "Editer le HUD",
-    "key.minepiece-essentials.help": "Aide / Guide"
+    "key.minepiece-essentials.help": "Aide / Guide",
+
+    "minepiece.ui.job.title": "Métier",
+    "minepiece.ui.job.harvest_hint": "Récolte pour voir",
+
+    "minepiece.ui.quests.title": "Quêtes du jour",
+    "minepiece.ui.quests.hint": "Ouvre /pass, onglet Quêtes",
+    "minepiece.ui.quests.done": "Quêtes du jour terminées",
+
+    "minepiece.ui.haki.title": "Haki",
+    "minepiece.ui.haki.ready": "Prêt !",
+
+    "minepiece.ui.pets.title": "Pets actifs",
+
+    "minepiece.ui.boss.title": "Boss Timers",
+
+    "minepiece.ui.ascensions.title": "Ascensions",
+    "minepiece.ui.ascensions.fruits": "Fruits",
+    "minepiece.ui.ascensions.weapons": "Armes",
+
+    "minepiece.ui.scrolls.title": "Parchemins",
+
+    "minepiece.ui.editor.rarities": "Raretes",
+    "minepiece.ui.editor.emblems_chests": "Emblemes - coffres",
+    "minepiece.ui.editor.emblems_inventory": "Emblemes - inventaire",
+    "minepiece.ui.editor.emblems_hotbar": "Emblemes - hotbar",
+    "minepiece.ui.editor.filter_bar": "Barre de filtre",
+    "minepiece.ui.editor.sort_buttons": "Boutons de tri",
+    "minepiece.ui.editor.ah_price_color": "Couleur prix AH",
+    "minepiece.ui.editor.tab_placement": "Placement",
+    "minepiece.ui.editor.tab_customize": "Personnaliser",
+    "minepiece.ui.editor.reset_placement": "Reinitialiser le placement",
+    "minepiece.ui.editor.placement_reset": "Placement reinitialise !",
+
+    "minepiece.ui.help.boss.title": "Boss Timers",
+    "minepiece.ui.help.boss.line1": "Respawns par île, alertes sonores & waypoints.",
+    "minepiece.ui.help.boss.line2": "Clique le bouton Refresh pour actualiser les timers.",
+    "minepiece.ui.help.boss.line3": "Ne bouge pas pendant un « Refresh All » !",
+
+    "minepiece.ui.help.scrolls.title": "Parchemins",
+    "minepiece.ui.help.scrolls.line1": "Objectifs de quêtes affichés en HUD (scan auto).",
+
+    "minepiece.ui.help.pet_quality.title": "Qualité des pets",
+    "minepiece.ui.help.pet_quality.line1": "Affiche le % de roll de chaque stat dans le tooltip.",
+    "minepiece.ui.help.pet_quality.line2": "Ouvre /pets et survole un pet pour le voir.",
+
+    "minepiece.ui.help.minion_calc.title": "Calculateur de minions",
+    "minepiece.ui.help.minion_calc.line1": "Stacks restants pour max, dans le tooltip du minion.",
+    "minepiece.ui.help.minion_calc.line2": "Ouvre l'écran de nourrissage une fois par ressource",
+    "minepiece.ui.help.minion_calc.line3": "(le mod apprend l'XP par unité).",
+
+    "minepiece.ui.help.active_pets.title": "Panneau pets actifs",
+    "minepiece.ui.help.active_pets.line1": "Total des stats données par tes pets actifs.",
+    "minepiece.ui.help.active_pets.line2": "Fais /pets une fois pour remplir le panneau.",
+
+    "minepiece.ui.help.job.title": "Progression métier",
+    "minepiece.ui.help.job.line1": "Niveau, XP et % du métier en cours de récolte.",
+
+    "minepiece.ui.help.daily_quests.title": "Quêtes du jour",
+    "minepiece.ui.help.daily_quests.line1": "Quêtes de pass + progression en HUD.",
+    "minepiece.ui.help.daily_quests.line2": "Ouvre /pass, onglet Quêtes pour remplir.",
+    "minepiece.ui.help.daily_quests.line3": "Pas de refresh auto : rouvre l'écran (la complétion",
+    "minepiece.ui.help.daily_quests.line4": "est tout de même détectée en direct via le chat).",
+
+    "minepiece.ui.help.hud_editor.title": "Éditeur de HUD",
+    "minepiece.ui.help.hud_editor.line1": "Touche K",
+    "minepiece.ui.help.hud_editor.line2": "Onglet Placement : déplacer / redimensionner / cacher.",
+    "minepiece.ui.help.hud_editor.line3": "Onglet Personnaliser : fond des panneaux.",
+
+    "minepiece.ui.help.this_help.title": "Cette aide",
+    "minepiece.ui.help.this_help.line1": "Touche H pour rouvrir ce guide à tout moment.",
+
+    "minepiece.ui.help.btn_dismiss": "Ne plus afficher",
+    "minepiece.ui.help.btn_close": "Fermer"
 }

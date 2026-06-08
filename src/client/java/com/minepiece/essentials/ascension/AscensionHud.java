@@ -94,16 +94,16 @@ public class AscensionHud extends HudElement {
         int h = 20 + (snapshot.size() + headers) * 10 + 4;
         this.height = h;
 
-        ParchmentRenderer.renderPanel(ctx, 0, 0, WIDTH, h, "Ascensions", getBackground());
+        ParchmentRenderer.renderPanel(ctx, 0, 0, WIDTH, h, Text.translatable("minepiece.ui.ascensions.title").getString(), getBackground());
 
         int y = 20;
         for (AscensionItem item : snapshot) {
             if (item.type() == AscensionItem.Type.FRUIT && !fruitHeaderDrawn) {
-                RenderUtils.drawText(ctx, "Fruits", 6, y, HEADER_COLOR);
+                RenderUtils.drawText(ctx, Text.translatable("minepiece.ui.ascensions.fruits").getString(), 6, y, HEADER_COLOR);
                 fruitHeaderDrawn = true;
                 y += 10;
             } else if (item.type() == AscensionItem.Type.WEAPON && !weaponHeaderDrawn) {
-                RenderUtils.drawText(ctx, "Armes", 6, y, HEADER_COLOR);
+                RenderUtils.drawText(ctx, Text.translatable("minepiece.ui.ascensions.weapons").getString(), 6, y, HEADER_COLOR);
                 weaponHeaderDrawn = true;
                 y += 10;
             }
