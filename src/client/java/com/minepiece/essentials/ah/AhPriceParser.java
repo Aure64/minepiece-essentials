@@ -1,5 +1,7 @@
 package com.minepiece.essentials.ah;
 
+import com.minepiece.essentials.i18n.ServerText;
+
 import java.util.List;
 import java.util.Optional;
 import java.util.OptionalDouble;
@@ -15,7 +17,6 @@ import java.util.regex.Pattern;
  */
 public final class AhPriceParser {
 
-    private static final String SELL_LINE = "Prix de vente";
     private static final Pattern NUMBER =
         Pattern.compile("(\\d+(?:\\.\\d+)?)\\s*([KkMmBbTt])?");
 
@@ -45,16 +46,16 @@ public final class AhPriceParser {
         return Long.toString(Math.round(v));
     }
 
-    /** The per-unit "Prix de vente" label (e.g. "1M"), when count &gt; 1. */
+    /** The per-unit "Prix de vente / Selling price" label (e.g. "1M"), when count &gt; 1. */
     public static Optional<String> perUnit(List<String> lore, int count) {
-        return perUnit(lore, count, SELL_LINE);
+        return perUnit(lore, count, ServerText.SELL_PRICE);
     }
 
-    /** Per-unit label from the lore line containing {@code keyword} ÷ count, when count &gt; 1. */
-    public static Optional<String> perUnit(List<String> lore, int count, String keyword) {
+    /** Per-unit label from the lore line matching any of {@code variants} ÷ count, when count &gt; 1. */
+    public static Optional<String> perUnit(List<String> lore, int count, String[] variants) {
         if (count <= 1 || lore == null) return Optional.empty();
         for (String line : lore) {
-            if (line.contains(keyword)) {
+            if (ServerText.matches(line, variants)) {
                 OptionalDouble price = parseAbbreviated(line);
                 if (price.isPresent() && price.getAsDouble() > 0) {
                     return Optional.of(format(price.getAsDouble() / count));

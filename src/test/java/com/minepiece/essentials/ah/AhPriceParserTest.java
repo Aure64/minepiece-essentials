@@ -1,5 +1,6 @@
 package com.minepiece.essentials.ah;
 
+import com.minepiece.essentials.i18n.ServerText;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -43,7 +44,7 @@ class AhPriceParserTest {
     void perUnitOfAveragePriceLine() {
         // "Prix moyen" 385.41K / 8 = 48.18K (the average per unit).
         assertEquals(Optional.of("48.18K"), AhPriceParser.perUnit(
-                List.of(" ▪ Prix de vente: 400K 实", " ▪ Prix moyen: 385.41K"), 8, "Prix moyen"));
+                List.of(" ▪ Prix de vente: 400K 实", " ▪ Prix moyen: 385.41K"), 8, ServerText.AVG_PRICE));
     }
 
     @Test
