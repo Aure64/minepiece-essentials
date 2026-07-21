@@ -41,8 +41,9 @@ public final class ServerText {
     // Boss
     public static final Pattern BOSS_COORDS =
         Pattern.compile("(?:Coordonn[eé]es?|Coordinates)\\s*:?\\s*([-\\d]+)\\s+([-\\d]+)\\s+([-\\d]+)");
+    // EN : le boss unique dit "Respawn:", les mini-boss disent "Spawn: 11m 52s (Every 15 Minutes)".
     public static final Pattern BOSS_RESPAWN =
-        Pattern.compile("(?:R[eé]app?arition|Apparition|Respawn)\\s*:?\\s*(?:(\\d+)m)?\\s*(\\d+)s");
+        Pattern.compile("(?:R[eé]app?arition|Apparition|Respawn|Spawn)\\s*:?\\s*(?:(\\d+)m)?\\s*(\\d+)s");
     public static final String[] BOSS_MINIBOSS_CATEGORY =
         {"mini-boss", "présents sur cette île", "present on this island", "present in the city"};
     public static final String[] BOSS_SINGLE =
