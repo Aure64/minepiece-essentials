@@ -49,9 +49,15 @@ Conséquences :
   client ; sa présence dans le jar public n'est pas une fuite de secret ;
 - région **EU**, donc pas de transfert hors UE à documenter.
 
-Projet cible : le projet PostHog existant de l'organisation « Hirofolio » sur le
-cloud EU. Si l'auteur crée un projet dédié au mod pour ne pas mélanger les
-données, seule la constante contenant la clé `phc_…` change.
+Projet cible : le projet **existant** « Default project » de l'organisation
+« Hirofolio » sur le cloud EU (id `198863`). Pas de projet dédié : le plan gratuit
+PostHog est limité à un projet par organisation, et en créer un second impose
+d'enregistrer une carte bancaire — disproportionné ici.
+
+Pour que la cohabitation avec les données déjà présentes dans ce projet ne pose
+aucun problème, **tous les événements du mod sont préfixés `mp_`** :
+`mp_session_start`, `mp_feature_used`. Ils restent ainsi filtrables d'un seul
+coup et ne peuvent entrer en collision avec quoi que ce soit d'autre.
 
 Alternative écartée : Cloudflare Worker + D1. Gratuit et auto-hébergé lui aussi,
 mais sans dashboard — il aurait fallu construire les courbes de rétention à la
@@ -95,7 +101,7 @@ reste du mod sont donc de simples one-liners sans condition.
 
 ## Données envoyées
 
-### Événement `session_start`
+### Événement `mp_session_start`
 
 Émis **une fois par session de jeu**, non pas au lancement mais ~5 s après que le
 joueur a rejoint un serveur — c'est le seul moment où `ServerDetector` a une
@@ -114,7 +120,7 @@ réponse fiable sur `on_minepiece`.
 Les mêmes valeurs sont aussi envoyées en `$set` (propriétés de personne), pour que
 PostHog puisse répondre à « combien de joueurs sont **actuellement** en 1.6.x ».
 
-### Événement `feature_used`
+### Événement `mp_feature_used`
 
 Une propriété : `feature`. **Une seule émission par feature et par session** — le
 but est de mesurer l'usage, pas le volume, et ça borne le trafic à quelques
@@ -189,7 +195,7 @@ Unitaires (`src/test`, sans Minecraft) :
 - toute propriété hors de la liste blanche est rejetée ;
 - opt-out désactivé ⇒ la file reste vide.
 
-En jeu : lancer le client, vérifier que `session_start` arrive dans PostHog avec
+En jeu : lancer le client, vérifier que `mp_session_start` arrive dans PostHog avec
 les bonnes propriétés, puis basculer le toggle et vérifier qu'il n'arrive plus
 rien. Le dépouillement peut se faire directement depuis Claude Code (accès PostHog
 branché sur cette session).
