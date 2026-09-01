@@ -34,7 +34,7 @@ public final class TelemetryId {
     }
 
     public static TelemetryId loadOrCreate(Path file) {
-        Stored stored = JsonHelper.load(file, Stored.class, null);
+        Stored stored = loadSafely(file);
         if (stored == null || stored.installId == null || stored.installId.isBlank()) {
             stored = new Stored();
             stored.installId = UUID.randomUUID().toString();
@@ -49,9 +49,22 @@ public final class TelemetryId {
     public boolean announced() { return announced; }
 
     public void markAnnounced(Path file) {
-        Stored stored = JsonHelper.load(file, Stored.class, null);
+        Stored stored = loadSafely(file);
         if (stored == null) return;
         stored.announced = true;
         JsonHelper.save(file, stored);
+    }
+
+    /**
+     * Lit le fichier via JsonHelper en absorbant toute exception non-vérifiée
+     * (JSON tronqué/corrompu, forme inattendue). La télémétrie ne doit jamais
+     * faire planter le client : un fichier corrompu est traité comme absent.
+     */
+    private static Stored loadSafely(Path file) {
+        try {
+            return JsonHelper.load(file, Stored.class, null);
+        } catch (RuntimeException e) {
+            return null;
+        }
     }
 }

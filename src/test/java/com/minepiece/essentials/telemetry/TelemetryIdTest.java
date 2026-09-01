@@ -49,4 +49,38 @@ class TelemetryIdTest {
                 TelemetryId.loadOrCreate(dir.resolve("a.json")).installId(),
                 TelemetryId.loadOrCreate(dir.resolve("b.json")).installId());
     }
+
+    @Test
+    void corruptJsonFallsBackToAFreshUsableIdentity() throws Exception {
+        Path file = dir.resolve("telemetry.json");
+        Files.writeString(file, "{\"installId\": \"abc");
+
+        TelemetryId id = assertDoesNotThrow(() -> TelemetryId.loadOrCreate(file),
+                "un fichier corrompu ne doit jamais faire planter le client");
+
+        assertNotNull(id.installId());
+        assertDoesNotThrow(() -> UUID.fromString(id.installId()));
+    }
+
+    @Test
+    void wrongShapeJsonFallsBackToAFreshUsableIdentity() throws Exception {
+        Path file = dir.resolve("telemetry.json");
+        Files.writeString(file, "[1, 2, 3]");
+
+        TelemetryId id = assertDoesNotThrow(() -> TelemetryId.loadOrCreate(file),
+                "un JSON de forme inattendue ne doit pas planter le client");
+
+        assertNotNull(id.installId());
+        assertDoesNotThrow(() -> UUID.fromString(id.installId()));
+    }
+
+    @Test
+    void markAnnouncedOnCorruptFileDoesNotThrow() throws Exception {
+        Path file = dir.resolve("telemetry.json");
+        TelemetryId id = TelemetryId.loadOrCreate(file);
+        Files.writeString(file, "{not valid json");
+
+        assertDoesNotThrow(() -> id.markAnnounced(file),
+                "un fichier corrompu ne doit pas faire planter markAnnounced non plus");
+    }
 }
