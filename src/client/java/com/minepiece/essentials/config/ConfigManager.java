@@ -29,4 +29,5 @@ public class ConfigManager {
     public Path dataDir() { return CONFIG_DIR.resolve("data"); }
     public Path bossDir() { return CONFIG_DIR.resolve("bosses"); }
     public Path waypointDir() { return CONFIG_DIR.resolve("waypoints"); }
+    public Path telemetryFile() { return CONFIG_DIR.resolve("telemetry.json"); }
 }
