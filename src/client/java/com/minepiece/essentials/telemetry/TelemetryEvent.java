@@ -1,8 +1,9 @@
 package com.minepiece.essentials.telemetry;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
-import com.minepiece.essentials.util.JsonHelper;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -28,6 +29,11 @@ public final class TelemetryEvent {
      * c'est le garde-fou qui empêche un pseudo ou des coordonnées de partir par
      * inadvertance lors d'une modification future.
      */
+    // Gson dédié avec serializeNulls() : JsonHelper.gson() ne sérialise pas les
+    // JsonNull explicites (writer.setSerializeNulls suit GsonBuilder), ce qui
+    // ferait disparaître $ip:null silencieusement — inacceptable pour cette garantie.
+    private static final Gson BATCH_GSON = new GsonBuilder().serializeNulls().create();
+
     public static final Set<String> ALLOWED_PROPERTIES = Set.of(
             "mod_version", "mc_version", "loader_version", "java_version",
             "os", "client_language", "on_minepiece", "feature");
@@ -69,6 +75,10 @@ public final class TelemetryEvent {
             // distinct_id est accepté à la racine de l'item comme dans properties ;
             // on met les deux pour ne dépendre d'aucune des deux formes.
             props.addProperty("distinct_id", distinctId);
+            // $ip=null empêche PostHog de dériver et stocker la géoloc du joueur :
+            // on annonce publiquement qu'aucune IP n'est collectée, donc c'est garanti
+            // ici, dans le sérialiseur, plutôt que délégué à un réglage de dashboard.
+            props.add("$ip", com.google.gson.JsonNull.INSTANCE);
             for (Map.Entry<String, Object> p : e.properties.entrySet()) {
                 Object v = p.getValue();
                 if (v instanceof Boolean b) props.addProperty(p.getKey(), b);
@@ -98,6 +108,6 @@ public final class TelemetryEvent {
         JsonObject root = new JsonObject();
         root.addProperty("api_key", apiKey);
         root.add("batch", batch);
-        return JsonHelper.gson().toJson(root);
+        return BATCH_GSON.toJson(root);
     }
 }

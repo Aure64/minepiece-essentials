@@ -60,6 +60,33 @@ class TelemetryEventTest {
     }
 
     @Test
+    void batchJsonSetsIpNullOnEveryItem() {
+        String json = TelemetryEvent.batchJson("phc_test", "install-42", List.of(
+                TelemetryEvent.of("mp_session_start", Map.of("mod_version", "1.7.2")),
+                TelemetryEvent.of("mp_feature_used", Map.of("feature", "hud_edit"))));
+
+        JsonObject root = JsonParser.parseString(json).getAsJsonObject();
+        for (var item : root.getAsJsonArray("batch")) {
+            JsonObject props = item.getAsJsonObject().getAsJsonObject("properties");
+            assertTrue(props.has("$ip"), "$ip doit être présent sur chaque item");
+            assertTrue(props.get("$ip").isJsonNull(), "$ip doit être JSON null, jamais l'IP réelle");
+        }
+    }
+
+    @Test
+    void setPropertyOnlyOnSessionStart() {
+        String json = TelemetryEvent.batchJson("phc_test", "install-42", List.of(
+                TelemetryEvent.of("mp_session_start", Map.of("mod_version", "1.7.2")),
+                TelemetryEvent.of("mp_feature_used", Map.of("feature", "hud_edit"))));
+
+        JsonObject root = JsonParser.parseString(json).getAsJsonObject();
+        JsonObject sessionProps = root.getAsJsonArray("batch").get(0).getAsJsonObject().getAsJsonObject("properties");
+        JsonObject featureProps = root.getAsJsonArray("batch").get(1).getAsJsonObject().getAsJsonObject("properties");
+        assertTrue(sessionProps.has("$set"), "mp_session_start doit porter $set");
+        assertFalse(featureProps.has("$set"), "mp_feature_used ne doit pas porter $set");
+    }
+
+    @Test
     void batchJsonNeverLeaksIdentity() {
         String json = TelemetryEvent.batchJson("phc_test", "install-42",
                 List.of(TelemetryEvent.of("mp_feature_used", Map.of("feature", "help_screen"))));

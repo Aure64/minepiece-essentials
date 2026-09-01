@@ -35,6 +35,10 @@ public final class Telemetry {
     /** Délai après la connexion avant d'émettre mp_session_start : ServerDetector a besoin de se stabiliser. */
     private static final long SESSION_DELAY_MS = 5_000;
 
+    /** En dessous de ce délai depuis le dernier mp_session_start, un nouveau JOIN
+     * (hop de proxy, reconnexion) n'est pas compté comme une nouvelle session. */
+    private static final long SESSION_DEDUP_MS = 15 * 60_000;
+
     private static final TelemetryBuffer BUFFER = new TelemetryBuffer();
     private static TelemetryId identity;
     private static HttpClient http;
@@ -42,6 +46,7 @@ public final class Telemetry {
     private static long joinedAt = 0;
     private static boolean sessionSent = false;
     private static long lastFlush = 0;
+    private static long lastSessionSentAt = 0;
 
     private Telemetry() {}
 
@@ -51,30 +56,56 @@ public final class Telemetry {
     }
 
     public static void setEnabled(boolean enabled) {
-        var mgr = MinepieceEssentialsClient.getInstance().getConfigManager();
-        mgr.config().telemetryEnabled = enabled;
-        mgr.save();
-        if (!enabled) BUFFER.drain(); // on jette ce qui n'est pas encore parti
+        try {
+            var mgr = MinepieceEssentialsClient.getInstance().getConfigManager();
+            if (mgr == null) return;
+            mgr.config().telemetryEnabled = enabled;
+            mgr.save();
+            if (!enabled) {
+                BUFFER.drain(); // on jette ce qui n'est pas encore parti
+            } else if (identity == null) {
+                // Le joueur réactive dans la même session : init() avait sauté la
+                // création d'identité à cause de l'opt-out. On la fait maintenant,
+                // sans quoi plus rien ne repartirait avant un redémarrage.
+                identity = TelemetryId.loadOrCreate(mgr.telemetryFile());
+                if (http == null) {
+                    http = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(8)).build();
+                }
+            }
+        } catch (Throwable t) {
+            MinepieceEssentialsClient.LOGGER.debug("[Telemetry] setEnabled ignoré : {}", t.toString());
+        }
     }
 
     public static void init() {
         try {
+            if (!isEnabled()) return; // pas de création d'UUID pour un joueur qui a déjà refusé
             identity = TelemetryId.loadOrCreate(
                     MinepieceEssentialsClient.getInstance().getConfigManager().telemetryFile());
             http = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(8)).build();
-        } catch (Exception e) {
-            MinepieceEssentialsClient.LOGGER.debug("[Telemetry] init ignoré : {}", e.toString());
+        } catch (Throwable t) {
+            MinepieceEssentialsClient.LOGGER.debug("[Telemetry] init ignoré : {}", t.toString());
         }
     }
 
     public static void onJoinedServer() {
-        joinedAt = System.currentTimeMillis();
-        sessionSent = false;
-        BUFFER.resetSession();
+        try {
+            joinedAt = System.currentTimeMillis();
+            sessionSent = false;
+            // BUFFER.resetSession() n'a lieu que dans sendSessionStart(), et seulement
+            // si la session est réellement comptée : sinon un hop de proxy réarmerait
+            // les événements mp_feature_used déjà envoyés pour rien.
+        } catch (Throwable t) {
+            MinepieceEssentialsClient.LOGGER.debug("[Telemetry] onJoinedServer ignoré : {}", t.toString());
+        }
     }
 
     public static void onDisconnected() {
-        flush();
+        try {
+            flush();
+        } catch (Throwable t) {
+            MinepieceEssentialsClient.LOGGER.debug("[Telemetry] onDisconnected ignoré : {}", t.toString());
+        }
     }
 
     /** Vrai si le message d'information a déjà été affiché sur cette installation. */
@@ -83,41 +114,58 @@ public final class Telemetry {
     }
 
     public static void markAnnounced() {
-        if (identity == null) return;
-        identity.markAnnounced(
-                MinepieceEssentialsClient.getInstance().getConfigManager().telemetryFile());
-        // relecture pour que wasAnnounced() reflète l'état persisté
-        identity = TelemetryId.loadOrCreate(
-                MinepieceEssentialsClient.getInstance().getConfigManager().telemetryFile());
+        try {
+            if (identity == null) return;
+            identity.markAnnounced(
+                    MinepieceEssentialsClient.getInstance().getConfigManager().telemetryFile());
+            // relecture pour que wasAnnounced() reflète l'état persisté
+            identity = TelemetryId.loadOrCreate(
+                    MinepieceEssentialsClient.getInstance().getConfigManager().telemetryFile());
+        } catch (Throwable t) {
+            MinepieceEssentialsClient.LOGGER.debug("[Telemetry] markAnnounced ignoré : {}", t.toString());
+        }
     }
 
     /** Signale l'usage d'une feature. Au plus un événement par feature et par session. */
     public static void feature(String name) {
-        if (!isEnabled() || identity == null) return;
-        if (!BUFFER.markFeatureSeen(name)) return;
         try {
+            if (!isEnabled() || identity == null) return;
+            if (!BUFFER.markFeatureSeen(name)) return;
             BUFFER.add(TelemetryEvent.of("mp_feature_used", Map.of("feature", name)));
-        } catch (IllegalArgumentException e) {
-            MinepieceEssentialsClient.LOGGER.debug("[Telemetry] feature rejetée : {}", e.getMessage());
+        } catch (Throwable t) {
+            MinepieceEssentialsClient.LOGGER.debug("[Telemetry] feature ignorée : {}", t.toString());
         }
     }
 
     /** Appelé chaque tick client : émet mp_session_start puis vide la file périodiquement. */
     public static void tick() {
-        if (!isEnabled() || identity == null) return;
+        try {
+            if (!isEnabled() || identity == null) return;
 
-        long now = System.currentTimeMillis();
-        if (!sessionSent && joinedAt > 0 && now - joinedAt >= SESSION_DELAY_MS) {
-            sessionSent = true;
-            sendSessionStart();
-        }
-        if (now - lastFlush >= FLUSH_INTERVAL_MS) {
-            lastFlush = now;
-            flush();
+            long now = System.currentTimeMillis();
+            if (!sessionSent && joinedAt > 0 && now - joinedAt >= SESSION_DELAY_MS) {
+                sessionSent = true;
+                sendSessionStart();
+            }
+            if (now - lastFlush >= FLUSH_INTERVAL_MS) {
+                lastFlush = now;
+                flush();
+            }
+        } catch (Throwable t) {
+            MinepieceEssentialsClient.LOGGER.debug("[Telemetry] tick ignoré : {}", t.toString());
         }
     }
 
     private static void sendSessionStart() {
+        long now = System.currentTimeMillis();
+        if (lastSessionSentAt != 0 && now - lastSessionSentAt < SESSION_DEDUP_MS) {
+            // Hop de proxy / reconnexion rapprochée : ni nouvelle session comptée,
+            // ni réarmement des mp_feature_used déjà envoyés sur cette session.
+            return;
+        }
+        lastSessionSentAt = now;
+        BUFFER.resetSession();
+
         Map<String, Object> props = new LinkedHashMap<>();
         props.put("mod_version", modVersion());
         props.put("mc_version", FabricLoader.getInstance().getModContainer("minecraft")

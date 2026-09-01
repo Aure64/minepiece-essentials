@@ -33,6 +33,14 @@ public final class TelemetryId {
         this.announced = announced;
     }
 
+    /**
+     * @return une identité persistée, ou {@code null} si la persistance a échoué
+     * (dossier de config non accessible en écriture, par ex.). Un {@code null} ne
+     * doit jamais être remplacé par un UUID jetable : cela gonflerait le compte
+     * d'installs et ferait réapparaître l'avis de premier lancement à chaque
+     * démarrage. {@link Telemetry} traite {@code null} comme « télémétrie
+     * indisponible » et ne fait rien.
+     */
     public static TelemetryId loadOrCreate(Path file) {
         Stored stored = loadSafely(file);
         if (stored == null || stored.installId == null || stored.installId.isBlank()) {
@@ -41,6 +49,11 @@ public final class TelemetryId {
             stored.firstSeen = java.time.LocalDate.now().toString();
             stored.announced = false;
             JsonHelper.save(file, stored);
+            if (!java.nio.file.Files.exists(file)) {
+                // Écriture silencieusement avortée (JsonHelper.save avale l'IOException) :
+                // on refuse de rendre une identité jamais persistée.
+                return null;
+            }
         }
         return new TelemetryId(stored.installId, stored.announced);
     }

@@ -33,8 +33,6 @@ public class HakiHud extends HudElement {
         if (!MinepieceEssentialsClient.getInstance().getConfigManager().config().hakiTimerEnabled) {
             return;
         }
-        com.minepiece.essentials.telemetry.Telemetry.feature("haki_hud");
-
         int h = 30;
         this.height = h;
         // Panel only — the title is drawn below so the logo + "Haki" stay grouped.
@@ -51,6 +49,9 @@ public class HakiHud extends HudElement {
 
         int textY = 18;
         if (HakiTimer.isActive()) {
+            // Ne compte que les joueurs qui utilisent réellement le Haki (cooldown actif),
+            // pas ceux pour qui le HUD est juste affiché en permanence (miroir de job_hud).
+            com.minepiece.essentials.telemetry.Telemetry.feature("haki_hud");
             RenderUtils.drawCenteredText(ctx, HakiTimer.remainingSeconds() + "s", W / 2, textY, COLOR_TEXT);
         } else {
             RenderUtils.drawCenteredText(ctx, Text.translatable("minepiece.ui.haki.ready").getString(), W / 2, textY, COLOR_READY);

@@ -75,6 +75,21 @@ class TelemetryIdTest {
     }
 
     @Test
+    void returnsNullWhenPersistenceFails() throws Exception {
+        // Le parent du chemin cible est un fichier régulier, pas un dossier :
+        // Files.createDirectories() dans JsonHelper.save() échoue et l'IOException
+        // est avalée par save() (voir sa doc). loadOrCreate() ne doit pas rendre
+        // une identité jetable dans ce cas.
+        Path blocked = dir.resolve("blocked");
+        Files.writeString(blocked, "je ne suis pas un dossier");
+        Path file = blocked.resolve("telemetry.json");
+
+        TelemetryId id = TelemetryId.loadOrCreate(file);
+
+        assertNull(id, "une identité jamais persistée ne doit pas être utilisable");
+    }
+
+    @Test
     void markAnnouncedOnCorruptFileDoesNotThrow() throws Exception {
         Path file = dir.resolve("telemetry.json");
         TelemetryId id = TelemetryId.loadOrCreate(file);

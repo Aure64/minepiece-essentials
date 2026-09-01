@@ -133,6 +133,9 @@ public class MinepieceEssentialsClient implements ClientModInitializer {
             }
 
             while (helpKey.wasPressed()) {
+                // Comptée ici uniquement : c'est une pression volontaire de H, à
+                // distinguer de l'ouverture automatique au premier lancement (pendingHelp).
+                com.minepiece.essentials.telemetry.Telemetry.feature("help_screen");
                 client.setScreen(new HelpScreen());
             }
             while (editHudKey.wasPressed()) {
