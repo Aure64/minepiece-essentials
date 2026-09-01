@@ -1094,8 +1094,11 @@ Couper le réseau (ou bloquer `eu.i.posthog.com` dans le fichier hosts), lancer 
 ### Task 9 : Port 1.21.8, disclosure Modrinth et release
 
 **Files:**
-- Copy: tout `telemetry/`, `ModConfig.java`, `ConfigManager.java`, `MinepieceEssentialsClient.java` et les fichiers de features vers `/home/aurelien/claude_project/Public_QoL_Minepiece-1.21.8/`
-- Modify à la main : `HudEditScreen.java` du dossier 1.21.8 (signature de `mouseClicked` différente)
+- Copy: tout `telemetry/`, `ModConfig.java`, `ConfigManager.java` et les fichiers de features **non version-spécifiques** vers `/home/aurelien/claude_project/Public_QoL_Minepiece-1.21.8/`
+- **Modify à la main (NE JAMAIS COPIER)** — ces 3 fichiers divergent entre 1.21.11 et 1.21.8 :
+  - `hud/HudEditScreen.java` — signature de `mouseClicked`
+  - `MinepieceEssentialsClient.java` — `KeyBinding.Category` n'existe pas en 1.21.8 (catégorie = String), et la lambda `ScreenMouseEvents.allowMouseClick` y prend 4 paramètres `(s, mouseX, mouseY, button)` au lieu de `(s, click)`
+  - `ah/AhTooltip.java` — `Style.withFont(Identifier)` en 1.21.8 vs `withFont(StyleSpriteSource.Font)` en 1.21.11
 - Create: `docs/modrinth-changelog-<version>.md`
 
 - [ ] **Step 1: Copier les fichiers partagés**
