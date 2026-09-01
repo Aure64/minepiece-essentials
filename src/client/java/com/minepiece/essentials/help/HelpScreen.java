@@ -108,6 +108,7 @@ public class HelpScreen extends Screen {
 
     @Override
     protected void init() {
+        com.minepiece.essentials.telemetry.Telemetry.feature("help_screen");
         left = (this.width - PANEL_W) / 2;
         top = (this.height - PANEL_H) / 2;
     }

@@ -168,14 +168,19 @@ public final class RarityScreenOverlay {
         for (Hit h : HITS) {
             if (mx >= h.x() && mx < h.x() + h.w() && my >= h.y() && my < h.y() + h.h()) {
                 switch (h.kind()) {
-                    case FILTER -> FILTER.toggle(h.rarity());
+                    case FILTER -> {
+                        com.minepiece.essentials.telemetry.Telemetry.feature("rarity_filter");
+                        FILTER.toggle(h.rarity());
+                    }
                     case CLEAR -> FILTER.clear();
                     case SORT_RARITY -> {
+                        com.minepiece.essentials.telemetry.Telemetry.feature("rarity_sort");
                         // trie dans le sens affiché, puis bascule l'indicateur.
                         RaritySorter.sort(screen, RaritySort.Mode.RARITY, !SORT.rarityDescending());
                         SORT.toggleRarity();
                     }
                     case SORT_ITEM -> {
+                        com.minepiece.essentials.telemetry.Telemetry.feature("rarity_sort");
                         // noms A→Z (fixe) ; ascending = sens des raretés dans le groupe.
                         RaritySorter.sort(screen, RaritySort.Mode.ITEM, !SORT.itemRarityDescending());
                         SORT.toggleItem();

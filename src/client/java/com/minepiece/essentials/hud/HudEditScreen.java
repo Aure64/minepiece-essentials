@@ -36,6 +36,7 @@ public class HudEditScreen extends Screen {
 
     @Override
     protected void init() {
+        com.minepiece.essentials.telemetry.Telemetry.feature("hud_edit");
         HudElementRegistry.setEditMode(true);
         tabsY = 26;
         tabsX = (width - (TAB_W * 2 + TAB_GAP)) / 2;

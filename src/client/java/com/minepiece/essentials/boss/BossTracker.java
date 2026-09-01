@@ -92,6 +92,7 @@ public class BossTracker {
      * no silent failures from cooldown / busy state.
      */
     public void refreshIsland(Island island) {
+        com.minepiece.essentials.telemetry.Telemetry.feature("boss_refresh");
         if (refreshQueue.contains(island)) return;
         refreshQueue.add(island);
     }

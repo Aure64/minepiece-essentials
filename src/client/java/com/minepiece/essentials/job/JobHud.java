@@ -42,6 +42,8 @@ public class JobHud extends HudElement {
             return;
         }
 
+        com.minepiece.essentials.telemetry.Telemetry.feature("job_hud");
+
         int h = 62;
         this.height = h;
         ParchmentRenderer.renderPanel(ctx, 0, 0, WIDTH, h, Text.translatable("minepiece.ui.job.title").getString(), getBackground());

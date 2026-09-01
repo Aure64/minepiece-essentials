@@ -89,6 +89,7 @@ public class WaypointManager {
     }
 
     public void addManualWaypoint(Island island, String name, int x, int y, int z, int color) {
+        com.minepiece.essentials.telemetry.Telemetry.feature("boss_waypoint");
         manualWaypoints.computeIfAbsent(island, k -> new ArrayList<>())
                 .add(new ManualWaypoint(name, x, y, z, color));
         saveManualWaypoints();

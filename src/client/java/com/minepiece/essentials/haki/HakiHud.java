@@ -33,6 +33,7 @@ public class HakiHud extends HudElement {
         if (!MinepieceEssentialsClient.getInstance().getConfigManager().config().hakiTimerEnabled) {
             return;
         }
+        com.minepiece.essentials.telemetry.Telemetry.feature("haki_hud");
 
         int h = 30;
         this.height = h;
