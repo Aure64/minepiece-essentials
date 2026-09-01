@@ -43,6 +43,14 @@ public final class ServerDetector {
     // évalué à chaque frame/tick.
     private static boolean diagnosticLogged = false;
 
+    // Horodatage de la première évaluation avec un monde chargé (0 = pas encore
+    // vu). Sert de référence pour la période de grâce du diagnostic : les
+    // signaux (notamment le tab-list et la boss bar) peuvent mettre jusqu'à
+    // quelques secondes à arriver après le chargement du monde, donc logguer
+    // au tout premier tick donnerait un faux négatif systématique.
+    private static long worldSeenAt = 0;
+    private static final long DIAGNOSTIC_GRACE_MS = 5000;
+
     // Once any signal confirms MinePiece on a connection, stay active until the
     // next join/disconnect. This survives the personal island (/is), where the
     // island boss bar disappears and players who joined via a non-"minepiece"
@@ -87,6 +95,7 @@ public final class ServerDetector {
         lastTabHeader = null;
         lastTabFooter = null;
         diagnosticLogged = false;
+        worldSeenAt = 0;
     }
 
     /**
@@ -104,6 +113,9 @@ public final class ServerDetector {
         if (client.world == null) {
             lastReason = "no world";
             return false;
+        }
+        if (worldSeenAt == 0) {
+            worldSeenAt = System.currentTimeMillis();
         }
 
         // Stay active once confirmed this connection (survives /is, where the
@@ -133,7 +145,14 @@ public final class ServerDetector {
 
         boolean islandMatch = IslandDetector.getInstance().getCurrentIsland() != Island.UNKNOWN;
 
-        if (!diagnosticLogged) {
+        // On logue au premier moment où la réponse est significative : soit dès
+        // qu'un signal réussit (état au moment du succès), soit une fois la
+        // période de grâce écoulée si la détection échoue toujours (état final).
+        // Logguer dès le premier tick donnerait un faux négatif systématique,
+        // les signaux tab-list/boss bar n'étant pas forcément déjà arrivés.
+        boolean anyMatch = forced || addressMatch || connectionMatch || tabListMatch || islandMatch;
+        boolean graceElapsed = System.currentTimeMillis() - worldSeenAt >= DIAGNOSTIC_GRACE_MS;
+        if (!diagnosticLogged && (anyMatch || graceElapsed)) {
             diagnosticLogged = true;
             MinepieceEssentialsClient.LOGGER.info(
                 "[ServerDetector] diagnostic — config={}, address={}, connection={}, tabList={}, island={}",
