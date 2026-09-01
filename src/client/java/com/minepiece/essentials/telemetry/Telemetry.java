@@ -77,6 +77,20 @@ public final class Telemetry {
         flush();
     }
 
+    /** Vrai si le message d'information a déjà été affiché sur cette installation. */
+    public static boolean wasAnnounced() {
+        return identity == null || identity.announced();
+    }
+
+    public static void markAnnounced() {
+        if (identity == null) return;
+        identity.markAnnounced(
+                MinepieceEssentialsClient.getInstance().getConfigManager().telemetryFile());
+        // relecture pour que wasAnnounced() reflète l'état persisté
+        identity = TelemetryId.loadOrCreate(
+                MinepieceEssentialsClient.getInstance().getConfigManager().telemetryFile());
+    }
+
     /** Signale l'usage d'une feature. Au plus un événement par feature et par session. */
     public static void feature(String name) {
         if (!isEnabled() || identity == null) return;

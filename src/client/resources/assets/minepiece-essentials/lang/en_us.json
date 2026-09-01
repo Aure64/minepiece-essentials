@@ -32,6 +32,8 @@
     "minepiece.ui.editor.filter_bar": "Filter bar",
     "minepiece.ui.editor.sort_buttons": "Sort buttons",
     "minepiece.ui.editor.ah_price_color": "AH price color",
+    "minepiece.ui.editor.telemetry": "Anonymous stats",
+    "minepiece.telemetry.notice": "[Minepiece Essentials] This mod sends anonymous stats (mod version, Minecraft version, features used) to measure how many players use it. No username, no gameplay data. You can turn it off in the HUD editor (key K).",
     "minepiece.ui.editor.tab_placement": "Placement",
     "minepiece.ui.editor.tab_customize": "Customize",
     "minepiece.ui.editor.reset_placement": "Reset placement",

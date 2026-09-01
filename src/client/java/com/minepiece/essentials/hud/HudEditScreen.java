@@ -164,6 +164,8 @@ public class HudEditScreen extends Screen {
         drawToggle(ctx, mouseX, mouseY, 3, Text.translatable("minepiece.ui.editor.filter_bar").getString(), cfg.rarityFilterEnabled);
         drawToggle(ctx, mouseX, mouseY, 4, Text.translatable("minepiece.ui.editor.sort_buttons").getString(), cfg.raritySorterEnabled);
         drawToggle(ctx, mouseX, mouseY, 5, Text.translatable("minepiece.ui.editor.ah_price_color").getString(), cfg.ahPriceColorEnabled);
+        drawToggle(ctx, mouseX, mouseY, 6, Text.translatable("minepiece.ui.editor.telemetry").getString(),
+                cfg.telemetryEnabled);
     }
 
     private void drawToggle(DrawContext ctx, int mouseX, int mouseY, int index, String label, boolean on) {
@@ -250,7 +252,7 @@ public class HudEditScreen extends Screen {
         }
 
         if (button == 0) {
-            for (int i = 0; i < 6; i++) {
+            for (int i = 0; i < 7; i++) {
                 int ty = rarityTogglesY + i * TOGGLE_STEP;
                 if (inBox(mouseX, mouseY, rarityTogglesX, ty, BTN_W, BTN_H)) {
                     var mgr = MinepieceEssentialsClient.getInstance().getConfigManager();
@@ -261,7 +263,9 @@ public class HudEditScreen extends Screen {
                         case 2 -> cfg.rarityHotbarEnabled = !cfg.rarityHotbarEnabled;
                         case 3 -> cfg.rarityFilterEnabled = !cfg.rarityFilterEnabled;
                         case 4 -> cfg.raritySorterEnabled = !cfg.raritySorterEnabled;
-                        default -> cfg.ahPriceColorEnabled = !cfg.ahPriceColorEnabled;
+                        case 5 -> cfg.ahPriceColorEnabled = !cfg.ahPriceColorEnabled;
+                        default -> com.minepiece.essentials.telemetry.Telemetry.setEnabled(
+                                !cfg.telemetryEnabled);
                     }
                     mgr.save();
                     return true;
