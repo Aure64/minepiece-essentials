@@ -132,9 +132,16 @@ Features instrumentées : `boss_refresh`, `boss_waypoint`, `hud_edit`,
 
 ### Ce qui n'est jamais envoyé
 
-Pseudo ou UUID Minecraft, adresse IP (PostHog est configuré pour ne pas la
-conserver), contenu du chat, coordonnées, inventaire, adresse du serveur autre que
-le booléen `on_minepiece`. La liste des clés autorisées est **codée en dur** et
+Pseudo ou UUID Minecraft, adresse IP, contenu du chat, coordonnées, inventaire,
+adresse du serveur autre que le booléen `on_minepiece`.
+
+L'IP mérite une précision : PostHog enregistre l'IP de l'appelant et en déduit la
+géolocalisation **par défaut**. Un réglage de tableau de bord ne suffit pas à
+défendre une promesse affichée publiquement — le mod envoie donc `"$ip": null`
+dans **chaque** événement, injecté par le sérialiseur (jamais par l'appelant, qui
+pourrait l'oublier) et vérifié par un test. Attention : Gson supprime les `null`
+par défaut ; la sérialisation du lot utilise une instance dédiée avec
+`serializeNulls()`, sans quoi la clé disparaîtrait silencieusement du payload. La liste des clés autorisées est **codée en dur** et
 vérifiée par un test — une propriété hors liste fait échouer le build.
 
 ## Robustesse
