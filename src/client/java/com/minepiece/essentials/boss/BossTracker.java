@@ -28,6 +28,7 @@ public class BossTracker {
             Island.SABAODY,
             Island.ILE_HOMMES_POISSONS,
             Island.DRESSROSA,
+            Island.ZOU,
             Island.WHOLE_CAKE,
             Island.KOMUGI
         )));
