@@ -36,12 +36,20 @@ public final class ServerDetector {
     // Dernier header/footer du tab-list reçus via PlayerListHeaderS2CPacket
     // (voir ClientPlayNetworkHandlerMixin#onPlayerListHeader). Lecture seule :
     // on ne fait que stocker ce que le serveur a déjà envoyé.
-    private static String lastTabHeader = null;
-    private static String lastTabFooter = null;
+    //
+    // volatile : le mixin s'injecte à @At("HEAD") de onPlayerListHeader, qui
+    // s'exécute AVANT le forceMainThread() de vanilla — donc onTabListHeaderFooter
+    // écrit ces champs (et les flags de log ci-dessous) depuis le thread netty,
+    // alors que detectSignals() les lit depuis le thread client. Sans volatile,
+    // rien ne garantit un happens-before entre les deux threads : le thread client
+    // peut ne jamais observer l'écriture (c'est exactement le faux négatif /is
+    // sous Lunar Client que ce correctif vise à éliminer).
+    private static volatile String lastTabHeader = null;
+    private static volatile String lastTabFooter = null;
 
     // Garantit un seul log de diagnostic par connexion, même si detect() est
     // évalué à chaque frame/tick.
-    private static boolean diagnosticLogged = false;
+    private static volatile boolean diagnosticLogged = false;
 
     // Garantit un seul log "tab-list reçu" par connexion, même si le serveur
     // renvoie plusieurs fois le PlayerListHeaderS2CPacket. Sert à prouver que
@@ -49,13 +57,13 @@ public final class ServerDetector {
     // dans detectSignals() (sur la machine de l'auteur, le signal "address"
     // verrouille la détection avant que le tab-list ne soit consulté, donc le
     // diagnostic existant ne prouve jamais que ce chemin fonctionne).
-    private static boolean tabListReceptionLogged = false;
+    private static volatile boolean tabListReceptionLogged = false;
 
     // Garantit un seul log "tab-list correspond" par connexion : se déclenche
     // la première fois que le tab-list bascule à minepiece=true, même si ce
     // n'est pas au premier paquet (certains serveurs envoient un tab-list vide
     // à la connexion puis le peuplent quelques secondes plus tard).
-    private static boolean tabListMatchLogged = false;
+    private static volatile boolean tabListMatchLogged = false;
 
     // Horodatage de la première évaluation avec un monde chargé (0 = pas encore
     // vu). Sert de référence pour la période de grâce du diagnostic : les
