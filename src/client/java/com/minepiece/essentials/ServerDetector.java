@@ -20,6 +20,10 @@ import java.net.SocketAddress;
  *   <li>a manual config override ({@code forceMinePieceDetection});</li>
  *   <li>the saved-server address containing "minepiece";</li>
  *   <li>the live connection hostname containing "minepiece" (covers Direct Connect);</li>
+ *   <li>le pied de page (footer) / en-tête (header) du tab-list contenant
+ *       "minepiece" — visible partout, y compris sur l'île perso (/is), où la
+ *       boss bar de l'île disparaît (couvre Lunar Client, qui expose une IP
+ *       plutôt qu'un hostname et un {@code getCurrentServerEntry()} nul);</li>
  *   <li>a MinePiece island detected from the boss bar — works regardless of how
  *       the player connected.</li>
  * </ol>
@@ -28,6 +32,24 @@ public final class ServerDetector {
 
     private static boolean lastState = false;
     private static String lastReason = "";
+
+    // Dernier header/footer du tab-list reçus via PlayerListHeaderS2CPacket
+    // (voir ClientPlayNetworkHandlerMixin#onPlayerListHeader). Lecture seule :
+    // on ne fait que stocker ce que le serveur a déjà envoyé.
+    private static String lastTabHeader = null;
+    private static String lastTabFooter = null;
+
+    // Garantit un seul log de diagnostic par connexion, même si detect() est
+    // évalué à chaque frame/tick.
+    private static boolean diagnosticLogged = false;
+
+    // Horodatage de la première évaluation avec un monde chargé (0 = pas encore
+    // vu). Sert de référence pour la période de grâce du diagnostic : les
+    // signaux (notamment le tab-list et la boss bar) peuvent mettre jusqu'à
+    // quelques secondes à arriver après le chargement du monde, donc logguer
+    // au tout premier tick donnerait un faux négatif systématique.
+    private static long worldSeenAt = 0;
+    private static final long DIAGNOSTIC_GRACE_MS = 5000;
 
     // Once any signal confirms MinePiece on a connection, stay active until the
     // next join/disconnect. This survives the personal island (/is), where the
@@ -70,6 +92,20 @@ public final class ServerDetector {
         cachedAt = 0;
         cachedResult = false;
         lastState = false;
+        lastTabHeader = null;
+        lastTabFooter = null;
+        diagnosticLogged = false;
+        worldSeenAt = 0;
+    }
+
+    /**
+     * Appelé par {@code ClientPlayNetworkHandlerMixin} à chaque réception d'un
+     * {@code PlayerListHeaderS2CPacket}. Stocke simplement le texte déjà envoyé
+     * par le serveur — aucune action, aucun envoi.
+     */
+    public static void onTabListHeaderFooter(String header, String footer) {
+        lastTabHeader = header;
+        lastTabFooter = footer;
     }
 
     private static boolean detect() {
@@ -77,6 +113,9 @@ public final class ServerDetector {
         if (client.world == null) {
             lastReason = "no world";
             return false;
+        }
+        if (worldSeenAt == 0) {
+            worldSeenAt = System.currentTimeMillis();
         }
 
         // Stay active once confirmed this connection (survives /is, where the
@@ -93,25 +132,54 @@ public final class ServerDetector {
 
     private static boolean detectSignals(MinecraftClient client) {
         MinepieceEssentialsClient mod = MinepieceEssentialsClient.getInstance();
-        if (mod != null && mod.getConfigManager() != null
-                && mod.getConfigManager().config().forceMinePieceDetection) {
+        boolean forced = mod != null && mod.getConfigManager() != null
+                && mod.getConfigManager().config().forceMinePieceDetection;
+
+        ServerInfo info = client.getCurrentServerEntry();
+        boolean addressMatch = info != null && info.address != null && info.address.toLowerCase().contains("minepiece");
+
+        String connHost = connectionHost(client);
+        boolean connectionMatch = connHost != null && connHost.contains("minepiece");
+
+        boolean tabListMatch = tabListMatches(lastTabHeader, lastTabFooter);
+
+        boolean islandMatch = IslandDetector.getInstance().getCurrentIsland() != Island.UNKNOWN;
+
+        // On logue au premier moment où la réponse est significative : soit dès
+        // qu'un signal réussit (état au moment du succès), soit une fois la
+        // période de grâce écoulée si la détection échoue toujours (état final).
+        // Logguer dès le premier tick donnerait un faux négatif systématique,
+        // les signaux tab-list/boss bar n'étant pas forcément déjà arrivés.
+        boolean anyMatch = forced || addressMatch || connectionMatch || tabListMatch || islandMatch;
+        boolean graceElapsed = System.currentTimeMillis() - worldSeenAt >= DIAGNOSTIC_GRACE_MS;
+        if (!diagnosticLogged && (anyMatch || graceElapsed)) {
+            diagnosticLogged = true;
+            MinepieceEssentialsClient.LOGGER.info(
+                "[ServerDetector] diagnostic — config={}, address={}, connection={}, tabList={}, island={}",
+                forced, addressMatch, connectionMatch, tabListMatch, islandMatch);
+        }
+
+        if (forced) {
             lastReason = "forced by config";
             return true;
         }
 
-        ServerInfo info = client.getCurrentServerEntry();
-        if (info != null && info.address != null && info.address.toLowerCase().contains("minepiece")) {
+        if (addressMatch) {
             lastReason = "address " + info.address;
             return true;
         }
 
-        String connHost = connectionHost(client);
-        if (connHost != null && connHost.contains("minepiece")) {
+        if (connectionMatch) {
             lastReason = "connection " + connHost;
             return true;
         }
 
-        if (IslandDetector.getInstance().getCurrentIsland() != Island.UNKNOWN) {
+        if (tabListMatch) {
+            lastReason = "tab-list header/footer";
+            return true;
+        }
+
+        if (islandMatch) {
             lastReason = "island detected";
             return true;
         }
@@ -120,6 +188,18 @@ public final class ServerDetector {
             ? "address " + info.address
             : (connHost != null ? "connection " + connHost : "no server entry");
         return false;
+    }
+
+    /**
+     * Le pied de page (et l'en-tête) du tab-list contiennent "PLAY.MINEPIECE.NET"
+     * sur toutes les cartes du serveur, y compris l'île perso. Correspondance
+     * insensible à la casse sur le sous-texte "minepiece", combinée header+footer.
+     * Extrait en méthode pure (aucune dépendance Minecraft) pour être testable
+     * unitairement.
+     */
+    static boolean tabListMatches(String header, String footer) {
+        String combined = (header != null ? header : "") + (footer != null ? footer : "");
+        return combined.toLowerCase().contains("minepiece");
     }
 
     /** The hostname of the live connection (lower-cased), or null. Covers Direct Connect. */
