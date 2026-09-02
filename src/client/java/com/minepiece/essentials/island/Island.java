@@ -38,10 +38,22 @@ public enum Island {
         this.zone = zone;
     }
 
+    // Longueur minimale d'une clé auto-générée à partir du nom d'affichage. En
+    // dessous, une île au nom court (ex. "Zou" -> "zou") produirait une clé qui
+    // matche n'importe quel texte de boss bar contenant cette séquence par
+    // hasard (nom de mob, de joueur, d'événement...), et BOSSBAR_MAP est un
+    // HashMap parcouru dans un ordre arbitraire : le mauvais match peut gagner.
+    // Les alias explicites ci-dessous (ex. "ile de zou") ne sont pas concernés :
+    // ils couvrent le vrai cas d'usage et restent volontairement ajoutés tels quels.
+    private static final int MIN_AUTO_KEY_LENGTH = 5;
+
     static {
         for (Island island : values()) {
             if (island != UNKNOWN) {
-                BOSSBAR_MAP.put(island.displayName.toLowerCase(), island);
+                String key = island.displayName.toLowerCase();
+                if (key.length() >= MIN_AUTO_KEY_LENGTH) {
+                    BOSSBAR_MAP.put(key, island);
+                }
             }
         }
         BOSSBAR_MAP.put("archipel des sabaody", SABAODY);
@@ -51,6 +63,11 @@ public enum Island {
         BOSSBAR_MAP.put("komugi island", KOMUGI);
         BOSSBAR_MAP.put("royaume de drum", DRUM);
         BOSSBAR_MAP.put("ile de zou", ZOU);
+        // "Jaya" (4 lettres) tombe aussi sous MIN_AUTO_KEY_LENGTH : alias explicite
+        // pour ne pas perdre la détection de cette île (contrairement à "zou", 4
+        // lettres reste un risque de faux positif largement plus faible, mais on
+        // applique le même seuil sans exception pour la génération automatique).
+        BOSSBAR_MAP.put("jaya", JAYA);
     }
 
     public static Island fromBossbarText(String text) {
