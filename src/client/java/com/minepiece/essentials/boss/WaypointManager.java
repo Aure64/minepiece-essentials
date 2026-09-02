@@ -71,6 +71,12 @@ public class WaypointManager {
             Files.writeString(configFile, String.join("\n", lines) + "\n",
                     StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
 
+            // Ne compte que si un waypoint a vraiment été écrit pour ce joueur
+            // (Xaero présent, dossier serveur trouvé, écriture réussie, au moins un waypoint).
+            if (!manuals.isEmpty()) {
+                com.minepiece.essentials.telemetry.Telemetry.feature("boss_waypoint");
+            }
+
         } catch (IOException e) {
             MinepieceEssentialsClient.LOGGER.error("[Waypoint] Failed to sync", e);
         }

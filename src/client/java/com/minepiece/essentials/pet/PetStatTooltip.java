@@ -59,6 +59,7 @@ public final class PetStatTooltip {
             if (quality.isEmpty()) continue;
 
             lines.set(i, withQuality(lines.get(i), quality.getAsDouble()));
+            com.minepiece.essentials.telemetry.Telemetry.feature("pet_tooltip");
         }
     }
 

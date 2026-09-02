@@ -49,4 +49,7 @@ public class ModConfig {
     public boolean rarityHotbarEnabled = true;     // emblèmes sur la hotbar (en jeu)
     public boolean rarityFilterEnabled = true;
     public boolean raritySorterEnabled = true;
+
+    // Télémétrie anonyme (voir docs/superpowers/specs/2026-09-01-telemetrie-design.md).
+    public boolean telemetryEnabled = true;
 }

@@ -24,6 +24,7 @@ public class ParcheminHud extends HudElement {
     public void render(DrawContext ctx, float tickDelta) {
         List<ParcheminScanner.QuestInfo> parchemins = sorted;
         if (parchemins.isEmpty()) return;
+        com.minepiece.essentials.telemetry.Telemetry.feature("parchment_hud");
 
         int h = 20 + parchemins.size() * 24 + 4;
         this.height = h;

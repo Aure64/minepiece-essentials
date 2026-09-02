@@ -46,6 +46,7 @@ public final class MinionTooltip {
         if (minion == null) return;
 
         int insertAt = insertIndex(lines);
+        com.minepiece.essentials.telemetry.Telemetry.feature("minion_calc");
 
         if (minion.isMaxed()) {
             lines.add(insertAt, Text.literal("Minion : prestige max ✓").withColor(COLOR_MAXED));

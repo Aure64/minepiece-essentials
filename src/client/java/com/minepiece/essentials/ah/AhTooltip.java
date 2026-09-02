@@ -50,16 +50,21 @@ public final class AhTooltip {
             if (avg.isPresent()) {
                 Text line = perUnitLine("Prix moyen/u: ", avg.get());
                 if (avgIdx >= 0) lines.add(avgIdx + 1, line); else lines.add(line);
+                com.minepiece.essentials.telemetry.Telemetry.feature("ah_price");
             }
             if (sell.isPresent()) {
                 Text line = perUnitLine("Prix/u: ", sell.get());
                 if (sellIdx >= 0) lines.add(sellIdx + 1, line); else lines.add(line);
+                com.minepiece.essentials.telemetry.Telemetry.feature("ah_price");
             }
         }
 
         // 2) Écart vs prix moyen (couleur). Ajouté en fin d'infobulle.
         if (cfg.ahPriceColorEnabled) {
-            AhPriceBand.fromLore(strings).ifPresent(res -> lines.add(bandLine(res)));
+            AhPriceBand.fromLore(strings).ifPresent(res -> {
+                lines.add(bandLine(res));
+                com.minepiece.essentials.telemetry.Telemetry.feature("ah_price");
+            });
         }
     }
 

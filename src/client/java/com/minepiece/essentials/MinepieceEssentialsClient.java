@@ -44,6 +44,7 @@ public class MinepieceEssentialsClient implements ClientModInitializer {
 
     private boolean pendingHelp = false;
     private boolean helpShownThisSession = false;
+    private boolean pendingTelemetryNotice = false;
 
     @Override
     public void onInitializeClient() {
@@ -79,6 +80,7 @@ public class MinepieceEssentialsClient implements ClientModInitializer {
         registerRarityScreenHooks();
 
         UpdateChecker.init();
+        com.minepiece.essentials.telemetry.Telemetry.init();
 
         // Reset transient state (queues, last island) on every server join/disconnect.
         // Without this, refreshQueue can persist across reconnects and resume firing.
@@ -90,10 +92,15 @@ public class MinepieceEssentialsClient implements ClientModInitializer {
             if (!configManager.config().helpDismissed && !helpShownThisSession) {
                 pendingHelp = true;
             }
+            com.minepiece.essentials.telemetry.Telemetry.onJoinedServer();
+            if (!com.minepiece.essentials.telemetry.Telemetry.wasAnnounced()) {
+                pendingTelemetryNotice = true;
+            }
         });
         ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> {
             IslandDetector.getInstance().reset();
             BossTracker.getInstance().onConnectionChange();
+            com.minepiece.essentials.telemetry.Telemetry.onDisconnected();
         });
 
         registerKeybinds();
@@ -101,6 +108,16 @@ public class MinepieceEssentialsClient implements ClientModInitializer {
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             // Not gated to MinePiece: players whose detection fails still get notified to update.
             UpdateChecker.tickNotify();
+
+            // Idem : la télémétrie doit partir même si la détection MinePiece échoue.
+            com.minepiece.essentials.telemetry.Telemetry.tick();
+            if (pendingTelemetryNotice && client.player != null) {
+                pendingTelemetryNotice = false;
+                client.player.sendMessage(
+                    net.minecraft.text.Text.translatable("minepiece.telemetry.notice")
+                        .withColor(0xF0A857), false);
+                com.minepiece.essentials.telemetry.Telemetry.markAnnounced();
+            }
 
             // Auto-learn minion resource XP ratios from the feeding screen.
             MinionFeedLearner.tick();
@@ -116,6 +133,9 @@ public class MinepieceEssentialsClient implements ClientModInitializer {
             }
 
             while (helpKey.wasPressed()) {
+                // Comptée ici uniquement : c'est une pression volontaire de H, à
+                // distinguer de l'ouverture automatique au premier lancement (pendingHelp).
+                com.minepiece.essentials.telemetry.Telemetry.feature("help_screen");
                 client.setScreen(new HelpScreen());
             }
             while (editHudKey.wasPressed()) {
