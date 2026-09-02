@@ -1,4 +1,9 @@
-# Minepiece Essentials 1.8.0 — Correctif île perso + statistiques anonymes
+# Minepiece Essentials 1.8.0 — Zou, correctif île perso, statistiques anonymes
+
+## ✨ Nouveautés
+
+**🐘 L'île de Zou est suivie**
+La nouvelle île **Zou** (`/zou`) apparaît dans le HUD **Boss Timers**, entre Dressrosa et Whole Cake, avec **coordonnées** et **timer de respawn** pour ses mini-boss — **Jack** et les pirates Minks & Jack. Ouvre le HUD des boss et clique sur la flèche de rafraîchissement de Zou pour récupérer ses timers.
 
 ## 🩹 Correction importante
 
@@ -6,7 +11,7 @@
 Certains joueurs — surtout sous **Lunar Client** — voyaient le mod fonctionner sur les îles du serveur mais devenir totalement inactif sur leur `/is` : plus de HUD, plus de timers, plus rien. En cause : sur l'île perso la boss bar d'île disparaît, et c'était le dernier signal dont disposaient ces joueurs pour reconnaître le serveur.
 Le mod s'appuie désormais aussi sur le **pied de page de la tab-list**, présent partout, `/is` compris. Si le problème persiste chez toi, ton `logs/latest.log` contient maintenant une ligne `[ServerDetector] diagnostic` qui dit exactement quel signal a échoué — envoie-la, elle suffit à diagnostiquer.
 
-## ✨ Nouveauté
+## ✨ Et aussi
 
 **📊 Statistiques anonymes (désactivables)**
 Le mod envoie désormais quelques statistiques **anonymes** pour que je sache combien de joueurs l'utilisent réellement, sur quelles versions, et **quelles fonctions servent vraiment** — c'est ce qui me permet de décider quoi améliorer et quoi arrêter de maintenir.
