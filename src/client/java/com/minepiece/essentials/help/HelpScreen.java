@@ -6,10 +6,13 @@ import com.minepiece.essentials.donate.DonateScreen;
 import com.minepiece.essentials.hud.ParchmentRenderer;
 import com.minepiece.essentials.util.RenderUtils;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.gui.Click;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.text.StyleSpriteSource;
 import net.minecraft.text.Text;
+import net.minecraft.util.Identifier;
 
 /**
  * Book-style help popup explaining the mod's features and how to use them.
@@ -20,15 +23,29 @@ public class HelpScreen extends Screen {
 
     private static final int PANEL_W = 350;
     private static final int HEADER_H = 24;
-    private static final int FOOTER_H = 40;
+    // Pied de page : rangée dismiss/close, puis rangée dédiée au don (mise en avant, tout en bas).
+    private static final int FOOTER_H = 66;
     private static final int TITLE_H = 11;
     private static final int LINE_H = 9;
     private static final int FEATURE_GAP = 5;
     private static final int BTN_H = 20;
+    private static final int DONATE_ROW_GAP = 6;
 
     private static final int GOLD = 0xFFFFD27F;
     private static final int GRAY = 0xFFCBC8C7;
     private static final int RED = 0xFFFF6B6B;
+
+    // Palette "parchemin doré" réservée au bouton de don, pour qu'il attire l'œil.
+    private static final int DONATE_FILL = 0xFF8A6A44;
+    private static final int DONATE_FILL_HOVER = 0xFFF0A857;
+    private static final int DONATE_BORDER_LIGHT = 0xFFFFE9D5;
+    private static final int DONATE_BORDER_DARK = 0xFF3A2A1C;
+    private static final int DONATE_TEXT = 0xFFFFE9D5;
+    private static final int DONATE_TEXT_HOVER = 0xFF3A2A1C;
+
+    /** Glyphe de la monnaie du serveur (berries), rendu avec la police custom du pack. */
+    private static final String BERRY = "实";
+    private static final Identifier BERRY_FONT = Identifier.of("fonts", "icons");
 
     private record Line(String text, boolean important) {}
 
@@ -131,12 +148,43 @@ public class HelpScreen extends Screen {
             y += FEATURE_GAP;
         }
 
-        int btnY = top + PANEL_H - 28;
+        int btnY = topRowY();
         drawButton(ctx, left + 12, btnY, 140, tr("minepiece.ui.help.btn_dismiss"), mouseX, mouseY);
-        if (ServerDetector.isOnMinePiece()) {
-            drawButton(ctx, left + 153, btnY, 90, tr("minepiece.ui.donate.btn_donate"), mouseX, mouseY);
-        }
         drawButton(ctx, left + PANEL_W - 12 - 90, btnY, 90, tr("minepiece.ui.help.btn_close"), mouseX, mouseY);
+
+        // Bouton de don : rangée dédiée tout en bas du panneau, traitement doré pour se distinguer.
+        if (ServerDetector.isOnMinePiece()) {
+            drawDonateButton(ctx, left + 12, donateRowY(), PANEL_W - 24, tr("minepiece.ui.donate.btn_donate"), mouseX, mouseY);
+        }
+    }
+
+    /** Rangée du haut (dismiss/close). */
+    private int topRowY() {
+        return top + PANEL_H - FOOTER_H + 12;
+    }
+
+    /** Rangée dédiée au don, sous la rangée dismiss/close. */
+    private int donateRowY() {
+        return topRowY() + BTN_H + DONATE_ROW_GAP;
+    }
+
+    /** Bouton de don : palette dorée/parchemin, bordure claire/sombre, glyphe berries. */
+    private void drawDonateButton(DrawContext ctx, int x, int y, int w, String label, int mouseX, int mouseY) {
+        boolean hover = mouseX >= x && mouseX <= x + w && mouseY >= y && mouseY <= y + BTN_H;
+        int fill = hover ? DONATE_FILL_HOVER : DONATE_FILL;
+        int textColor = hover ? DONATE_TEXT_HOVER : DONATE_TEXT;
+
+        ctx.fill(x, y, x + w, y + BTN_H, fill);
+        ctx.fill(x, y, x + w, y + 1, DONATE_BORDER_LIGHT);
+        ctx.fill(x, y + BTN_H - 1, x + w, y + BTN_H, DONATE_BORDER_DARK);
+        ctx.fill(x, y, x + 1, y + BTN_H, DONATE_BORDER_LIGHT);
+        ctx.fill(x + w - 1, y, x + w, y + BTN_H, DONATE_BORDER_DARK);
+
+        TextRenderer tr = MinecraftClient.getInstance().textRenderer;
+        Text text = Text.literal(label + " ").append(Text.literal(BERRY)
+                .styled(s -> s.withFont(new StyleSpriteSource.Font(BERRY_FONT))));
+        int tw = tr.getWidth(text);
+        ctx.drawText(tr, text, x + (w - tw) / 2, y + (BTN_H - tr.fontHeight) / 2, textColor, false);
     }
 
     private void drawButton(DrawContext ctx, int x, int y, int w, String label, int mouseX, int mouseY) {
@@ -150,7 +198,7 @@ public class HelpScreen extends Screen {
     @Override
     public boolean mouseClicked(Click click, boolean doubled) {
         if (click.button() == 0) {
-            int btnY = top + PANEL_H - 28;
+            int btnY = topRowY();
             if (inside(click, left + 12, btnY, 140)) {
                 var cfg = MinepieceEssentialsClient.getInstance().getConfigManager();
                 cfg.config().helpDismissed = true;
@@ -158,12 +206,13 @@ public class HelpScreen extends Screen {
                 close();
                 return true;
             }
-            if (ServerDetector.isOnMinePiece() && inside(click, left + 153, btnY, 90)) {
-                MinecraftClient.getInstance().setScreen(new DonateScreen(this));
-                return true;
-            }
             if (inside(click, left + PANEL_W - 12 - 90, btnY, 90)) {
                 close();
+                return true;
+            }
+            // Le don reste gate sur MinePiece à la fois pour l'affichage (render) et le clic.
+            if (ServerDetector.isOnMinePiece() && inside(click, left + 12, donateRowY(), PANEL_W - 24)) {
+                MinecraftClient.getInstance().setScreen(new DonateScreen(this));
                 return true;
             }
         }

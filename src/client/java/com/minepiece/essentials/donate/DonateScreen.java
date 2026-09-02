@@ -1,5 +1,6 @@
 package com.minepiece.essentials.donate;
 
+import com.minepiece.essentials.hud.ParchmentRenderer;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
@@ -157,19 +158,44 @@ public class DonateScreen extends Screen {
         return String.format("%,d", amount).replace(',', ' ');
     }
 
+    /**
+     * Fond plat façon HelpScreen, sans flou vanilla. Screen.render() appelle déjà
+     * renderBackground() une fois pour dessiner l'arrière-plan avant les widgets ;
+     * on ne doit donc PAS l'appeler nous-même en plus dans render(), sinon le flou
+     * vanilla (Screen$BlurredBackgroundRenderer) est déclenché deux fois dans la
+     * même frame et Minecraft lève "Can only blur once per frame".
+     */
+    @Override
+    public void renderBackground(DrawContext ctx, int mouseX, int mouseY, float delta) {
+        ctx.fill(0, 0, width, height, 0xB0000000);
+        int[] panel = panelBounds();
+        ParchmentRenderer.renderPanel(ctx, panel[0], panel[1], panel[2], panel[3], null);
+    }
+
+    /** Zone du panneau parchemin derrière les widgets, selon l'état courant. */
+    private int[] panelBounds() {
+        int centerX = width / 2;
+        if (state == State.AMOUNT) {
+            int y = height / 2 - 96;
+            return new int[]{centerX - 130, y, 260, 146};
+        } else {
+            int y = height / 2 - 56;
+            return new int[]{centerX - 130, y, 260, 106};
+        }
+    }
+
     @Override
     public void render(DrawContext ctx, int mouseX, int mouseY, float delta) {
-        renderBackground(ctx, mouseX, mouseY, delta);
         super.render(ctx, mouseX, mouseY, delta);
 
         int centerX = width / 2;
         if (state == State.AMOUNT) {
-            ctx.drawCenteredTextWithShadow(textRenderer, title, centerX, height / 2 - 70, 0xFFFFFFFF);
+            ctx.drawCenteredTextWithShadow(textRenderer, title, centerX, height / 2 - 70, 0xFFF0A857);
             if (errorMessage != null) {
                 ctx.drawCenteredTextWithShadow(textRenderer, errorMessage, centerX, height / 2 - 20, 0xFFFF5555);
             }
         } else {
-            ctx.drawCenteredTextWithShadow(textRenderer, title, centerX, height / 2 - 40, 0xFFFFFFFF);
+            ctx.drawCenteredTextWithShadow(textRenderer, title, centerX, height / 2 - 40, 0xFFF0A857);
             ctx.drawCenteredTextWithShadow(textRenderer,
                     Text.translatable("minepiece.ui.donate.confirm_prompt").getString(),
                     centerX, height / 2 - 20, 0xFFFFE9D5);

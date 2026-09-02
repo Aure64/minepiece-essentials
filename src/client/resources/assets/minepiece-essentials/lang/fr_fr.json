@@ -38,6 +38,7 @@
     "minepiece.ui.editor.tab_customize": "Personnaliser",
     "minepiece.ui.editor.reset_placement": "Reinitialiser le placement",
     "minepiece.ui.editor.placement_reset": "Placement reinitialise !",
+    "minepiece.ui.editor.donate_berries": "Don en berries a l'auteur",
 
     "minepiece.ui.help.boss.title": "Boss Timers",
     "minepiece.ui.help.boss.line1": "Respawns par île, alertes sonores & waypoints.",
@@ -88,5 +89,5 @@
     "minepiece.ui.donate.btn_back": "Retour",
     "minepiece.ui.donate.error_invalid": "Montant invalide : entre un nombre entier positif.",
     "minepiece.ui.donate.confirm_prompt": "Cette commande va être envoyée :",
-    "minepiece.ui.donate.btn_donate": "Faire un don"
+    "minepiece.ui.donate.btn_donate": "Faire un don en berries à l'auteur (optionnel)"
 }

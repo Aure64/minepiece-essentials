@@ -38,6 +38,7 @@
     "minepiece.ui.editor.tab_customize": "Customize",
     "minepiece.ui.editor.reset_placement": "Reset placement",
     "minepiece.ui.editor.placement_reset": "Placement reset!",
+    "minepiece.ui.editor.donate_berries": "Donate berries to the author",
 
     "minepiece.ui.help.boss.title": "Boss Timers",
     "minepiece.ui.help.boss.line1": "Island respawns, sound alerts & waypoints.",
@@ -88,5 +89,5 @@
     "minepiece.ui.donate.btn_back": "Back",
     "minepiece.ui.donate.error_invalid": "Invalid amount: enter a positive whole number.",
     "minepiece.ui.donate.confirm_prompt": "This command will be sent:",
-    "minepiece.ui.donate.btn_donate": "Donate"
+    "minepiece.ui.donate.btn_donate": "Donate berries to the author (optional)"
 }

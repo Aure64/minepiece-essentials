@@ -7,10 +7,13 @@ import com.minepiece.essentials.config.HudBackground;
 import com.minepiece.essentials.donate.DonateScreen;
 import com.minepiece.essentials.util.RenderUtils;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.gui.Click;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.text.StyleSpriteSource;
 import net.minecraft.text.Text;
+import net.minecraft.util.Identifier;
 
 public class HudEditScreen extends Screen {
     private static final int BTN_W = 180;
@@ -35,6 +38,18 @@ public class HudEditScreen extends Screen {
 
     // Bouton de don, tout en bas de l'onglet Placement (visible seulement sur MinePiece).
     private int donateBtnX, donateBtnY;
+
+    // Palette "parchemin doré" du bouton de don, pour qu'il se distingue des toggles gris.
+    private static final int DONATE_FILL = 0xFF8A6A44;
+    private static final int DONATE_FILL_HOVER = 0xFFF0A857;
+    private static final int DONATE_BORDER_LIGHT = 0xFFFFE9D5;
+    private static final int DONATE_BORDER_DARK = 0xFF3A2A1C;
+    private static final int DONATE_TEXT = 0xFFFFE9D5;
+    private static final int DONATE_TEXT_HOVER = 0xFF3A2A1C;
+
+    /** Glyphe de la monnaie du serveur (berries), rendu avec la police custom du pack. */
+    private static final String BERRY = "实";
+    private static final Identifier BERRY_FONT = Identifier.of("fonts", "icons");
 
     public HudEditScreen() {
         super(Text.literal("HUD Editor"));
@@ -177,14 +192,28 @@ public class HudEditScreen extends Screen {
                 cfg.telemetryEnabled);
 
         // Bouton de don, seulement visible tant qu'on est connecté à MinePiece.
+        // Traitement doré volontairement différent des toggles gris pour attirer l'œil.
         if (ServerDetector.isOnMinePiece()) {
-            boolean donateHover = inBox(mouseX, mouseY, donateBtnX, donateBtnY, BTN_W, BTN_H);
-            ctx.fill(donateBtnX, donateBtnY, donateBtnX + BTN_W, donateBtnY + BTN_H, donateHover ? 0xFF6A4A2C : 0xFF3A2A1C);
-            ctx.fill(donateBtnX, donateBtnY, donateBtnX + BTN_W, donateBtnY + 1, 0xFF8A6A44);
-            ctx.fill(donateBtnX, donateBtnY + BTN_H - 1, donateBtnX + BTN_W, donateBtnY + BTN_H, 0xFF8A6A44);
-            RenderUtils.drawCenteredText(ctx, Text.translatable("minepiece.ui.donate.btn_donate").getString(),
-                    width / 2, donateBtnY + 4, 0xFFFFE9D5);
+            drawDonateButton(ctx, mouseX, mouseY);
         }
+    }
+
+    private void drawDonateButton(DrawContext ctx, int mouseX, int mouseY) {
+        boolean hover = inBox(mouseX, mouseY, donateBtnX, donateBtnY, BTN_W, BTN_H);
+        int fill = hover ? DONATE_FILL_HOVER : DONATE_FILL;
+        int textColor = hover ? DONATE_TEXT_HOVER : DONATE_TEXT;
+
+        ctx.fill(donateBtnX, donateBtnY, donateBtnX + BTN_W, donateBtnY + BTN_H, fill);
+        ctx.fill(donateBtnX, donateBtnY, donateBtnX + BTN_W, donateBtnY + 1, DONATE_BORDER_LIGHT);
+        ctx.fill(donateBtnX, donateBtnY + BTN_H - 1, donateBtnX + BTN_W, donateBtnY + BTN_H, DONATE_BORDER_DARK);
+        ctx.fill(donateBtnX, donateBtnY, donateBtnX + 1, donateBtnY + BTN_H, DONATE_BORDER_LIGHT);
+        ctx.fill(donateBtnX + BTN_W - 1, donateBtnY, donateBtnX + BTN_W, donateBtnY + BTN_H, DONATE_BORDER_DARK);
+
+        TextRenderer tr = MinecraftClient.getInstance().textRenderer;
+        Text text = Text.literal(Text.translatable("minepiece.ui.editor.donate_berries").getString() + " ")
+                .append(Text.literal(BERRY).styled(s -> s.withFont(new StyleSpriteSource.Font(BERRY_FONT))));
+        int tw = tr.getWidth(text);
+        ctx.drawText(tr, text, width / 2 - tw / 2, donateBtnY + (BTN_H - tr.fontHeight) / 2, textColor, false);
     }
 
     private void drawToggle(DrawContext ctx, int mouseX, int mouseY, int index, String label, boolean on) {
