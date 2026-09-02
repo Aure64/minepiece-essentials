@@ -1,8 +1,11 @@
 package com.minepiece.essentials.help;
 
 import com.minepiece.essentials.MinepieceEssentialsClient;
+import com.minepiece.essentials.ServerDetector;
+import com.minepiece.essentials.donate.DonateScreen;
 import com.minepiece.essentials.hud.ParchmentRenderer;
 import com.minepiece.essentials.util.RenderUtils;
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.Click;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
@@ -129,8 +132,11 @@ public class HelpScreen extends Screen {
         }
 
         int btnY = top + PANEL_H - 28;
-        drawButton(ctx, left + 12, btnY, 150, tr("minepiece.ui.help.btn_dismiss"), mouseX, mouseY);
-        drawButton(ctx, left + PANEL_W - 12 - 100, btnY, 100, tr("minepiece.ui.help.btn_close"), mouseX, mouseY);
+        drawButton(ctx, left + 12, btnY, 140, tr("minepiece.ui.help.btn_dismiss"), mouseX, mouseY);
+        if (ServerDetector.isOnMinePiece()) {
+            drawButton(ctx, left + 153, btnY, 90, tr("minepiece.ui.donate.btn_donate"), mouseX, mouseY);
+        }
+        drawButton(ctx, left + PANEL_W - 12 - 90, btnY, 90, tr("minepiece.ui.help.btn_close"), mouseX, mouseY);
     }
 
     private void drawButton(DrawContext ctx, int x, int y, int w, String label, int mouseX, int mouseY) {
@@ -145,14 +151,18 @@ public class HelpScreen extends Screen {
     public boolean mouseClicked(Click click, boolean doubled) {
         if (click.button() == 0) {
             int btnY = top + PANEL_H - 28;
-            if (inside(click, left + 12, btnY, 150)) {
+            if (inside(click, left + 12, btnY, 140)) {
                 var cfg = MinepieceEssentialsClient.getInstance().getConfigManager();
                 cfg.config().helpDismissed = true;
                 cfg.save();
                 close();
                 return true;
             }
-            if (inside(click, left + PANEL_W - 12 - 100, btnY, 100)) {
+            if (ServerDetector.isOnMinePiece() && inside(click, left + 153, btnY, 90)) {
+                MinecraftClient.getInstance().setScreen(new DonateScreen(this));
+                return true;
+            }
+            if (inside(click, left + PANEL_W - 12 - 90, btnY, 90)) {
                 close();
                 return true;
             }

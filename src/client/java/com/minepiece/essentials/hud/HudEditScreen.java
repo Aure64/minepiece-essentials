@@ -1,9 +1,12 @@
 package com.minepiece.essentials.hud;
 
 import com.minepiece.essentials.MinepieceEssentialsClient;
+import com.minepiece.essentials.ServerDetector;
 import com.minepiece.essentials.boss.BossTimerHud;
 import com.minepiece.essentials.config.HudBackground;
+import com.minepiece.essentials.donate.DonateScreen;
 import com.minepiece.essentials.util.RenderUtils;
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.Click;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
@@ -30,6 +33,9 @@ public class HudEditScreen extends Screen {
     private int rarityTogglesX, rarityTogglesY;
     private static final int TOGGLE_STEP = BTN_H + 4;
 
+    // Bouton de don, tout en bas de l'onglet Placement (visible seulement sur MinePiece).
+    private int donateBtnX, donateBtnY;
+
     public HudEditScreen() {
         super(Text.literal("HUD Editor"));
     }
@@ -44,6 +50,8 @@ public class HudEditScreen extends Screen {
         resetBtnY = tabsY + TAB_H + 6;
         rarityTogglesX = (width - BTN_W) / 2;
         rarityTogglesY = resetBtnY + BTN_H + 28;
+        donateBtnX = (width - BTN_W) / 2;
+        donateBtnY = rarityTogglesY + 7 * TOGGLE_STEP + 12;
     }
 
     // --- geometry helpers ----------------------------------------------------
@@ -167,6 +175,16 @@ public class HudEditScreen extends Screen {
         drawToggle(ctx, mouseX, mouseY, 5, Text.translatable("minepiece.ui.editor.ah_price_color").getString(), cfg.ahPriceColorEnabled);
         drawToggle(ctx, mouseX, mouseY, 6, Text.translatable("minepiece.ui.editor.telemetry").getString(),
                 cfg.telemetryEnabled);
+
+        // Bouton de don, seulement visible tant qu'on est connecté à MinePiece.
+        if (ServerDetector.isOnMinePiece()) {
+            boolean donateHover = inBox(mouseX, mouseY, donateBtnX, donateBtnY, BTN_W, BTN_H);
+            ctx.fill(donateBtnX, donateBtnY, donateBtnX + BTN_W, donateBtnY + BTN_H, donateHover ? 0xFF6A4A2C : 0xFF3A2A1C);
+            ctx.fill(donateBtnX, donateBtnY, donateBtnX + BTN_W, donateBtnY + 1, 0xFF8A6A44);
+            ctx.fill(donateBtnX, donateBtnY + BTN_H - 1, donateBtnX + BTN_W, donateBtnY + BTN_H, 0xFF8A6A44);
+            RenderUtils.drawCenteredText(ctx, Text.translatable("minepiece.ui.donate.btn_donate").getString(),
+                    width / 2, donateBtnY + 4, 0xFFFFE9D5);
+        }
     }
 
     private void drawToggle(DrawContext ctx, int mouseX, int mouseY, int index, String label, boolean on) {
@@ -272,6 +290,12 @@ public class HudEditScreen extends Screen {
                     return true;
                 }
             }
+        }
+
+        if (button == 0 && ServerDetector.isOnMinePiece()
+                && inBox(mouseX, mouseY, donateBtnX, donateBtnY, BTN_W, BTN_H)) {
+            MinecraftClient.getInstance().setScreen(new DonateScreen(this));
+            return true;
         }
 
         if (button == 0) {
