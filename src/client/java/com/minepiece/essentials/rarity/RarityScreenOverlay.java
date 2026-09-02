@@ -6,14 +6,12 @@ import java.util.List;
 import java.util.Set;
 import com.minepiece.essentials.ServerDetector;
 import com.minepiece.essentials.MinepieceEssentialsClient;
-import com.minepiece.essentials.ah.AhPriceBand;
+import com.minepiece.essentials.ah.AhPriceBandCache;
 import com.minepiece.essentials.config.ModConfig;
 import com.minepiece.essentials.util.RenderUtils;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
-import net.minecraft.component.DataComponentTypes;
-import net.minecraft.component.type.LoreComponent;
 import net.minecraft.item.ItemStack;
 import net.minecraft.screen.slot.Slot;
 import net.minecraft.text.Text;
@@ -38,15 +36,6 @@ public final class RarityScreenOverlay {
 
     private static ModConfig cfg() {
         return MinepieceEssentialsClient.getInstance().getConfigManager().config();
-    }
-
-    /** Lignes de lore d'un item en texte brut (sans assembler toute l'infobulle). */
-    private static List<String> loreStrings(ItemStack st) {
-        LoreComponent lore = st.get(DataComponentTypes.LORE);
-        if (lore == null) return List.of();
-        List<String> out = new ArrayList<>(lore.lines().size());
-        for (Text t : lore.lines()) out.add(t.getString());
-        return out;
     }
 
     /** Liseré 1px collé autour de la case (à l'extérieur du 16×16), l'item reste net. */
@@ -79,7 +68,7 @@ public final class RarityScreenOverlay {
                 // Liseré prix AH (sous le voile éventuel) : ne s'affiche que sur les items
                 // d'annonce (lore avec Prix de vente + Prix moyen), donc dans le /ah.
                 if (priceColor) {
-                    AhPriceBand.fromLore(loreStrings(st))
+                    AhPriceBandCache.get(st)
                             .ifPresent(res -> drawPriceBorder(ctx, sx, sy, res.band().color));
                 }
                 if (filterOn && FILTER.isDimmed(r)) {

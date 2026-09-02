@@ -24,6 +24,7 @@ public enum ItemRarity {
     public final int color;   // ARGB, pour le bouton de filtre
     public final int rank;    // ordre de tri
     public final String label; // libellé FR pour les tooltips
+    private final Identifier texture; // précalculé : construit une fois, pas par slot/frame
 
     ItemRarity(char glyph, String key, int nativeW, int nativeH, int color, int rank, String label) {
         this.glyph = glyph;
@@ -33,9 +34,10 @@ public enum ItemRarity {
         this.color = color;
         this.rank = rank;
         this.label = label;
+        this.texture = Identifier.of("fonts", "textures/font/rarity/items/icon/" + key + "_icons.png");
     }
 
     public Identifier texture() {
-        return Identifier.of("fonts", "textures/font/rarity/items/icon/" + key + "_icons.png");
+        return texture;
     }
 }

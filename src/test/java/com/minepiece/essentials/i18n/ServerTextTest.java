@@ -46,6 +46,25 @@ class ServerTextTest {
         var enMini = ServerText.BOSS_INTERVAL.matcher("Spawn: 11m 52s (Every 15 Minutes)");
         assertTrue(enMini.find()); assertEquals("15", enMini.group(1));
     }
+    @Test void matchesNullLineReturnsFalse() {
+        assertFalse(ServerText.matches(null, ServerText.SELL_PRICE));
+    }
+    @Test void matchesCaseInsensitive() {
+        assertTrue(ServerText.matches("PRIX DE VENTE: 10M", ServerText.SELL_PRICE));
+        assertTrue(ServerText.matches("selling PRICE: 10M", ServerText.SELL_PRICE));
+    }
+    @Test void matchesVariantAbsent() {
+        assertFalse(ServerText.matches("Prix moyen: 9M", ServerText.SELL_PRICE));
+    }
+    @Test void matchesStableAcrossRepeatedCallsOnSameArray() {
+        // Le cache interne (par identité de tableau) ne doit pas changer le résultat
+        // d'un appel à l'autre, y compris avec un tableau qui n'est pas une constante partagée.
+        String[] variants = {"Foo", "Bar"};
+        assertTrue(ServerText.matches("un foo ici", variants));
+        assertTrue(ServerText.matches("un foo ici", variants));
+        assertFalse(ServerText.matches("rien ici", variants));
+        assertTrue(ServerText.matches("BAR présent", variants));
+    }
     private static String firstGroup(String s) {
         var m = ServerText.PET_LEVEL.matcher(s);
         return m.find() ? m.group(1) : null;

@@ -1,5 +1,8 @@
 package com.minepiece.essentials.i18n;
 
+import java.util.IdentityHashMap;
+import java.util.Locale;
+import java.util.Map;
 import java.util.regex.Pattern;
 
 /**
@@ -63,11 +66,26 @@ public final class ServerText {
     public static final String[] HAKI_READY =
         {"Vous pouvez de nouveau utiliser votre haki", "You can use your haki"};
 
+    // Cache des variantes déjà mises en minuscules, par tableau (identité) — évite de
+    // relancer toLowerCase() sur chaque variante à chaque appel. Appelé uniquement
+    // depuis le thread client (parsers de packets/rendu), pas de synchronisation nécessaire.
+    private static final Map<String[], String[]> LOWER_VARIANTS_CACHE = new IdentityHashMap<>();
+
+    private static String[] lowerVariantsOf(String[] variants) {
+        return LOWER_VARIANTS_CACHE.computeIfAbsent(variants, ServerText::toLowerAll);
+    }
+
+    private static String[] toLowerAll(String[] variants) {
+        String[] out = new String[variants.length];
+        for (int i = 0; i < variants.length; i++) out[i] = variants[i].toLowerCase(Locale.ROOT);
+        return out;
+    }
+
     /** Vrai si {@code line} contient une des variantes (insensible à la casse). */
     public static boolean matches(String line, String[] variants) {
         if (line == null) return false;
-        String lower = line.toLowerCase();
-        for (String v : variants) if (lower.contains(v.toLowerCase())) return true;
+        String lower = line.toLowerCase(Locale.ROOT);
+        for (String v : lowerVariantsOf(variants)) if (lower.contains(v)) return true;
         return false;
     }
 }
