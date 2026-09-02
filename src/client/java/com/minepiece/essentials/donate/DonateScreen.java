@@ -22,7 +22,7 @@ public class DonateScreen extends Screen {
     /** Nom du joueur receveur des dons in-game (auteur du mod). */
     private static final String RECIPIENT = "Aure64";
 
-    private static final int[] PRESETS = {100_000, 500_000, 1_000_000};
+    private static final int[] PRESETS = {50_000, 100_000, 250_000};
 
     private enum State { AMOUNT, CONFIRM }
 
