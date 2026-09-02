@@ -8,3 +8,7 @@ run/
 
 # Local-only Claude Code instructions
 CLAUDE.md
+
+# Espace de travail des agents (jamais commite)
+.superpowers/
+logs/
