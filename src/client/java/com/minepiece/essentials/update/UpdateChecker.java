@@ -5,11 +5,10 @@ import com.minepiece.essentials.MinepieceEssentialsClient;
 import com.minepiece.essentials.ModConstants;
 import com.minepiece.essentials.util.JsonHelper;
 import net.fabricmc.loader.api.FabricLoader;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.text.ClickEvent;
-import net.minecraft.text.Text;
-import net.minecraft.text.TextColor;
-
+import net.minecraft.client.Minecraft;
+import net.minecraft.network.chat.ClickEvent;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TextColor;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -63,24 +62,24 @@ public final class UpdateChecker {
     /** Call each client tick; prints the notice once, when an update exists and the player is in game. */
     public static void tickNotify() {
         if (notified || latestVersion == null) return;
-        MinecraftClient client = MinecraftClient.getInstance();
+        Minecraft client = Minecraft.getInstance();
         if (client.player == null) return;
 
         notified = true;
         String current = currentVersion();
         if (!isNewer(latestVersion, current)) return;
 
-        client.player.sendMessage(Text.literal("[Minepiece Essentials] ").withColor(0xF0A857)
-            .append(Text.literal("Mise à jour disponible : ").withColor(0xFFFFFF))
-            .append(Text.literal("v" + latestVersion).withColor(0x7CFC55))
-            .append(Text.literal("  (tu as v" + current + ")").withColor(0x999999)), false);
+        client.player.displayClientMessage(Component.literal("[Minepiece Essentials] ").withColor(0xF0A857)
+            .append(Component.literal("Mise à jour disponible : ").withColor(0xFFFFFF))
+            .append(Component.literal("v" + latestVersion).withColor(0x7CFC55))
+            .append(Component.literal("  (tu as v" + current + ")").withColor(0x999999)), false);
 
-        Text link = Text.literal(RELEASES_URL).styled(s -> s
+        Component link = Component.literal(RELEASES_URL).withStyle(s -> s
             .withColor(TextColor.fromRgb(0x55AAFF))
-            .withUnderline(true)
+            .withUnderlined(true)
             .withClickEvent(new ClickEvent.OpenUrl(URI.create(RELEASES_URL))));
-        client.player.sendMessage(
-            Text.literal("Télécharger : ").withColor(0xCCCCCC).append(link), false);
+        client.player.displayClientMessage(
+            Component.literal("Télécharger : ").withColor(0xCCCCCC).append(link), false);
     }
 
     private static String currentVersion() {

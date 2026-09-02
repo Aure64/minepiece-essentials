@@ -4,11 +4,10 @@ import com.minepiece.essentials.MinepieceEssentialsClient;
 import com.minepiece.essentials.ServerDetector;
 import com.minepiece.essentials.i18n.ServerText;
 import net.fabricmc.fabric.api.client.item.v1.ItemTooltipCallback;
-import net.minecraft.item.ItemStack;
-import net.minecraft.text.StyleSpriteSource;
-import net.minecraft.text.Text;
-import net.minecraft.util.Identifier;
-
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.FontDescription;
+import net.minecraft.resources.Identifier;
+import net.minecraft.world.item.ItemStack;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -22,7 +21,7 @@ import java.util.Optional;
 public final class AhTooltip {
 
     private static final String BERRY = "实";                       // currency glyph
-    private static final Identifier BERRY_FONT = Identifier.of("fonts", "icons");
+    private static final Identifier BERRY_FONT = Identifier.fromNamespaceAndPath("fonts", "icons");
     private static final int LABEL_COLOR = 0xFFFFD24B;             // gold
 
     private AhTooltip() {}
@@ -31,13 +30,13 @@ public final class AhTooltip {
         ItemTooltipCallback.EVENT.register((stack, context, type, lines) -> annotate(stack, lines));
     }
 
-    private static void annotate(ItemStack stack, List<Text> lines) {
+    private static void annotate(ItemStack stack, List<Component> lines) {
         if (!ServerDetector.isOnMinePiece()) return;
         var cfg = MinepieceEssentialsClient.getInstance().getConfigManager().config();
 
         // Snapshot du lore AVANT toute insertion (les ajouts ci-dessous décalent les index).
         List<String> strings = new ArrayList<>(lines.size());
-        for (Text t : lines) strings.add(t.getString());
+        for (Component t : lines) strings.add(t.getString());
 
         // 1) Prix par unité (piles > 1).
         int count = stack.getCount();
@@ -48,12 +47,12 @@ public final class AhTooltip {
             int avgIdx = indexOf(strings, ServerText.AVG_PRICE);
             // Insert the lower line first so the earlier index stays valid.
             if (avg.isPresent()) {
-                Text line = perUnitLine("Prix moyen/u: ", avg.get());
+                Component line = perUnitLine("Prix moyen/u: ", avg.get());
                 if (avgIdx >= 0) lines.add(avgIdx + 1, line); else lines.add(line);
                 com.minepiece.essentials.telemetry.Telemetry.feature("ah_price");
             }
             if (sell.isPresent()) {
-                Text line = perUnitLine("Prix/u: ", sell.get());
+                Component line = perUnitLine("Prix/u: ", sell.get());
                 if (sellIdx >= 0) lines.add(sellIdx + 1, line); else lines.add(line);
                 com.minepiece.essentials.telemetry.Telemetry.feature("ah_price");
             }
@@ -69,17 +68,17 @@ public final class AhTooltip {
     }
 
     /** Ligne « ▪ ▲ +15 % vs moyenne », colorée selon la bande. */
-    private static Text bandLine(AhPriceBand.Result res) {
+    private static Component bandLine(AhPriceBand.Result res) {
         int pct = res.percent();
         String head = pct > 0 ? "▲ +" : pct < 0 ? "▼ " : "● ";
-        return Text.literal(" ▪ " + head + pct + " % vs moyenne").withColor(res.band().color);
+        return Component.literal(" ▪ " + head + pct + " % vs moyenne").withColor(res.band().color);
     }
 
-    private static Text perUnitLine(String label, String value) {
-        return Text.empty()
-                .append(Text.literal(" ▪ " + label + value + " ").withColor(LABEL_COLOR))
-                .append(Text.literal(BERRY).withColor(0xFFFFFF)
-                        .styled(s -> s.withFont(new StyleSpriteSource.Font(BERRY_FONT))));
+    private static Component perUnitLine(String label, String value) {
+        return Component.empty()
+                .append(Component.literal(" ▪ " + label + value + " ").withColor(LABEL_COLOR))
+                .append(Component.literal(BERRY).withColor(0xFFFFFF)
+                        .withStyle(s -> s.withFont(new FontDescription.Resource(BERRY_FONT))));
     }
 
     private static int indexOf(List<String> lines, String[] variants) {

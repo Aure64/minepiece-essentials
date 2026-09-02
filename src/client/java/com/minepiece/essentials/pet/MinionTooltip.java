@@ -3,12 +3,11 @@ package com.minepiece.essentials.pet;
 import com.minepiece.essentials.MinepieceEssentialsClient;
 import com.minepiece.essentials.ServerDetector;
 import net.fabricmc.fabric.api.client.item.v1.ItemTooltipCallback;
-import net.minecraft.component.DataComponentTypes;
-import net.minecraft.component.type.NbtComponent;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
-import net.minecraft.text.Text;
-
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.component.CustomData;
 import java.util.List;
 import java.util.Optional;
 import java.util.OptionalDouble;
@@ -33,23 +32,23 @@ public final class MinionTooltip {
         ItemTooltipCallback.EVENT.register((stack, context, type, lines) -> annotate(stack, lines));
     }
 
-    private static void annotate(ItemStack stack, List<Text> lines) {
-        if (!stack.isOf(Items.RABBIT_FOOT)) return;
+    private static void annotate(ItemStack stack, List<Component> lines) {
+        if (!stack.is(Items.RABBIT_FOOT)) return;
         if (!ServerDetector.isOnMinePiece()) return;
         if (!MinepieceEssentialsClient.getInstance().getConfigManager().config().minionCalculatorEnabled) {
             return;
         }
 
-        NbtComponent data = stack.get(DataComponentTypes.CUSTOM_DATA);
+        CustomData data = stack.get(DataComponents.CUSTOM_DATA);
         if (data == null) return;
-        MinionData minion = MinionNbt.parse(data.copyNbt().toString()).orElse(null);
+        MinionData minion = MinionNbt.parse(data.copyTag().toString()).orElse(null);
         if (minion == null) return;
 
         int insertAt = insertIndex(lines);
         com.minepiece.essentials.telemetry.Telemetry.feature("minion_calc");
 
         if (minion.isMaxed()) {
-            lines.add(insertAt, Text.literal("Minion : prestige max ✓").withColor(COLOR_MAXED));
+            lines.add(insertAt, Component.literal("Minion : prestige max ✓").withColor(COLOR_MAXED));
             return;
         }
 
@@ -59,16 +58,16 @@ public final class MinionTooltip {
         OptionalDouble xpPer = ResourceXpStore.get().xpPerItem(MinionData.tokenToItemId(minion.foodToken()));
         String resource = resourceName(lines);
 
-        Text line1;
-        Text line2;
+        Component line1;
+        Component line2;
         if (xpPer.isPresent()) {
             double per = xpPer.getAsDouble() * STACK;
             String res = resource != null ? " de " + resource : "";
-            line1 = Text.literal("Prestige suivant : " + fmt(stacks(toNext, per)) + " stacks" + res);
-            line2 = Text.literal("Max (P10) : " + fmt(stacks(toMax, per)) + " stacks");
+            line1 = Component.literal("Prestige suivant : " + fmt(stacks(toNext, per)) + " stacks" + res);
+            line2 = Component.literal("Max (P10) : " + fmt(stacks(toMax, per)) + " stacks");
         } else {
-            line1 = Text.literal("Prestige suivant : " + fmt((long) Math.ceil(toNext)) + " XP");
-            line2 = Text.literal("Max (P10) : " + fmt((long) Math.ceil(toMax))
+            line1 = Component.literal("Prestige suivant : " + fmt((long) Math.ceil(toNext)) + " XP");
+            line2 = Component.literal("Max (P10) : " + fmt((long) Math.ceil(toMax))
                 + " XP — nourris une fois pour les stacks");
         }
         lines.add(insertAt, line1.copy().withColor(COLOR_INFO));
@@ -80,7 +79,7 @@ public final class MinionTooltip {
     }
 
     /** Insert just after the prestige bar (the line following "Prestige:"); else at end. */
-    private static int insertIndex(List<Text> lines) {
+    private static int insertIndex(List<Component> lines) {
         for (int i = 0; i < lines.size(); i++) {
             if (lines.get(i).getString().contains(PRESTIGE_MARKER)) {
                 return Math.min(i + 2, lines.size());
@@ -89,8 +88,8 @@ public final class MinionTooltip {
         return lines.size();
     }
 
-    private static String resourceName(List<Text> lines) {
-        for (Text line : lines) {
+    private static String resourceName(List<Component> lines) {
+        for (Component line : lines) {
             String s = line.getString();
             int idx = s.indexOf(RESOURCE_MARKER);
             if (idx >= 0) {

@@ -2,10 +2,10 @@ package com.minepiece.essentials.boss;
 
 import com.minepiece.essentials.MinepieceEssentialsClient;
 import com.minepiece.essentials.island.Island;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.sound.PositionedSoundInstance;
-import net.minecraft.sound.SoundEvent;
 import java.util.*;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.resources.sounds.SimpleSoundInstance;
+import net.minecraft.sounds.SoundEvent;
 
 /**
  * Plays the boss's own laugh/voice when they reach the alert threshold (30s by default).
@@ -63,11 +63,11 @@ public class BossAlertManager {
             return;
         }
 
-        MinecraftClient client = MinecraftClient.getInstance();
+        Minecraft client = Minecraft.getInstance();
         if (client.getSoundManager() == null) return;
 
         lastSoundTime = now;
-        client.getSoundManager().play(PositionedSoundInstance.ui(sound, 1.0f));
+        client.getSoundManager().play(SimpleSoundInstance.forUI(sound, 1.0f));
         MinepieceEssentialsClient.LOGGER.info("[BossAlert] Playing sound for boss: {}", bossName);
     }
 

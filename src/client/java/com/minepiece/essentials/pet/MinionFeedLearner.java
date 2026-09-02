@@ -1,16 +1,15 @@
 package com.minepiece.essentials.pet;
 
 import com.minepiece.essentials.ServerDetector;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.screen.ingame.HandledScreen;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.tooltip.TooltipType;
-import net.minecraft.registry.Registries;
-import net.minecraft.screen.slot.Slot;
-import net.minecraft.text.Text;
-
 import java.util.Optional;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.TooltipFlag;
 
 /**
  * Watches the minion feeding screen and learns each resource's XP-per-item ratio
@@ -25,8 +24,8 @@ public final class MinionFeedLearner {
 
     /** Call once per client tick; cheap no-op unless a feeding screen is open. */
     public static void tick() {
-        MinecraftClient client = MinecraftClient.getInstance();
-        if (!(client.currentScreen instanceof HandledScreen<?> screen)) return;
+        Minecraft client = Minecraft.getInstance();
+        if (!(client.screen instanceof AbstractContainerScreen<?> screen)) return;
         if (!ServerDetector.isOnMinePiece()) return;
 
         MinionFeedLine.Feed feed = findFeed(screen, client);
@@ -38,11 +37,11 @@ public final class MinionFeedLearner {
         }
     }
 
-    private static MinionFeedLine.Feed findFeed(HandledScreen<?> screen, MinecraftClient client) {
-        for (Slot slot : screen.getScreenHandler().slots) {
-            ItemStack stack = slot.getStack();
-            if (stack.isEmpty() || !stack.getName().getString().equals(FEED_ITEM_NAME)) continue;
-            for (Text line : stack.getTooltip(Item.TooltipContext.DEFAULT, client.player, TooltipType.BASIC)) {
+    private static MinionFeedLine.Feed findFeed(AbstractContainerScreen<?> screen, Minecraft client) {
+        for (Slot slot : screen.getMenu().slots) {
+            ItemStack stack = slot.getItem();
+            if (stack.isEmpty() || !stack.getHoverName().getString().equals(FEED_ITEM_NAME)) continue;
+            for (Component line : stack.getTooltipLines(Item.TooltipContext.EMPTY, client.player, TooltipFlag.NORMAL)) {
                 Optional<MinionFeedLine.Feed> feed = MinionFeedLine.parse(line.getString());
                 if (feed.isPresent()) return feed.get();
             }
@@ -50,12 +49,12 @@ public final class MinionFeedLearner {
         return null;
     }
 
-    private static String findResourceItemId(HandledScreen<?> screen, String resourceName) {
-        for (Slot slot : screen.getScreenHandler().slots) {
-            ItemStack stack = slot.getStack();
+    private static String findResourceItemId(AbstractContainerScreen<?> screen, String resourceName) {
+        for (Slot slot : screen.getMenu().slots) {
+            ItemStack stack = slot.getItem();
             if (stack.isEmpty()) continue;
-            if (stack.getName().getString().equals(resourceName)) {
-                return Registries.ITEM.getId(stack.getItem()).toString();
+            if (stack.getHoverName().getString().equals(resourceName)) {
+                return BuiltInRegistries.ITEM.getKey(stack.getItem()).toString();
             }
         }
         return null;

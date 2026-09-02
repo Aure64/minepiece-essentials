@@ -1,12 +1,12 @@
 package com.minepiece.essentials.boss;
 
 import com.minepiece.essentials.MinepieceEssentialsClient;
-import net.minecraft.registry.Registries;
-import net.minecraft.registry.Registry;
-import net.minecraft.sound.SoundEvent;
-import net.minecraft.util.Identifier;
 import java.util.HashMap;
 import java.util.Map;
+import net.minecraft.core.Registry;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.Identifier;
+import net.minecraft.sounds.SoundEvent;
 
 /**
  * Registers one SoundEvent per known boss name.
@@ -30,9 +30,9 @@ public class ModSounds {
 
     public static void register() {
         for (String bossKey : KNOWN_BOSSES) {
-            Identifier id = Identifier.of("minepiece-essentials", "boss." + bossKey);
-            SoundEvent event = SoundEvent.of(id);
-            Registry.register(Registries.SOUND_EVENT, id, event);
+            Identifier id = Identifier.fromNamespaceAndPath("minepiece-essentials", "boss." + bossKey);
+            SoundEvent event = SoundEvent.createVariableRangeEvent(id);
+            Registry.register(BuiltInRegistries.SOUND_EVENT, id, event);
             BOSS_SOUNDS.put(bossKey, event);
             MinepieceEssentialsClient.LOGGER.info("[ModSounds] Registered boss sound: {}", id);
         }

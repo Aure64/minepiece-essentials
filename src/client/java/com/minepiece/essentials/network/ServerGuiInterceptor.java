@@ -1,9 +1,9 @@
 package com.minepiece.essentials.network;
 
 import com.minepiece.essentials.MinepieceEssentialsClient;
-import net.minecraft.item.ItemStack;
 import java.util.*;
 import java.util.function.Consumer;
+import net.minecraft.world.item.ItemStack;
 
 /**
  * Passive interceptor: does NOT block screens from opening.

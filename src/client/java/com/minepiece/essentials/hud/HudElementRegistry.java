@@ -3,7 +3,7 @@ package com.minepiece.essentials.hud;
 import com.minepiece.essentials.ServerDetector;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
-import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.Minecraft;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -17,19 +17,19 @@ public class HudElementRegistry {
 
     public static void init() {
         HudRenderCallback.EVENT.register((context, renderTickCounter) -> {
-            MinecraftClient client = MinecraftClient.getInstance();
-            if (client.player == null || client.options.hudHidden) return;
+            Minecraft client = Minecraft.getInstance();
+            if (client.player == null || client.options.hideGui) return;
             if (!ServerDetector.isOnMinePiece()) return;
 
-            float tickDelta = renderTickCounter.getTickProgress(true);
+            float tickDelta = renderTickCounter.getGameTimeDeltaPartialTick(true);
             for (HudElement element : elements) {
                 if (element.isVisible()) {
-                    context.getMatrices().pushMatrix();
+                    context.pose().pushMatrix();
                     float scale = element.getScale();
-                    context.getMatrices().translate(element.getX(), element.getY());
-                    context.getMatrices().scale(scale, scale);
+                    context.pose().translate(element.getX(), element.getY());
+                    context.pose().scale(scale, scale);
                     element.render(context, tickDelta);
-                    context.getMatrices().popMatrix();
+                    context.pose().popMatrix();
                 }
             }
         });

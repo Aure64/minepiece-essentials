@@ -4,10 +4,9 @@ import com.minepiece.essentials.MinepieceEssentialsClient;
 import com.minepiece.essentials.hud.HudElement;
 import com.minepiece.essentials.hud.ParchmentRenderer;
 import com.minepiece.essentials.util.RenderUtils;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.text.Text;
-
 import java.util.Map;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.network.chat.Component;
 
 /** HUD panel listing the active pets and the total combat stats they grant. */
 public class ActivePetsHud extends HudElement {
@@ -20,15 +19,15 @@ public class ActivePetsHud extends HudElement {
     }
 
     @Override
-    public void render(DrawContext ctx, float tickDelta) {
+    public void render(GuiGraphics ctx, float tickDelta) {
         if (!MinepieceEssentialsClient.getInstance().getConfigManager().config().petPanelEnabled) {
             return;
         }
         ActivePetsState.Snapshot snap = ActivePetsState.get();
         if (snap.isEmpty()) {
             this.height = 32;
-            ParchmentRenderer.renderPanel(ctx, 0, 0, WIDTH, 32, Text.translatable("minepiece.ui.pets.title").getString(), getBackground());
-            RenderUtils.drawText(ctx, Text.translatable("minepiece.ui.pets.hint").getString(), 6, 20, 0xFFCBC8C7);
+            ParchmentRenderer.renderPanel(ctx, 0, 0, WIDTH, 32, Component.translatable("minepiece.ui.pets.title").getString(), getBackground());
+            RenderUtils.drawText(ctx, Component.translatable("minepiece.ui.pets.hint").getString(), 6, 20, 0xFFCBC8C7);
             return;
         }
 
@@ -37,7 +36,7 @@ public class ActivePetsHud extends HudElement {
         int h = 20 + count * 10 + 6 + stats * 10 + 4;
         this.height = h;
 
-        ParchmentRenderer.renderPanel(ctx, 0, 0, WIDTH, h, Text.translatable("minepiece.ui.pets.title").getString() + " (" + count + ")", getBackground());
+        ParchmentRenderer.renderPanel(ctx, 0, 0, WIDTH, h, Component.translatable("minepiece.ui.pets.title").getString() + " (" + count + ")", getBackground());
 
         int y = 20;
         for (ActivePetsState.ActivePet pet : snap.pets()) {

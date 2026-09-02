@@ -4,9 +4,9 @@ import com.minepiece.essentials.MinepieceEssentialsClient;
 import com.minepiece.essentials.hud.HudElement;
 import com.minepiece.essentials.hud.ParchmentRenderer;
 import com.minepiece.essentials.util.RenderUtils;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.text.Text;
-import net.minecraft.util.Identifier;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
 
 /** Small always-on HUD: shows the remaining haki cooldown, or "Prêt !" when ready. */
 public class HakiHud extends HudElement {
@@ -17,7 +17,7 @@ public class HakiHud extends HudElement {
     private static final int ICON_SIZE = 10;
     // King (Conqueror's) haki icon — provided by the MinePiece server resource pack.
     private static final Identifier KING_HAKI =
-            Identifier.of("items", "textures/global/haki/king_haki.png");
+            Identifier.fromNamespaceAndPath("items", "textures/global/haki/king_haki.png");
 
     public HakiHud() {
         super("haki_timer", 5, 160, W, 32);
@@ -29,7 +29,7 @@ public class HakiHud extends HudElement {
     }
 
     @Override
-    public void render(DrawContext ctx, float tickDelta) {
+    public void render(GuiGraphics ctx, float tickDelta) {
         if (!MinepieceEssentialsClient.getInstance().getConfigManager().config().hakiTimerEnabled) {
             return;
         }
@@ -40,7 +40,7 @@ public class HakiHud extends HudElement {
 
         // Header row: logo + "Haki", centred as a single group and vertically aligned.
         final int GAP = 3;
-        String hakiTitle = Text.translatable("minepiece.ui.haki.title").getString();
+        String hakiTitle = Component.translatable("minepiece.ui.haki.title").getString();
         int titleW = RenderUtils.textWidth(hakiTitle);
         int groupX = (W - (ICON_SIZE + GAP + titleW)) / 2;
         int rowY = 5;
@@ -54,7 +54,7 @@ public class HakiHud extends HudElement {
             com.minepiece.essentials.telemetry.Telemetry.feature("haki_hud");
             RenderUtils.drawCenteredText(ctx, HakiTimer.remainingSeconds() + "s", W / 2, textY, COLOR_TEXT);
         } else {
-            RenderUtils.drawCenteredText(ctx, Text.translatable("minepiece.ui.haki.ready").getString(), W / 2, textY, COLOR_READY);
+            RenderUtils.drawCenteredText(ctx, Component.translatable("minepiece.ui.haki.ready").getString(), W / 2, textY, COLOR_READY);
         }
     }
 }

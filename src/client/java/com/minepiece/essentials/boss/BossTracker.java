@@ -6,12 +6,12 @@ import com.minepiece.essentials.island.Island;
 import com.minepiece.essentials.island.IslandDetector;
 import com.minepiece.essentials.network.BackgroundGuiRefresh;
 import com.minepiece.essentials.util.JsonHelper;
-import net.minecraft.item.ItemStack;
-import net.minecraft.text.Text;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.item.ItemStack;
 
 public class BossTracker {
     private static BossTracker instance;
@@ -146,7 +146,7 @@ public class BossTracker {
         for (Map.Entry<Integer, ItemStack> entry : items.entrySet()) {
             ItemStack stack = entry.getValue();
             if (stack.isEmpty()) continue;
-            String name = stack.getName().getString().toLowerCase();
+            String name = stack.getHoverName().getString().toLowerCase();
             if (ServerText.matches(name, ServerText.BOSS_MOB_KEYWORDS)) {
                 return entry.getKey();
             }
@@ -168,9 +168,9 @@ public class BossTracker {
             ItemStack stack = entry.getValue();
             if (stack == null || stack.isEmpty()) continue;
             StringBuilder lore = new StringBuilder();
-            for (net.minecraft.text.Text line : stack.getTooltip(
-                    net.minecraft.item.Item.TooltipContext.DEFAULT, null,
-                    net.minecraft.item.tooltip.TooltipType.BASIC)) {
+            for (net.minecraft.network.chat.Component line : stack.getTooltipLines(
+                    net.minecraft.world.item.Item.TooltipContext.EMPTY, null,
+                    net.minecraft.world.item.TooltipFlag.NORMAL)) {
                 lore.append(line.getString().toLowerCase()).append('\n');
             }
             String l = lore.toString();
@@ -188,7 +188,7 @@ public class BossTracker {
             ItemStack stack = entry.getValue();
             if (stack == null || stack.isEmpty()) continue;
 
-            String name = stack.getName().getString();
+            String name = stack.getHoverName().getString();
             if (name.isEmpty()) continue;
 
             String nameLower = name.toLowerCase();
@@ -196,9 +196,9 @@ public class BossTracker {
 
             BossData boss = new BossData(name, island);
 
-            var tooltip = stack.getTooltip(net.minecraft.item.Item.TooltipContext.DEFAULT,
-                    null, net.minecraft.item.tooltip.TooltipType.BASIC);
-            for (Text text : tooltip) {
+            var tooltip = stack.getTooltipLines(net.minecraft.world.item.Item.TooltipContext.EMPTY,
+                    null, net.minecraft.world.item.TooltipFlag.NORMAL);
+            for (Component text : tooltip) {
                 String line = text.getString();
                 Matcher coordMatch = ServerText.BOSS_COORDS.matcher(line);
                 if (coordMatch.find()) {

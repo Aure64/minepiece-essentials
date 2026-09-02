@@ -2,13 +2,13 @@ package com.minepiece.essentials.quest;
 
 import com.minepiece.essentials.MinepieceEssentialsClient;
 import com.minepiece.essentials.i18n.ServerText;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.item.ItemStack;
-import net.minecraft.text.Text;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import net.minecraft.client.Minecraft;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.item.ItemStack;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
@@ -25,7 +25,7 @@ public class ParcheminScanner {
     private long lastLogTime = 0;
 
     public void tick() {
-        MinecraftClient client = MinecraftClient.getInstance();
+        Minecraft client = Minecraft.getInstance();
         if (client.player == null) return;
 
         List<QuestInfo> found = new ArrayList<>();
@@ -34,11 +34,11 @@ public class ParcheminScanner {
         boolean shouldLog = System.currentTimeMillis() - lastLogTime > 30000;
         if (shouldLog) lastLogTime = System.currentTimeMillis();
 
-        for (int i = 0; i < inventory.size(); i++) {
-            ItemStack stack = inventory.getStack(i);
+        for (int i = 0; i < inventory.getContainerSize(); i++) {
+            ItemStack stack = inventory.getItem(i);
             if (stack.isEmpty()) continue;
 
-            String name = stack.getName().getString();
+            String name = stack.getHoverName().getString();
 
             if (!ServerText.matches(name, ServerText.SCROLL_NAME)) continue;
 
@@ -57,7 +57,7 @@ public class ParcheminScanner {
 
     private QuestInfo parseParchemin(ItemStack stack, boolean shouldLog) {
         QuestInfo quest = new QuestInfo();
-        quest.name = stack.getName().getString();
+        quest.name = stack.getHoverName().getString();
 
         // Detect rarity from name
         if (ServerText.matches(quest.name, ServerText.LUNAR)) {
@@ -81,10 +81,10 @@ public class ParcheminScanner {
             MinepieceEssentialsClient.LOGGER.info("[ParcheminScan] Parchemin '{}' -> rarity={}", quest.name, quest.rarity);
         }
 
-        var tooltip = stack.getTooltip(net.minecraft.item.Item.TooltipContext.DEFAULT,
-                null, net.minecraft.item.tooltip.TooltipType.BASIC);
+        var tooltip = stack.getTooltipLines(net.minecraft.world.item.Item.TooltipContext.EMPTY,
+                null, net.minecraft.world.item.TooltipFlag.NORMAL);
 
-        for (Text text : tooltip) {
+        for (Component text : tooltip) {
             String line = text.getString();
 
             if (shouldLog) {

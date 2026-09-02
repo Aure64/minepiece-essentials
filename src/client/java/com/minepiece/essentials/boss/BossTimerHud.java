@@ -8,10 +8,10 @@ import com.minepiece.essentials.island.IslandDetector;
 import com.minepiece.essentials.network.BackgroundGuiRefresh;
 import com.minepiece.essentials.util.ColorUtils;
 import com.minepiece.essentials.util.RenderUtils;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.text.Text;
 import java.util.*;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.network.chat.Component;
 
 public class BossTimerHud extends HudElement {
     private static final int WIDTH = 190;
@@ -65,7 +65,7 @@ public class BossTimerHud extends HudElement {
     }
 
     @Override
-    public void render(DrawContext ctx, float tickDelta) {
+    public void render(GuiGraphics ctx, float tickDelta) {
         refreshButtonPositions.clear();
         islandHeaderClickAreas.clear();
         bossClickAreas.clear();
@@ -92,7 +92,7 @@ public class BossTimerHud extends HudElement {
         if (queueActive) h += 12;
         this.height = h;
 
-        ParchmentRenderer.renderPanel(ctx, 0, 0, WIDTH, h, Text.translatable("minepiece.ui.boss.title").getString(), getBackground());
+        ParchmentRenderer.renderPanel(ctx, 0, 0, WIDTH, h, Component.translatable("minepiece.ui.boss.title").getString(), getBackground());
 
         // Refresh All button — top-right of header
         int allBtnW = 18;
@@ -311,7 +311,7 @@ public class BossTimerHud extends HudElement {
     private void toggleBossWaypoint(BossData boss, Island island) {
         if (!boss.hasCoords) return;
 
-        MinecraftClient client = MinecraftClient.getInstance();
+        Minecraft client = Minecraft.getInstance();
         if (client.player == null) return;
 
         String bossKey = island.id + ":" + boss.name;
@@ -319,17 +319,17 @@ public class BossTimerHud extends HudElement {
         if (activeWaypoints.contains(bossKey)) {
             activeWaypoints.remove(bossKey);
             // Send chat message to confirm removal
-            client.player.sendMessage(
-                net.minecraft.text.Text.literal("\u00a7c[MinePiece] \u00a77Waypoint retir\u00e9: \u00a7f" + boss.name),
+            client.player.displayClientMessage(
+                net.minecraft.network.chat.Component.literal("\u00a7c[MinePiece] \u00a77Waypoint retir\u00e9: \u00a7f" + boss.name),
                 false);
         } else {
             activeWaypoints.add(bossKey);
             // Copy coords to clipboard
             String coords = boss.x + " " + boss.y + " " + boss.z;
-            client.keyboard.setClipboard(coords);
+            client.keyboardHandler.setClipboard(coords);
             // Send chat message with coords
-            client.player.sendMessage(
-                net.minecraft.text.Text.literal(
+            client.player.displayClientMessage(
+                net.minecraft.network.chat.Component.literal(
                     "\u00a7a[MinePiece] \u00a77Waypoint: \u00a7f" + boss.name +
                     " \u00a77[\u00a7b" + boss.x + " " + boss.y + " " + boss.z +
                     "\u00a77] \u00a78(coords copi\u00e9es)"),

@@ -4,19 +4,18 @@ import com.minepiece.essentials.MinepieceEssentialsClient;
 import com.minepiece.essentials.hud.HudElement;
 import com.minepiece.essentials.hud.ParchmentRenderer;
 import com.minepiece.essentials.util.RenderUtils;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.network.ClientPlayerEntity;
-import net.minecraft.component.DataComponentTypes;
-import net.minecraft.component.type.NbtComponent;
-import net.minecraft.item.ItemStack;
-import net.minecraft.text.Style;
-import net.minecraft.text.Text;
-import net.minecraft.text.TextColor;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.Style;
+import net.minecraft.network.chat.TextColor;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.CustomData;
 
 /**
  * HUD listing the player's ascendable fruits and weapons with their level, and
@@ -44,7 +43,7 @@ public class AscensionHud extends HudElement {
     @Override
     public void tick() {
         if (ticks++ % SCAN_INTERVAL != 0) return;
-        ClientPlayerEntity player = MinecraftClient.getInstance().player;
+        LocalPlayer player = Minecraft.getInstance().player;
         items = player == null ? List.of() : scan(player);
 
         // Precompute the section flags once per scan instead of streaming twice
@@ -59,18 +58,18 @@ public class AscensionHud extends HudElement {
         hasWeapon = w;
     }
 
-    private static List<AscensionItem> scan(ClientPlayerEntity player) {
+    private static List<AscensionItem> scan(LocalPlayer player) {
         List<AscensionItem> fruits = new ArrayList<>();
         List<AscensionItem> weapons = new ArrayList<>();
         var inventory = player.getInventory();
-        for (int i = 0; i < inventory.size(); i++) {
-            ItemStack stack = inventory.getStack(i);
+        for (int i = 0; i < inventory.getContainerSize(); i++) {
+            ItemStack stack = inventory.getItem(i);
             if (stack.isEmpty()) continue;
-            NbtComponent data = stack.get(DataComponentTypes.CUSTOM_DATA);
+            CustomData data = stack.get(DataComponents.CUSTOM_DATA);
             if (data == null) continue;
-            AscensionParser.parse(stack.getName().getString(), data.copyNbt().toString())
+            AscensionParser.parse(stack.getHoverName().getString(), data.copyTag().toString())
                 .ifPresent(item -> {
-                    int detected = colorOf(stack.getName());
+                    int detected = colorOf(stack.getHoverName());
                     AscensionItem coloured = detected != 0 ? item.withColor(detected) : item;
                     (coloured.type() == AscensionItem.Type.FRUIT ? fruits : weapons).add(coloured);
                 });
@@ -81,7 +80,7 @@ public class AscensionHud extends HudElement {
     }
 
     @Override
-    public void render(DrawContext ctx, float tickDelta) {
+    public void render(GuiGraphics ctx, float tickDelta) {
         if (!MinepieceEssentialsClient.getInstance().getConfigManager().config().ascensionHudEnabled) {
             return;
         }
@@ -94,16 +93,16 @@ public class AscensionHud extends HudElement {
         int h = 20 + (snapshot.size() + headers) * 10 + 4;
         this.height = h;
 
-        ParchmentRenderer.renderPanel(ctx, 0, 0, WIDTH, h, Text.translatable("minepiece.ui.ascensions.title").getString(), getBackground());
+        ParchmentRenderer.renderPanel(ctx, 0, 0, WIDTH, h, Component.translatable("minepiece.ui.ascensions.title").getString(), getBackground());
 
         int y = 20;
         for (AscensionItem item : snapshot) {
             if (item.type() == AscensionItem.Type.FRUIT && !fruitHeaderDrawn) {
-                RenderUtils.drawText(ctx, Text.translatable("minepiece.ui.ascensions.fruits").getString(), 6, y, HEADER_COLOR);
+                RenderUtils.drawText(ctx, Component.translatable("minepiece.ui.ascensions.fruits").getString(), 6, y, HEADER_COLOR);
                 fruitHeaderDrawn = true;
                 y += 10;
             } else if (item.type() == AscensionItem.Type.WEAPON && !weaponHeaderDrawn) {
-                RenderUtils.drawText(ctx, Text.translatable("minepiece.ui.ascensions.weapons").getString(), 6, y, HEADER_COLOR);
+                RenderUtils.drawText(ctx, Component.translatable("minepiece.ui.ascensions.weapons").getString(), 6, y, HEADER_COLOR);
                 weaponHeaderDrawn = true;
                 y += 10;
             }
@@ -120,11 +119,11 @@ public class AscensionHud extends HudElement {
     }
 
     /** First explicit colour in the item's name Text, as ARGB; 0 if none (use the rarity fallback). */
-    private static int colorOf(Text text) {
+    private static int colorOf(Component text) {
         int[] found = {0};
         text.visit((style, str) -> {
             TextColor c = style.getColor();
-            if (c != null && found[0] == 0) found[0] = 0xFF000000 | c.getRgb();
+            if (c != null && found[0] == 0) found[0] = 0xFF000000 | c.getValue();
             return Optional.empty();
         }, Style.EMPTY);
         return found[0];

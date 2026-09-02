@@ -3,14 +3,13 @@ package com.minepiece.essentials.quest;
 import com.minepiece.essentials.ServerDetector;
 import com.minepiece.essentials.i18n.ServerText;
 import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.screen.ingame.HandledScreen;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.tooltip.TooltipType;
-import net.minecraft.screen.slot.Slot;
-import net.minecraft.text.Text;
-
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.TooltipFlag;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -50,19 +49,19 @@ public final class PassQuestScanner {
             scannedDay = null;
         }
 
-        MinecraftClient client = MinecraftClient.getInstance();
-        if (client.currentScreen instanceof HandledScreen<?> screen && ServerDetector.isOnMinePiece()) {
+        Minecraft client = Minecraft.getInstance();
+        if (client.screen instanceof AbstractContainerScreen<?> screen && ServerDetector.isOnMinePiece()) {
             scan(screen, client);
         }
     }
 
-    private static void scan(HandledScreen<?> screen, MinecraftClient client) {
+    private static void scan(AbstractContainerScreen<?> screen, Minecraft client) {
         Map<Integer, PassQuest> byNumber = new LinkedHashMap<>();
 
-        for (Slot slot : screen.getScreenHandler().slots) {
-            ItemStack stack = slot.getStack();
+        for (Slot slot : screen.getMenu().slots) {
+            ItemStack stack = slot.getItem();
             if (stack.isEmpty()) continue;
-            String name = stack.getName().getString();
+            String name = stack.getHoverName().getString();
             if (!ServerText.matches(name, ServerText.QUEST_NAME_FRAGMENT)) continue; // "Quête #N" / "Quest #N"
             PassQuestParser.parse(name, tooltipLines(stack, client))
                     .ifPresent(q -> byNumber.putIfAbsent(q.number(), q));
@@ -77,9 +76,9 @@ public final class PassQuestScanner {
         scannedDay = LocalDate.now();
     }
 
-    private static List<String> tooltipLines(ItemStack stack, MinecraftClient client) {
+    private static List<String> tooltipLines(ItemStack stack, Minecraft client) {
         List<String> out = new ArrayList<>();
-        for (Text line : stack.getTooltip(Item.TooltipContext.DEFAULT, client.player, TooltipType.BASIC)) {
+        for (Component line : stack.getTooltipLines(Item.TooltipContext.EMPTY, client.player, TooltipFlag.NORMAL)) {
             out.add(line.getString());
         }
         return out;

@@ -5,10 +5,9 @@ import com.minepiece.essentials.config.ModConfig;
 import com.minepiece.essentials.hud.HudElement;
 import com.minepiece.essentials.hud.ParchmentRenderer;
 import com.minepiece.essentials.util.RenderUtils;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.text.Text;
-
 import java.util.Locale;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.network.chat.Component;
 
 /**
  * Live HUD for the active job, fed by {@link JobTracker} from the action bar.
@@ -31,14 +30,14 @@ public class JobHud extends HudElement {
     public void tick() {}
 
     @Override
-    public void render(DrawContext ctx, float tickDelta) {
+    public void render(GuiGraphics ctx, float tickDelta) {
         if (!config().jobHudEnabled) return;
 
         if (!JobTracker.hasData()) {
             int h = 32;
             this.height = h;
-            ParchmentRenderer.renderPanel(ctx, 0, 0, WIDTH, h, Text.translatable("minepiece.ui.job.title").getString(), getBackground());
-            RenderUtils.drawText(ctx, Text.translatable("minepiece.ui.job.harvest_hint").getString(), 8, 20, SUB_COLOR);
+            ParchmentRenderer.renderPanel(ctx, 0, 0, WIDTH, h, Component.translatable("minepiece.ui.job.title").getString(), getBackground());
+            RenderUtils.drawText(ctx, Component.translatable("minepiece.ui.job.harvest_hint").getString(), 8, 20, SUB_COLOR);
             return;
         }
 
@@ -46,7 +45,7 @@ public class JobHud extends HudElement {
 
         int h = 62;
         this.height = h;
-        ParchmentRenderer.renderPanel(ctx, 0, 0, WIDTH, h, Text.translatable("minepiece.ui.job.title").getString(), getBackground());
+        ParchmentRenderer.renderPanel(ctx, 0, 0, WIDTH, h, Component.translatable("minepiece.ui.job.title").getString(), getBackground());
 
         float p = JobTracker.progress();
 

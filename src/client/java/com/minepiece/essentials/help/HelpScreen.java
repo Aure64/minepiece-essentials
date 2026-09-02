@@ -5,14 +5,14 @@ import com.minepiece.essentials.ServerDetector;
 import com.minepiece.essentials.donate.DonateScreen;
 import com.minepiece.essentials.hud.ParchmentRenderer;
 import com.minepiece.essentials.util.RenderUtils;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.font.TextRenderer;
-import net.minecraft.client.gui.Click;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.text.StyleSpriteSource;
-import net.minecraft.text.Text;
-import net.minecraft.util.Identifier;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.FontDescription;
+import net.minecraft.resources.Identifier;
 
 /**
  * Book-style help popup explaining the mod's features and how to use them.
@@ -45,7 +45,7 @@ public class HelpScreen extends Screen {
 
     /** Glyphe de la monnaie du serveur (berries), rendu avec la police custom du pack. */
     private static final String BERRY = "实";
-    private static final Identifier BERRY_FONT = Identifier.of("fonts", "icons");
+    private static final Identifier BERRY_FONT = Identifier.fromNamespaceAndPath("fonts", "icons");
 
     private record Line(String text, boolean important) {}
 
@@ -60,7 +60,7 @@ public class HelpScreen extends Screen {
     }
 
     private static String tr(String key) {
-        return Text.translatable(key).getString();
+        return Component.translatable(key).getString();
     }
 
     private static Feature[] buildFeatures() {
@@ -123,7 +123,7 @@ public class HelpScreen extends Screen {
     private int top;
 
     public HelpScreen() {
-        super(Text.literal("Minepiece Essentials — Aide"));
+        super(Component.literal("Minepiece Essentials — Aide"));
     }
 
     @Override
@@ -133,7 +133,7 @@ public class HelpScreen extends Screen {
     }
 
     @Override
-    public void render(DrawContext ctx, int mouseX, int mouseY, float delta) {
+    public void render(GuiGraphics ctx, int mouseX, int mouseY, float delta) {
         ctx.fill(0, 0, this.width, this.height, 0xB0000000);
         ParchmentRenderer.renderPanel(ctx, left, top, PANEL_W, PANEL_H, "Minepiece Essentials");
 
@@ -169,7 +169,7 @@ public class HelpScreen extends Screen {
     }
 
     /** Bouton de don : palette dorée/parchemin, bordure claire/sombre, glyphe berries. */
-    private void drawDonateButton(DrawContext ctx, int x, int y, int w, String label, int mouseX, int mouseY) {
+    private void drawDonateButton(GuiGraphics ctx, int x, int y, int w, String label, int mouseX, int mouseY) {
         boolean hover = mouseX >= x && mouseX <= x + w && mouseY >= y && mouseY <= y + BTN_H;
         int fill = hover ? DONATE_FILL_HOVER : DONATE_FILL;
         int textColor = hover ? DONATE_TEXT_HOVER : DONATE_TEXT;
@@ -180,14 +180,14 @@ public class HelpScreen extends Screen {
         ctx.fill(x, y, x + 1, y + BTN_H, DONATE_BORDER_LIGHT);
         ctx.fill(x + w - 1, y, x + w, y + BTN_H, DONATE_BORDER_DARK);
 
-        TextRenderer tr = MinecraftClient.getInstance().textRenderer;
-        Text text = Text.literal(label + " ").append(Text.literal(BERRY)
-                .styled(s -> s.withFont(new StyleSpriteSource.Font(BERRY_FONT))));
-        int tw = tr.getWidth(text);
-        ctx.drawText(tr, text, x + (w - tw) / 2, y + (BTN_H - tr.fontHeight) / 2, textColor, false);
+        Font tr = Minecraft.getInstance().font;
+        Component text = Component.literal(label + " ").append(Component.literal(BERRY)
+                .withStyle(s -> s.withFont(new FontDescription.Resource(BERRY_FONT))));
+        int tw = tr.width(text);
+        ctx.drawString(tr, text, x + (w - tw) / 2, y + (BTN_H - tr.lineHeight) / 2, textColor, false);
     }
 
-    private void drawButton(DrawContext ctx, int x, int y, int w, String label, int mouseX, int mouseY) {
+    private void drawButton(GuiGraphics ctx, int x, int y, int w, String label, int mouseX, int mouseY) {
         boolean hover = mouseX >= x && mouseX <= x + w && mouseY >= y && mouseY <= y + BTN_H;
         ctx.fill(x, y, x + w, y + BTN_H, hover ? 0xFF5A4632 : 0xFF3A2A1C);
         ctx.fill(x, y, x + w, y + 1, 0xFF8A6A44);
@@ -196,35 +196,35 @@ public class HelpScreen extends Screen {
     }
 
     @Override
-    public boolean mouseClicked(Click click, boolean doubled) {
+    public boolean mouseClicked(MouseButtonEvent click, boolean doubled) {
         if (click.button() == 0) {
             int btnY = topRowY();
             if (inside(click, left + 12, btnY, 140)) {
                 var cfg = MinepieceEssentialsClient.getInstance().getConfigManager();
                 cfg.config().helpDismissed = true;
                 cfg.save();
-                close();
+                onClose();
                 return true;
             }
             if (inside(click, left + PANEL_W - 12 - 90, btnY, 90)) {
-                close();
+                onClose();
                 return true;
             }
             // Le don reste gate sur MinePiece à la fois pour l'affichage (render) et le clic.
             if (ServerDetector.isOnMinePiece() && inside(click, left + 12, donateRowY(), PANEL_W - 24)) {
-                MinecraftClient.getInstance().setScreen(new DonateScreen(this));
+                Minecraft.getInstance().setScreen(new DonateScreen(this));
                 return true;
             }
         }
         return super.mouseClicked(click, doubled);
     }
 
-    private boolean inside(Click click, int x, int y, int w) {
+    private boolean inside(MouseButtonEvent click, int x, int y, int w) {
         return click.x() >= x && click.x() <= x + w && click.y() >= y && click.y() <= y + BTN_H;
     }
 
     @Override
-    public boolean shouldPause() {
+    public boolean isPauseScreen() {
         return false;
     }
 }

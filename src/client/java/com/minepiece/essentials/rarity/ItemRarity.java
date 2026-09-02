@@ -1,6 +1,6 @@
 package com.minepiece.essentials.rarity;
 
-import net.minecraft.util.Identifier;
+import net.minecraft.resources.Identifier;
 
 /**
  * Raretés MinePiece. Le glyphe est le codepoint que le resource pack serveur mappe
@@ -34,7 +34,7 @@ public enum ItemRarity {
         this.color = color;
         this.rank = rank;
         this.label = label;
-        this.texture = Identifier.of("fonts", "textures/font/rarity/items/icon/" + key + "_icons.png");
+        this.texture = Identifier.fromNamespaceAndPath("fonts", "textures/font/rarity/items/icon/" + key + "_icons.png");
     }
 
     public Identifier texture() {

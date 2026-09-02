@@ -1,14 +1,14 @@
 package com.minepiece.essentials.network;
 
 import com.minepiece.essentials.MinepieceEssentialsClient;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.item.ItemStack;
-import net.minecraft.network.packet.c2s.play.CloseHandledScreenC2SPacket;
-import net.minecraft.network.packet.c2s.play.ClickSlotC2SPacket;
-import net.minecraft.screen.slot.SlotActionType;
-import net.minecraft.screen.sync.ItemStackHash;
 import java.util.Map;
 import java.util.function.Consumer;
+import net.minecraft.client.Minecraft;
+import net.minecraft.network.HashedStack;
+import net.minecraft.network.protocol.game.ServerboundContainerClickPacket;
+import net.minecraft.network.protocol.game.ServerboundContainerClosePacket;
+import net.minecraft.world.inventory.ClickType;
+import net.minecraft.world.item.ItemStack;
 
 public class BackgroundGuiRefresh {
     private static long lastRefreshTime = 0;
@@ -34,7 +34,7 @@ public class BackgroundGuiRefresh {
      * The screen is blocked from opening via mixin cancel on onOpenScreen.
      */
     public static void sendCommand(String command, Consumer<Map<Integer, ItemStack>> onItems) {
-        MinecraftClient client = MinecraftClient.getInstance();
+        Minecraft client = Minecraft.getInstance();
         if (client.player == null || busy) return;
 
         long now = System.currentTimeMillis();
@@ -51,14 +51,14 @@ public class BackgroundGuiRefresh {
         });
 
         String cmd = command.startsWith("/") ? command.substring(1) : command;
-        client.player.networkHandler.sendChatCommand(cmd);
+        client.player.connection.sendCommand(cmd);
     }
 
     /**
      * After receiving first screen items, click a slot to open a sub-menu.
      */
     public static void clickSlotAndListen(int slot, Consumer<Map<Integer, ItemStack>> onItems) {
-        MinecraftClient client = MinecraftClient.getInstance();
+        Minecraft client = Minecraft.getInstance();
         if (client.player == null || !busy) return;
 
         int syncId = ServerGuiInterceptor.getExpectedSyncId();
@@ -74,12 +74,12 @@ public class BackgroundGuiRefresh {
         ServerGuiInterceptor.prepareForSecondScreen(onItems);
 
         // Send click packet
-        client.getNetworkHandler().sendPacket(
-            new ClickSlotC2SPacket(
+        client.getConnection().send(
+            new ServerboundContainerClickPacket(
                 syncId, 0, (short) slot, (byte) 0,
-                SlotActionType.PICKUP,
+                ClickType.PICKUP,
                 new it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap<>(),
-                ItemStackHash.EMPTY));
+                HashedStack.EMPTY));
     }
 
     /**
@@ -103,15 +103,15 @@ public class BackgroundGuiRefresh {
     }
 
     private static void closeCurrentScreen() {
-        MinecraftClient client = MinecraftClient.getInstance();
-        if (client.getNetworkHandler() != null) {
+        Minecraft client = Minecraft.getInstance();
+        if (client.getConnection() != null) {
             int syncId = ServerGuiInterceptor.getExpectedSyncId();
             if (syncId >= 0) {
                 // Tell server we closed the screen
-                client.getNetworkHandler().sendPacket(new CloseHandledScreenC2SPacket(syncId));
+                client.getConnection().send(new ServerboundContainerClosePacket(syncId));
             }
             // Also close any screen the client might have open
-            if (client.currentScreen != null) {
+            if (client.screen != null) {
                 client.setScreen(null);
             }
         }

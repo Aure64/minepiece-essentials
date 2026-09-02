@@ -4,10 +4,10 @@ import com.minepiece.essentials.hud.HudElement;
 import com.minepiece.essentials.hud.ParchmentRenderer;
 import com.minepiece.essentials.util.ColorUtils;
 import com.minepiece.essentials.util.RenderUtils;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.text.Text;
 import java.util.Comparator;
 import java.util.List;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.network.chat.Component;
 
 public class ParcheminHud extends HudElement {
     private static final int WIDTH = 170;
@@ -21,14 +21,14 @@ public class ParcheminHud extends HudElement {
     }
 
     @Override
-    public void render(DrawContext ctx, float tickDelta) {
+    public void render(GuiGraphics ctx, float tickDelta) {
         List<ParcheminScanner.QuestInfo> parchemins = sorted;
         if (parchemins.isEmpty()) return;
         com.minepiece.essentials.telemetry.Telemetry.feature("parchment_hud");
 
         int h = 20 + parchemins.size() * 24 + 4;
         this.height = h;
-        ParchmentRenderer.renderPanel(ctx, 0, 0, WIDTH, h, Text.translatable("minepiece.ui.scrolls.title").getString(), getBackground());
+        ParchmentRenderer.renderPanel(ctx, 0, 0, WIDTH, h, Component.translatable("minepiece.ui.scrolls.title").getString(), getBackground());
 
         int lineY = 20;
         for (var quest : parchemins) {

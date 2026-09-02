@@ -6,14 +6,14 @@ import com.minepiece.essentials.boss.BossTimerHud;
 import com.minepiece.essentials.config.HudBackground;
 import com.minepiece.essentials.donate.DonateScreen;
 import com.minepiece.essentials.util.RenderUtils;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.font.TextRenderer;
-import net.minecraft.client.gui.Click;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.text.StyleSpriteSource;
-import net.minecraft.text.Text;
-import net.minecraft.util.Identifier;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.FontDescription;
+import net.minecraft.resources.Identifier;
 
 public class HudEditScreen extends Screen {
     private static final int BTN_W = 180;
@@ -49,10 +49,10 @@ public class HudEditScreen extends Screen {
 
     /** Glyphe de la monnaie du serveur (berries), rendu avec la police custom du pack. */
     private static final String BERRY = "实";
-    private static final Identifier BERRY_FONT = Identifier.of("fonts", "icons");
+    private static final Identifier BERRY_FONT = Identifier.fromNamespaceAndPath("fonts", "icons");
 
     public HudEditScreen() {
-        super(Text.literal("HUD Editor"));
+        super(Component.literal("HUD Editor"));
     }
 
     @Override
@@ -106,12 +106,12 @@ public class HudEditScreen extends Screen {
     // --- rendering -----------------------------------------------------------
 
     @Override
-    public void render(DrawContext ctx, int mouseX, int mouseY, float delta) {
+    public void render(GuiGraphics ctx, int mouseX, int mouseY, float delta) {
         ctx.fill(0, 0, width, height, 0x44000000);
 
         String tabName = tab == Tab.PLACEMENT
-                ? Text.translatable("minepiece.ui.editor.tab_placement").getString()
-                : Text.translatable("minepiece.ui.editor.tab_customize").getString();
+                ? Component.translatable("minepiece.ui.editor.tab_placement").getString()
+                : Component.translatable("minepiece.ui.editor.tab_customize").getString();
         String hint = tab == Tab.PLACEMENT
                 ? tabName + " - Clic gauche: deplacer | Clic droit: ON/OFF | Scroll: taille"
                 : tabName + " - Clic sur un HUD: change son fond (Parchemin -> Sombre -> Transparent)";
@@ -127,14 +127,14 @@ public class HudEditScreen extends Screen {
         }
     }
 
-    private void drawTabs(DrawContext ctx, int mouseX, int mouseY) {
-        drawTab(ctx, placementTabX(), Text.translatable("minepiece.ui.editor.tab_placement").getString(), tab == Tab.PLACEMENT,
+    private void drawTabs(GuiGraphics ctx, int mouseX, int mouseY) {
+        drawTab(ctx, placementTabX(), Component.translatable("minepiece.ui.editor.tab_placement").getString(), tab == Tab.PLACEMENT,
                 inBox(mouseX, mouseY, placementTabX(), tabsY, TAB_W, TAB_H));
-        drawTab(ctx, customizeTabX(), Text.translatable("minepiece.ui.editor.tab_customize").getString(), tab == Tab.CUSTOMIZE,
+        drawTab(ctx, customizeTabX(), Component.translatable("minepiece.ui.editor.tab_customize").getString(), tab == Tab.CUSTOMIZE,
                 inBox(mouseX, mouseY, customizeTabX(), tabsY, TAB_W, TAB_H));
     }
 
-    private void drawTab(DrawContext ctx, int x, String label, boolean active, boolean hover) {
+    private void drawTab(GuiGraphics ctx, int x, String label, boolean active, boolean hover) {
         int bg = active ? 0xFF6A4A2C : (hover ? 0xFF4A3422 : 0xFF2A1E14);
         ctx.fill(x, tabsY, x + TAB_W, tabsY + TAB_H, bg);
         ctx.fill(x, tabsY, x + TAB_W, tabsY + 1, 0xFF8A6A44);
@@ -142,7 +142,7 @@ public class HudEditScreen extends Screen {
                 active ? 0xFFFFE9D5 : 0xFFBFae9C);
     }
 
-    private void renderPlacement(DrawContext ctx, int mouseX, int mouseY, float delta) {
+    private void renderPlacement(GuiGraphics ctx, int mouseX, int mouseY, float delta) {
         for (HudElement element : HudElementRegistry.getElements()) {
             if (element instanceof BossTimerHud bossHud) {
                 bossHud.setMousePos(mouseX, mouseY);
@@ -173,22 +173,22 @@ public class HudEditScreen extends Screen {
         ctx.fill(resetBtnX, resetBtnY, resetBtnX + BTN_W, resetBtnY + BTN_H, hover ? 0xFF6A4A2C : 0xFF3A2A1C);
         ctx.fill(resetBtnX, resetBtnY, resetBtnX + BTN_W, resetBtnY + 1, 0xFF8A6A44);
         ctx.fill(resetBtnX, resetBtnY + BTN_H - 1, resetBtnX + BTN_W, resetBtnY + BTN_H, 0xFF8A6A44);
-        RenderUtils.drawCenteredText(ctx, Text.translatable("minepiece.ui.editor.reset_placement").getString(), width / 2, resetBtnY + 4, 0xFFFFE9D5);
+        RenderUtils.drawCenteredText(ctx, Component.translatable("minepiece.ui.editor.reset_placement").getString(), width / 2, resetBtnY + 4, 0xFFFFE9D5);
 
         if (System.currentTimeMillis() < resetMsgUntil) {
-            RenderUtils.drawCenteredText(ctx, Text.translatable("minepiece.ui.editor.placement_reset").getString(), width / 2, resetBtnY + BTN_H + 4, 0xFF7CFC55);
+            RenderUtils.drawCenteredText(ctx, Component.translatable("minepiece.ui.editor.placement_reset").getString(), width / 2, resetBtnY + BTN_H + 4, 0xFF7CFC55);
         }
 
         // Toggles de la fonctionnalité Raretés.
         var cfg = MinepieceEssentialsClient.getInstance().getConfigManager().config();
-        RenderUtils.drawCenteredText(ctx, Text.translatable("minepiece.ui.editor.rarities").getString(), width / 2, rarityTogglesY - 12, 0xFFFFE9D5);
-        drawToggle(ctx, mouseX, mouseY, 0, Text.translatable("minepiece.ui.editor.emblems_chests").getString(), cfg.rarityIconsEnabled);
-        drawToggle(ctx, mouseX, mouseY, 1, Text.translatable("minepiece.ui.editor.emblems_inventory").getString(), cfg.rarityInventoryEnabled);
-        drawToggle(ctx, mouseX, mouseY, 2, Text.translatable("minepiece.ui.editor.emblems_hotbar").getString(), cfg.rarityHotbarEnabled);
-        drawToggle(ctx, mouseX, mouseY, 3, Text.translatable("minepiece.ui.editor.filter_bar").getString(), cfg.rarityFilterEnabled);
-        drawToggle(ctx, mouseX, mouseY, 4, Text.translatable("minepiece.ui.editor.sort_buttons").getString(), cfg.raritySorterEnabled);
-        drawToggle(ctx, mouseX, mouseY, 5, Text.translatable("minepiece.ui.editor.ah_price_color").getString(), cfg.ahPriceColorEnabled);
-        drawToggle(ctx, mouseX, mouseY, 6, Text.translatable("minepiece.ui.editor.telemetry").getString(),
+        RenderUtils.drawCenteredText(ctx, Component.translatable("minepiece.ui.editor.rarities").getString(), width / 2, rarityTogglesY - 12, 0xFFFFE9D5);
+        drawToggle(ctx, mouseX, mouseY, 0, Component.translatable("minepiece.ui.editor.emblems_chests").getString(), cfg.rarityIconsEnabled);
+        drawToggle(ctx, mouseX, mouseY, 1, Component.translatable("minepiece.ui.editor.emblems_inventory").getString(), cfg.rarityInventoryEnabled);
+        drawToggle(ctx, mouseX, mouseY, 2, Component.translatable("minepiece.ui.editor.emblems_hotbar").getString(), cfg.rarityHotbarEnabled);
+        drawToggle(ctx, mouseX, mouseY, 3, Component.translatable("minepiece.ui.editor.filter_bar").getString(), cfg.rarityFilterEnabled);
+        drawToggle(ctx, mouseX, mouseY, 4, Component.translatable("minepiece.ui.editor.sort_buttons").getString(), cfg.raritySorterEnabled);
+        drawToggle(ctx, mouseX, mouseY, 5, Component.translatable("minepiece.ui.editor.ah_price_color").getString(), cfg.ahPriceColorEnabled);
+        drawToggle(ctx, mouseX, mouseY, 6, Component.translatable("minepiece.ui.editor.telemetry").getString(),
                 cfg.telemetryEnabled);
 
         // Bouton de don, seulement visible tant qu'on est connecté à MinePiece.
@@ -198,7 +198,7 @@ public class HudEditScreen extends Screen {
         }
     }
 
-    private void drawDonateButton(DrawContext ctx, int mouseX, int mouseY) {
+    private void drawDonateButton(GuiGraphics ctx, int mouseX, int mouseY) {
         boolean hover = inBox(mouseX, mouseY, donateBtnX, donateBtnY, BTN_W, BTN_H);
         int fill = hover ? DONATE_FILL_HOVER : DONATE_FILL;
         int textColor = hover ? DONATE_TEXT_HOVER : DONATE_TEXT;
@@ -209,14 +209,14 @@ public class HudEditScreen extends Screen {
         ctx.fill(donateBtnX, donateBtnY, donateBtnX + 1, donateBtnY + BTN_H, DONATE_BORDER_LIGHT);
         ctx.fill(donateBtnX + BTN_W - 1, donateBtnY, donateBtnX + BTN_W, donateBtnY + BTN_H, DONATE_BORDER_DARK);
 
-        TextRenderer tr = MinecraftClient.getInstance().textRenderer;
-        Text text = Text.literal(Text.translatable("minepiece.ui.editor.donate_berries").getString() + " ")
-                .append(Text.literal(BERRY).styled(s -> s.withFont(new StyleSpriteSource.Font(BERRY_FONT))));
-        int tw = tr.getWidth(text);
-        ctx.drawText(tr, text, width / 2 - tw / 2, donateBtnY + (BTN_H - tr.fontHeight) / 2, textColor, false);
+        Font tr = Minecraft.getInstance().font;
+        Component text = Component.literal(Component.translatable("minepiece.ui.editor.donate_berries").getString() + " ")
+                .append(Component.literal(BERRY).withStyle(s -> s.withFont(new FontDescription.Resource(BERRY_FONT))));
+        int tw = tr.width(text);
+        ctx.drawString(tr, text, width / 2 - tw / 2, donateBtnY + (BTN_H - tr.lineHeight) / 2, textColor, false);
     }
 
-    private void drawToggle(DrawContext ctx, int mouseX, int mouseY, int index, String label, boolean on) {
+    private void drawToggle(GuiGraphics ctx, int mouseX, int mouseY, int index, String label, boolean on) {
         int y = rarityTogglesY + index * TOGGLE_STEP;
         boolean hover = inBox(mouseX, mouseY, rarityTogglesX, y, BTN_W, BTN_H);
         ctx.fill(rarityTogglesX, y, rarityTogglesX + BTN_W, y + BTN_H, hover ? 0xFF6A4A2C : 0xFF3A2A1C);
@@ -226,7 +226,7 @@ public class HudEditScreen extends Screen {
                 width / 2, y + 4, on ? 0xFF7CFC55 : 0xFFFF6666);
     }
 
-    private void renderCustomize(DrawContext ctx, int mouseX, int mouseY, float delta) {
+    private void renderCustomize(GuiGraphics ctx, int mouseX, int mouseY, float delta) {
         for (HudElement element : HudElementRegistry.getElements()) {
             int x = element.getX(), y = element.getY();
             int w = element.getWidth(), h = element.getHeight();
@@ -247,18 +247,18 @@ public class HudEditScreen extends Screen {
     }
 
     /** Renders a HUD at its position with its scale applied. */
-    private void drawElement(DrawContext ctx, HudElement element, float delta) {
-        ctx.getMatrices().pushMatrix();
-        ctx.getMatrices().translate(element.getX(), element.getY());
-        ctx.getMatrices().scale(element.getScale(), element.getScale());
+    private void drawElement(GuiGraphics ctx, HudElement element, float delta) {
+        ctx.pose().pushMatrix();
+        ctx.pose().translate(element.getX(), element.getY());
+        ctx.pose().scale(element.getScale(), element.getScale());
         element.render(ctx, delta);
-        ctx.getMatrices().popMatrix();
+        ctx.pose().popMatrix();
     }
 
     // --- input ---------------------------------------------------------------
 
     @Override
-    public boolean mouseClicked(Click click, boolean doubled) {
+    public boolean mouseClicked(MouseButtonEvent click, boolean doubled) {
         double mouseX = click.x();
         double mouseY = click.y();
         int button = click.button();
@@ -293,7 +293,7 @@ public class HudEditScreen extends Screen {
         return false;
     }
 
-    private boolean clickPlacement(double mouseX, double mouseY, int button, Click click, boolean doubled) {
+    private boolean clickPlacement(double mouseX, double mouseY, int button, MouseButtonEvent click, boolean doubled) {
         if (button == 0 && overResetButton(mouseX, mouseY)) {
             resetPlacement();
             return true;
@@ -323,7 +323,7 @@ public class HudEditScreen extends Screen {
 
         if (button == 0 && ServerDetector.isOnMinePiece()
                 && inBox(mouseX, mouseY, donateBtnX, donateBtnY, BTN_W, BTN_H)) {
-            MinecraftClient.getInstance().setScreen(new DonateScreen(this));
+            Minecraft.getInstance().setScreen(new DonateScreen(this));
             return true;
         }
 
@@ -353,7 +353,7 @@ public class HudEditScreen extends Screen {
     }
 
     @Override
-    public boolean mouseDragged(Click click, double deltaX, double deltaY) {
+    public boolean mouseDragged(MouseButtonEvent click, double deltaX, double deltaY) {
         double mouseX = click.x();
         double mouseY = click.y();
         if (dragging != null && click.button() == 0) {
@@ -366,7 +366,7 @@ public class HudEditScreen extends Screen {
     }
 
     @Override
-    public boolean mouseReleased(Click click) {
+    public boolean mouseReleased(MouseButtonEvent click) {
         dragging = null;
         return super.mouseReleased(click);
     }
@@ -385,5 +385,5 @@ public class HudEditScreen extends Screen {
     }
 
     @Override
-    public boolean shouldPause() { return false; }
+    public boolean isPauseScreen() { return false; }
 }

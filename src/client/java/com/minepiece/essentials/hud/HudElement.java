@@ -3,8 +3,8 @@ package com.minepiece.essentials.hud;
 import com.minepiece.essentials.MinepieceEssentialsClient;
 import com.minepiece.essentials.config.HudBackground;
 import com.minepiece.essentials.config.LayoutConfig;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.DrawContext;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphics;
 
 public abstract class HudElement {
     protected final String id;
@@ -19,7 +19,7 @@ public abstract class HudElement {
         this.height = height;
     }
 
-    public abstract void render(DrawContext context, float tickDelta);
+    public abstract void render(GuiGraphics context, float tickDelta);
     public abstract void tick();
 
     public LayoutConfig.ElementLayout getLayout() {
@@ -30,13 +30,13 @@ public abstract class HudElement {
     }
 
     public int getX() {
-        MinecraftClient client = MinecraftClient.getInstance();
-        int maxX = client.getWindow().getScaledWidth() - getWidth();
+        Minecraft client = Minecraft.getInstance();
+        int maxX = client.getWindow().getGuiScaledWidth() - getWidth();
         return Math.max(0, Math.min(getLayout().x, maxX));
     }
     public int getY() {
-        MinecraftClient client = MinecraftClient.getInstance();
-        int maxY = client.getWindow().getScaledHeight() - getHeight();
+        Minecraft client = Minecraft.getInstance();
+        int maxY = client.getWindow().getGuiScaledHeight() - getHeight();
         return Math.max(0, Math.min(getLayout().y, maxY));
     }
     public float getScale() { return getLayout().scale; }

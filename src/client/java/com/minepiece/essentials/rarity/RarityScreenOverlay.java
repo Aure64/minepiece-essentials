@@ -4,17 +4,17 @@ import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.item.ItemStack;
 import com.minepiece.essentials.ServerDetector;
 import com.minepiece.essentials.MinepieceEssentialsClient;
 import com.minepiece.essentials.ah.AhPriceBandCache;
 import com.minepiece.essentials.config.ModConfig;
 import com.minepiece.essentials.util.RenderUtils;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.screen.ingame.HandledScreen;
-import net.minecraft.item.ItemStack;
-import net.minecraft.screen.slot.Slot;
-import net.minecraft.text.Text;
 
 /** Rendu de l'overlay rareté sur un HandledScreen + gestion des clics de la barre. */
 public final class RarityScreenOverlay {
@@ -39,7 +39,7 @@ public final class RarityScreenOverlay {
     }
 
     /** Liseré 1px collé autour de la case (à l'extérieur du 16×16), l'item reste net. */
-    private static void drawPriceBorder(DrawContext ctx, int x, int y, int color) {
+    private static void drawPriceBorder(GuiGraphics ctx, int x, int y, int color) {
         ctx.fill(x - 1, y - 1, x + 17, y,      color); // haut
         ctx.fill(x - 1, y + 16, x + 17, y + 17, color); // bas
         ctx.fill(x - 1, y, x, y + 16,          color); // gauche
@@ -47,7 +47,7 @@ public final class RarityScreenOverlay {
     }
 
     // ---- Rendu (appelé en TAIL de HandledScreen.render) ----
-    public static void render(HandledScreen<?> screen, DrawContext ctx,
+    public static void render(AbstractContainerScreen<?> screen, GuiGraphics ctx,
                               int bgX, int bgY, int mouseX, int mouseY) {
         HITS.clear();
         if (!ServerDetector.isOnMinePiece()) return;
@@ -55,13 +55,13 @@ public final class RarityScreenOverlay {
 
         // 1) Emblèmes + voile + liseré prix sur chaque slot.
         // L'inventaire joueur (E) et les coffres ont chacun leur toggle.
-        boolean isPlayerInv = screen instanceof net.minecraft.client.gui.screen.ingame.InventoryScreen;
+        boolean isPlayerInv = screen instanceof net.minecraft.client.gui.screens.inventory.InventoryScreen;
         boolean icons = isPlayerInv ? c.rarityInventoryEnabled : c.rarityIconsEnabled;
         boolean filterOn = c.rarityFilterEnabled && FILTER.any();
         boolean priceColor = c.ahPriceColorEnabled;
         if (icons || filterOn || priceColor) {
-            for (Slot slot : screen.getScreenHandler().slots) {
-                ItemStack st = slot.getStack();
+            for (Slot slot : screen.getMenu().slots) {
+                ItemStack st = slot.getItem();
                 if (st.isEmpty()) continue;
                 ItemRarity r = RarityDetector.detect(st);
                 int sx = bgX + slot.x, sy = bgY + slot.y;
@@ -89,8 +89,8 @@ public final class RarityScreenOverlay {
         // Boutons de filtre : une rareté présente = un bouton.
         if (c.rarityFilterEnabled) {
             Set<ItemRarity> present = EnumSet.noneOf(ItemRarity.class);
-            for (Slot slot : screen.getScreenHandler().slots) {
-                ItemRarity r = RarityDetector.detect(slot.getStack());
+            for (Slot slot : screen.getMenu().slots) {
+                ItemRarity r = RarityDetector.detect(slot.getItem());
                 if (r != null) present.add(r);
             }
             for (ItemRarity r : ItemRarity.values()) {
@@ -143,8 +143,8 @@ public final class RarityScreenOverlay {
         for (Hit h : HITS) {
             if (mouseX >= h.x() && mouseX < h.x() + h.w()
                     && mouseY >= h.y() && mouseY < h.y() + h.h()) {
-                ctx.drawTooltip(MinecraftClient.getInstance().textRenderer,
-                        Text.literal(h.tip()), mouseX, mouseY);
+                ctx.setTooltipForNextFrame(Minecraft.getInstance().font,
+                        Component.literal(h.tip()), mouseX, mouseY);
                 break;
             }
         }
@@ -152,7 +152,7 @@ public final class RarityScreenOverlay {
 
     // ---- Clic (appelé en HEAD de HandledScreen.mouseClicked) ----
     /** @return true si le clic a été consommé par la barre. */
-    public static boolean onClick(HandledScreen<?> screen, double mx, double my) {
+    public static boolean onClick(AbstractContainerScreen<?> screen, double mx, double my) {
         if (!ServerDetector.isOnMinePiece()) return false;
         for (Hit h : HITS) {
             if (mx >= h.x() && mx < h.x() + h.w() && my >= h.y() && my < h.y() + h.h()) {

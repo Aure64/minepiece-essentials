@@ -2,18 +2,18 @@ package com.minepiece.essentials.hud;
 
 import com.minepiece.essentials.config.HudBackground;
 import com.minepiece.essentials.util.RenderUtils;
-import net.minecraft.client.gui.DrawContext;
 import java.util.List;
+import net.minecraft.client.gui.GuiGraphics;
 
 public class ParchmentRenderer {
 
     /** Renders a panel with the classic parchment style. */
-    public static void renderPanel(DrawContext ctx, int x, int y, int w, int h, String title) {
+    public static void renderPanel(GuiGraphics ctx, int x, int y, int w, int h, String title) {
         renderPanel(ctx, x, y, w, h, title, HudBackground.PARCHMENT);
     }
 
     /** Renders a panel using the given background preset's fill/border/text colours. */
-    public static void renderPanel(DrawContext ctx, int x, int y, int w, int h, String title,
+    public static void renderPanel(GuiGraphics ctx, int x, int y, int w, int h, String title,
                                    HudBackground bg) {
         RenderUtils.drawParchmentBox(ctx, x, y, w, h, bg.bgColor(), bg.borderColor());
         if (title != null) {
@@ -24,12 +24,12 @@ public class ParchmentRenderer {
         }
     }
 
-    public static int renderList(DrawContext ctx, int x, int y, int w,
+    public static int renderList(GuiGraphics ctx, int x, int y, int w,
                                  String title, List<String> lines) {
         return renderList(ctx, x, y, w, title, lines, HudBackground.PARCHMENT);
     }
 
-    public static int renderList(DrawContext ctx, int x, int y, int w,
+    public static int renderList(GuiGraphics ctx, int x, int y, int w,
                                  String title, List<String> lines, HudBackground bg) {
         int lineHeight = 12;
         int totalHeight = 20 + lines.size() * lineHeight + 6;

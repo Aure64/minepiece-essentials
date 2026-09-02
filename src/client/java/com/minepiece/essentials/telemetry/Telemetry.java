@@ -4,8 +4,7 @@ import com.minepiece.essentials.MinepieceEssentialsClient;
 import com.minepiece.essentials.ModConstants;
 import com.minepiece.essentials.ServerDetector;
 import net.fabricmc.loader.api.FabricLoader;
-import net.minecraft.client.MinecraftClient;
-
+import net.minecraft.client.Minecraft;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -188,7 +187,7 @@ public final class Telemetry {
                 .map(m -> m.getMetadata().getVersion().getFriendlyString()).orElse("unknown"));
         props.put("java_version", System.getProperty("java.version", "unknown"));
         props.put("os", System.getProperty("os.name", "unknown").toLowerCase().split(" ")[0]);
-        props.put("client_language", MinecraftClient.getInstance().options.language);
+        props.put("client_language", Minecraft.getInstance().options.languageCode);
         props.put("on_minepiece", onMinePiece);
         try {
             BUFFER.add(TelemetryEvent.of("mp_session_start", props));

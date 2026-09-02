@@ -2,12 +2,12 @@ package com.minepiece.essentials.donate;
 
 import com.minepiece.essentials.ServerDetector;
 import com.minepiece.essentials.hud.ParchmentRenderer;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.widget.ButtonWidget;
-import net.minecraft.client.gui.widget.TextFieldWidget;
-import net.minecraft.text.Text;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.EditBox;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.Component;
 
 /**
  * Petit écran de don : saisie d'un montant en berries, puis confirmation
@@ -56,7 +56,7 @@ public class DonateScreen extends Screen {
     private State state = State.AMOUNT;
 
     // Champ de saisie du montant (état AMOUNT).
-    private TextFieldWidget amountField;
+    private EditBox amountField;
     private String pendingText = "";
     private String errorMessage = null;
 
@@ -67,7 +67,7 @@ public class DonateScreen extends Screen {
     private long confirmEnteredAt = 0;
 
     public DonateScreen(Screen parent) {
-        super(Text.translatable("minepiece.ui.donate.title"));
+        super(Component.translatable("minepiece.ui.donate.title"));
         this.parent = parent;
     }
 
@@ -113,12 +113,12 @@ public class DonateScreen extends Screen {
         int centerX = width / 2;
         int y = height / 2 - 50;
 
-        amountField = new TextFieldWidget(textRenderer, centerX - 100, y, 200, 20,
-                Text.translatable("minepiece.ui.donate.field_amount"));
+        amountField = new EditBox(font, centerX - 100, y, 200, 20,
+                Component.translatable("minepiece.ui.donate.field_amount"));
         amountField.setMaxLength(32);
-        amountField.setText(pendingText);
-        amountField.setChangedListener(text -> pendingText = text);
-        addDrawableChild(amountField);
+        amountField.setValue(pendingText);
+        amountField.setResponder(text -> pendingText = text);
+        addRenderableWidget(amountField);
         setInitialFocus(amountField);
 
         y += 28;
@@ -127,43 +127,43 @@ public class DonateScreen extends Screen {
         int presetsX = centerX - (presetW * 3 + gap * 2) / 2;
         for (int i = 0; i < PRESETS.length; i++) {
             int amount = PRESETS[i];
-            addDrawableChild(ButtonWidget.builder(Text.literal(formatBerries(amount)),
+            addRenderableWidget(Button.builder(Component.literal(formatBerries(amount)),
                     b -> {
                         pendingText = Integer.toString(amount);
-                        amountField.setText(pendingText);
-                    }).dimensions(presetsX + i * (presetW + gap), y, presetW, 20).build());
+                        amountField.setValue(pendingText);
+                    }).bounds(presetsX + i * (presetW + gap), y, presetW, 20).build());
         }
 
         y += 32;
-        addDrawableChild(ButtonWidget.builder(Text.translatable("minepiece.ui.donate.btn_next"),
-                b -> validateAndAdvance()).dimensions(centerX - 100, y, 96, 20).build());
-        addDrawableChild(ButtonWidget.builder(Text.translatable("minepiece.ui.donate.btn_cancel"),
-                b -> close()).dimensions(centerX + 4, y, 96, 20).build());
+        addRenderableWidget(Button.builder(Component.translatable("minepiece.ui.donate.btn_next"),
+                b -> validateAndAdvance()).bounds(centerX - 100, y, 96, 20).build());
+        addRenderableWidget(Button.builder(Component.translatable("minepiece.ui.donate.btn_cancel"),
+                b -> onClose()).bounds(centerX + 4, y, 96, 20).build());
     }
 
     private void validateAndAdvance() {
         try {
             confirmedAmount = parseAmount(pendingText);
         } catch (IllegalArgumentException e) {
-            errorMessage = Text.translatable("minepiece.ui.donate.error_invalid").getString();
+            errorMessage = Component.translatable("minepiece.ui.donate.error_invalid").getString();
             return;
         }
         errorMessage = null;
         state = State.CONFIRM;
         confirmEnteredAt = System.currentTimeMillis();
-        clearAndInit();
+        rebuildWidgets();
     }
 
     private void initConfirmState() {
         int centerX = width / 2;
 
-        addDrawableChild(ButtonWidget.builder(Text.translatable("minepiece.ui.donate.btn_confirm"),
-                b -> sendDonation()).dimensions(centerX - 100, height / 2 + CONFIRM_BUTTONS_Y, 96, BUTTON_HEIGHT).build());
-        addDrawableChild(ButtonWidget.builder(Text.translatable("minepiece.ui.donate.btn_back"),
+        addRenderableWidget(Button.builder(Component.translatable("minepiece.ui.donate.btn_confirm"),
+                b -> sendDonation()).bounds(centerX - 100, height / 2 + CONFIRM_BUTTONS_Y, 96, BUTTON_HEIGHT).build());
+        addRenderableWidget(Button.builder(Component.translatable("minepiece.ui.donate.btn_back"),
                 b -> {
                     state = State.AMOUNT;
-                    clearAndInit();
-                }).dimensions(centerX + 4, height / 2 + CONFIRM_BUTTONS_Y, 96, BUTTON_HEIGHT).build());
+                    rebuildWidgets();
+                }).bounds(centerX + 4, height / 2 + CONFIRM_BUTTONS_Y, 96, BUTTON_HEIGHT).build());
     }
 
     /**
@@ -180,7 +180,7 @@ public class DonateScreen extends Screen {
         if (!ServerDetector.isOnMinePiece()) {
             // Ecran ouvert sur MinePiece mais qui aurait survécu à un changement
             // de contexte (autre serveur) : on n'envoie rien.
-            close();
+            onClose();
             return;
         }
         if (!isArmed(confirmEnteredAt, System.currentTimeMillis())) {
@@ -188,15 +188,15 @@ public class DonateScreen extends Screen {
             // sur "Suivant") : on ignore, la confirmation n'a pas pu être lue.
             return;
         }
-        MinecraftClient client = MinecraftClient.getInstance();
+        Minecraft client = Minecraft.getInstance();
         if (client.player == null) {
-            close();
+            onClose();
             return;
         }
         // Un seul envoi, déclenché par ce clic de confirmation. Pas de slash
         // en tête : c'est le pattern maison de sendChatCommand.
-        client.player.networkHandler.sendChatCommand("pay " + RECIPIENT + " " + confirmedAmount);
-        close();
+        client.player.connection.sendCommand("pay " + RECIPIENT + " " + confirmedAmount);
+        onClose();
     }
 
     private String commandPreview() {
@@ -215,7 +215,7 @@ public class DonateScreen extends Screen {
      * même frame et Minecraft lève "Can only blur once per frame".
      */
     @Override
-    public void renderBackground(DrawContext ctx, int mouseX, int mouseY, float delta) {
+    public void renderBackground(GuiGraphics ctx, int mouseX, int mouseY, float delta) {
         ctx.fill(0, 0, width, height, 0xB0000000);
         int[] panel = panelBounds();
         ParchmentRenderer.renderPanel(ctx, panel[0], panel[1], panel[2], panel[3], null);
@@ -237,31 +237,31 @@ public class DonateScreen extends Screen {
     }
 
     @Override
-    public void render(DrawContext ctx, int mouseX, int mouseY, float delta) {
+    public void render(GuiGraphics ctx, int mouseX, int mouseY, float delta) {
         super.render(ctx, mouseX, mouseY, delta);
 
         int centerX = width / 2;
         if (state == State.AMOUNT) {
-            ctx.drawCenteredTextWithShadow(textRenderer, title, centerX, height / 2 - 70, 0xFFF0A857);
+            ctx.drawCenteredString(font, title, centerX, height / 2 - 70, 0xFFF0A857);
             if (errorMessage != null) {
-                ctx.drawCenteredTextWithShadow(textRenderer, errorMessage, centerX, height / 2 - 20, 0xFFFF5555);
+                ctx.drawCenteredString(font, errorMessage, centerX, height / 2 - 20, 0xFFFF5555);
             }
         } else {
-            ctx.drawCenteredTextWithShadow(textRenderer, title, centerX, height / 2 - 40, 0xFFF0A857);
-            ctx.drawCenteredTextWithShadow(textRenderer,
-                    Text.translatable("minepiece.ui.donate.confirm_prompt").getString(),
+            ctx.drawCenteredString(font, title, centerX, height / 2 - 40, 0xFFF0A857);
+            ctx.drawCenteredString(font,
+                    Component.translatable("minepiece.ui.donate.confirm_prompt").getString(),
                     centerX, height / 2 - 20, 0xFFFFE9D5);
-            ctx.drawCenteredTextWithShadow(textRenderer, commandPreview(), centerX, height / 2, 0xFFFFD27F);
+            ctx.drawCenteredString(font, commandPreview(), centerX, height / 2, 0xFFFFD27F);
         }
     }
 
     @Override
-    public void close() {
-        MinecraftClient.getInstance().setScreen(parent);
+    public void onClose() {
+        Minecraft.getInstance().setScreen(parent);
     }
 
     @Override
-    public boolean shouldPause() {
+    public boolean isPauseScreen() {
         return false;
     }
 }

@@ -4,10 +4,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.WeakHashMap;
-import net.minecraft.component.DataComponentTypes;
-import net.minecraft.component.type.LoreComponent;
-import net.minecraft.item.ItemStack;
-import net.minecraft.text.Text;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.ItemLore;
 
 /**
  * ItemStack → AhPriceBand.Result via le lore, avec cache par pile (même approche que
@@ -37,10 +37,10 @@ public final class AhPriceBandCache {
 
     /** Lignes de lore d'un item en texte brut (sans assembler toute l'infobulle). */
     private static List<String> loreStrings(ItemStack stack) {
-        LoreComponent lore = stack.get(DataComponentTypes.LORE);
+        ItemLore lore = stack.get(DataComponents.LORE);
         if (lore == null) return List.of();
         List<String> out = new ArrayList<>(lore.lines().size());
-        for (Text t : lore.lines()) out.add(t.getString());
+        for (Component t : lore.lines()) out.add(t.getString());
         return out;
     }
 }

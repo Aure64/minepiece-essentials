@@ -20,27 +20,27 @@ import com.minepiece.essentials.pet.MinionTooltip;
 import com.minepiece.essentials.pet.PetStatTooltip;
 import com.minepiece.essentials.quest.ParcheminHud;
 import com.minepiece.essentials.update.UpdateChecker;
+import com.mojang.blaze3d.platform.InputConstants;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
+import net.minecraft.client.KeyMapping;
+import net.minecraft.resources.Identifier;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
-import net.minecraft.client.option.KeyBinding;
-import net.minecraft.client.util.InputUtil;
-import net.minecraft.util.Identifier;
 import org.lwjgl.glfw.GLFW;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class MinepieceEssentialsClient implements ClientModInitializer {
     public static final Logger LOGGER = LoggerFactory.getLogger(ModConstants.MOD_NAME);
-    private static final KeyBinding.Category CATEGORY = KeyBinding.Category.create(
-        Identifier.of(ModConstants.MOD_ID, "main"));
+    private static final KeyMapping.Category CATEGORY = KeyMapping.Category.register(
+        Identifier.fromNamespaceAndPath(ModConstants.MOD_ID, "main"));
 
     private static MinepieceEssentialsClient instance;
     private ConfigManager configManager;
 
-    private KeyBinding editHudKey;
-    private KeyBinding helpKey;
+    private KeyMapping editHudKey;
+    private KeyMapping helpKey;
 
     private boolean pendingHelp = false;
     private boolean helpShownThisSession = false;
@@ -113,8 +113,8 @@ public class MinepieceEssentialsClient implements ClientModInitializer {
             com.minepiece.essentials.telemetry.Telemetry.tick();
             if (pendingTelemetryNotice && client.player != null) {
                 pendingTelemetryNotice = false;
-                client.player.sendMessage(
-                    net.minecraft.text.Text.translatable("minepiece.telemetry.notice")
+                client.player.displayClientMessage(
+                    net.minecraft.network.chat.Component.translatable("minepiece.telemetry.notice")
                         .withColor(0xF0A857), false);
                 com.minepiece.essentials.telemetry.Telemetry.markAnnounced();
             }
@@ -126,19 +126,19 @@ public class MinepieceEssentialsClient implements ClientModInitializer {
 
             BossTracker.getInstance().tick();
 
-            if (pendingHelp && client.currentScreen == null && client.player != null) {
+            if (pendingHelp && client.screen == null && client.player != null) {
                 client.setScreen(new HelpScreen());
                 pendingHelp = false;
                 helpShownThisSession = true;
             }
 
-            while (helpKey.wasPressed()) {
+            while (helpKey.consumeClick()) {
                 // Comptée ici uniquement : c'est une pression volontaire de H, à
                 // distinguer de l'ouverture automatique au premier lancement (pendingHelp).
                 com.minepiece.essentials.telemetry.Telemetry.feature("help_screen");
                 client.setScreen(new HelpScreen());
             }
-            while (editHudKey.wasPressed()) {
+            while (editHudKey.consumeClick()) {
                 client.setScreen(new HudEditScreen());
             }
         });
@@ -148,13 +148,13 @@ public class MinepieceEssentialsClient implements ClientModInitializer {
     }
 
     /**
-     * Branche les clics de la barre rareté sur TOUS les HandledScreen (inventaire E inclus).
-     * Le RENDU, lui, passe par {@code ScreenRenderMixin} (dessiné avant drawDeferredElements
+     * Branche les clics de la barre rareté sur TOUS les AbstractContainerScreen (inventaire E inclus).
+     * Le RENDU, lui, passe par {@code ScreenRenderMixin} (dessiné avant renderDeferredElements
      * pour rester sous l'infobulle serveur) — pas par afterRender qui dessinerait par-dessus.
      */
     private void registerRarityScreenHooks() {
         net.fabricmc.fabric.api.client.screen.v1.ScreenEvents.AFTER_INIT.register((client, screen, sw, sh) -> {
-            if (screen instanceof net.minecraft.client.gui.screen.ingame.HandledScreen<?> hs) {
+            if (screen instanceof net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<?> hs) {
                 net.fabricmc.fabric.api.client.screen.v1.ScreenMouseEvents.allowMouseClick(screen)
                     .register((s, click) ->
                         !com.minepiece.essentials.rarity.RarityScreenOverlay.onClick(hs, click.x(), click.y()));
@@ -163,10 +163,10 @@ public class MinepieceEssentialsClient implements ClientModInitializer {
     }
 
     private void registerKeybinds() {
-        editHudKey = KeyBindingHelper.registerKeyBinding(new KeyBinding(
-            "key.minepiece-essentials.edit_hud", InputUtil.Type.KEYSYM, GLFW.GLFW_KEY_K, CATEGORY));
-        helpKey = KeyBindingHelper.registerKeyBinding(new KeyBinding(
-            "key.minepiece-essentials.help", InputUtil.Type.KEYSYM, GLFW.GLFW_KEY_H, CATEGORY));
+        editHudKey = KeyBindingHelper.registerKeyBinding(new KeyMapping(
+            "key.minepiece-essentials.edit_hud", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_K, CATEGORY));
+        helpKey = KeyBindingHelper.registerKeyBinding(new KeyMapping(
+            "key.minepiece-essentials.help", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_H, CATEGORY));
     }
 
     public static MinepieceEssentialsClient getInstance() { return instance; }

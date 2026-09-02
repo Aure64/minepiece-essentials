@@ -3,24 +3,23 @@ package com.minepiece.essentials.pet;
 import com.minepiece.essentials.MinepieceEssentialsClient;
 import com.minepiece.essentials.ServerDetector;
 import com.minepiece.essentials.i18n.ServerText;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.screen.ingame.HandledScreen;
-import net.minecraft.component.DataComponentTypes;
-import net.minecraft.component.type.NbtComponent;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
-import net.minecraft.item.tooltip.TooltipType;
-import net.minecraft.screen.slot.Slot;
-import net.minecraft.text.Style;
-import net.minecraft.text.Text;
-import net.minecraft.text.TextColor;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.Style;
+import net.minecraft.network.chat.TextColor;
+import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.item.component.CustomData;
 
 /**
  * Scans the open /pets screen and publishes the combat-stat total of the
@@ -49,20 +48,20 @@ public final class ActivePetsScanner {
     public static void tick() {
         if (ticks++ % SCAN_INTERVAL != 0) return;
 
-        MinecraftClient client = MinecraftClient.getInstance();
-        if (client.currentScreen instanceof HandledScreen<?> screen && ServerDetector.isOnMinePiece()) {
+        Minecraft client = Minecraft.getInstance();
+        if (client.screen instanceof AbstractContainerScreen<?> screen && ServerDetector.isOnMinePiece()) {
             scan(screen, client);
         }
     }
 
-    private static void scan(HandledScreen<?> screen, MinecraftClient client) {
+    private static void scan(AbstractContainerScreen<?> screen, Minecraft client) {
         boolean isPetsScreen = false;
         List<ActivePetsState.ActivePet> activePets = new ArrayList<>();
         List<PetEffect> allStats = new ArrayList<>();
 
-        for (Slot slot : screen.getScreenHandler().slots) {
-            ItemStack stack = slot.getStack();
-            if (!stack.isOf(Items.RABBIT_FOOT)) continue;
+        for (Slot slot : screen.getMenu().slots) {
+            ItemStack stack = slot.getItem();
+            if (!stack.is(Items.RABBIT_FOOT)) continue;
 
             List<String> tip = tooltipLines(stack, client);
             if (containsAny(tip, ServerText.PET_ACTIVE_ACTION) || containsAny(tip, ServerText.PET_INACTIVE_ACTION)) {
@@ -71,9 +70,9 @@ public final class ActivePetsScanner {
             if (!containsAny(tip, ServerText.PET_ACTIVE_ACTION)) continue;
 
             String nbt = nbt(stack);
-            int color = nameColor(stack.getName());
+            int color = nameColor(stack.getHoverName());
             if (color == 0) color = rarityColor(nbt); // fallback when the name has no explicit colour
-            activePets.add(new ActivePetsState.ActivePet(stack.getName().getString(), color, levelOf(tip)));
+            activePets.add(new ActivePetsState.ActivePet(stack.getHoverName().getString(), color, levelOf(tip)));
             allStats.addAll(combatStats(tip));
         }
 
@@ -90,16 +89,16 @@ public final class ActivePetsScanner {
     }
 
     private static String nbt(ItemStack stack) {
-        NbtComponent data = stack.get(DataComponentTypes.CUSTOM_DATA);
-        return data == null ? "" : data.copyNbt().toString();
+        CustomData data = stack.get(DataComponents.CUSTOM_DATA);
+        return data == null ? "" : data.copyTag().toString();
     }
 
     /** First explicit colour in the pet's name Text, as ARGB; 0 if none. */
-    private static int nameColor(Text name) {
+    private static int nameColor(Component name) {
         int[] found = {0};
         name.visit((style, str) -> {
             TextColor c = style.getColor();
-            if (c != null && found[0] == 0) found[0] = 0xFF000000 | c.getRgb();
+            if (c != null && found[0] == 0) found[0] = 0xFF000000 | c.getValue();
             return Optional.empty();
         }, Style.EMPTY);
         return found[0];
@@ -149,9 +148,9 @@ public final class ActivePetsScanner {
         return out;
     }
 
-    private static List<String> tooltipLines(ItemStack stack, MinecraftClient client) {
+    private static List<String> tooltipLines(ItemStack stack, Minecraft client) {
         List<String> out = new ArrayList<>();
-        for (Text line : stack.getTooltip(Item.TooltipContext.DEFAULT, client.player, TooltipType.BASIC)) {
+        for (Component line : stack.getTooltipLines(Item.TooltipContext.EMPTY, client.player, TooltipFlag.NORMAL)) {
             out.add(line.getString());
         }
         return out;

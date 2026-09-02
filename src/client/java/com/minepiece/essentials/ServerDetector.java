@@ -2,12 +2,11 @@ package com.minepiece.essentials;
 
 import com.minepiece.essentials.island.Island;
 import com.minepiece.essentials.island.IslandDetector;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.network.ClientPlayNetworkHandler;
-import net.minecraft.client.network.ServerInfo;
-
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.multiplayer.ClientPacketListener;
+import net.minecraft.client.multiplayer.ServerData;
 
 /**
  * Decides whether the mod's features should be active (i.e. the player is on the
@@ -157,8 +156,8 @@ public final class ServerDetector {
     }
 
     private static boolean detect() {
-        MinecraftClient client = MinecraftClient.getInstance();
-        if (client.world == null) {
+        Minecraft client = Minecraft.getInstance();
+        if (client.level == null) {
             lastReason = "no world";
             return false;
         }
@@ -178,13 +177,13 @@ public final class ServerDetector {
         return ok;
     }
 
-    private static boolean detectSignals(MinecraftClient client) {
+    private static boolean detectSignals(Minecraft client) {
         MinepieceEssentialsClient mod = MinepieceEssentialsClient.getInstance();
         boolean forced = mod != null && mod.getConfigManager() != null
                 && mod.getConfigManager().config().forceMinePieceDetection;
 
-        ServerInfo info = client.getCurrentServerEntry();
-        boolean addressMatch = info != null && info.address != null && info.address.toLowerCase().contains("minepiece");
+        ServerData info = client.getCurrentServer();
+        boolean addressMatch = info != null && info.ip != null && info.ip.toLowerCase().contains("minepiece");
 
         String connHost = connectionHost(client);
         boolean connectionMatch = connHost != null && connHost.contains("minepiece");
@@ -213,7 +212,7 @@ public final class ServerDetector {
         }
 
         if (addressMatch) {
-            lastReason = "address " + info.address;
+            lastReason = "address " + info.ip;
             return true;
         }
 
@@ -232,8 +231,8 @@ public final class ServerDetector {
             return true;
         }
 
-        lastReason = info != null && info.address != null
-            ? "address " + info.address
+        lastReason = info != null && info.ip != null
+            ? "address " + info.ip
             : (connHost != null ? "connection " + connHost : "no server entry");
         return false;
     }
@@ -304,11 +303,11 @@ public final class ServerDetector {
     );
 
     /** The hostname of the live connection (lower-cased), or null. Covers Direct Connect. */
-    private static String connectionHost(MinecraftClient client) {
-        ClientPlayNetworkHandler handler = client.getNetworkHandler();
+    private static String connectionHost(Minecraft client) {
+        ClientPacketListener handler = client.getConnection();
         if (handler == null) return null;
         try {
-            SocketAddress address = handler.getConnection().getAddress();
+            SocketAddress address = handler.getConnection().getRemoteAddress();
             if (address instanceof InetSocketAddress isa) {
                 return isa.getHostString().toLowerCase();
             }
