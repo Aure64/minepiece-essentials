@@ -18,6 +18,9 @@ Ce qui n'est **jamais** envoyé : ton pseudo, ton UUID Minecraft, ton adresse IP
 **Pour désactiver** : touche **K**, interrupteur « Statistiques anonymes ». Un message te l'explique au premier lancement.
 Hébergement : PostHog, région **Europe**.
 
+**💛 Bouton de don (facultatif)**
+Un petit bouton dans l'éditeur de HUD (**K**) et dans l'aide (**H**) permet d'envoyer des berries à l'auteur du mod si tu as envie de soutenir le projet. Trois montants proposés (50K / 100K / 250K) ou le montant de ton choix, et **une confirmation affiche la commande exacte avant tout envoi** — aucun risque d'envoi accidentel. Visible uniquement sur MinePiece, et évidemment totalement facultatif.
+
 ---
 
 **Compatibilité :** Minecraft **1.21.11** et **1.21.8** · Fabric Loader ≥ 0.16.0 · Fabric API · Java 21
