@@ -25,7 +25,7 @@ public final class MinionFeedLearner {
     /** Call once per client tick; cheap no-op unless a feeding screen is open. */
     public static void tick() {
         Minecraft client = Minecraft.getInstance();
-        if (!(client.screen instanceof AbstractContainerScreen<?> screen)) return;
+        if (!(client.gui.screen() instanceof AbstractContainerScreen<?> screen)) return;
         if (!ServerDetector.isOnMinePiece()) return;
 
         MinionFeedLine.Feed feed = findFeed(screen, client);

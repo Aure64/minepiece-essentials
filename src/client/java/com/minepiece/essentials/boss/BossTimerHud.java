@@ -10,7 +10,7 @@ import com.minepiece.essentials.util.ColorUtils;
 import com.minepiece.essentials.util.RenderUtils;
 import java.util.*;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
 
 public class BossTimerHud extends HudElement {
@@ -65,7 +65,7 @@ public class BossTimerHud extends HudElement {
     }
 
     @Override
-    public void render(GuiGraphics ctx, float tickDelta) {
+    public void render(GuiGraphicsExtractor ctx, float tickDelta) {
         refreshButtonPositions.clear();
         islandHeaderClickAreas.clear();
         bossClickAreas.clear();
@@ -319,21 +319,19 @@ public class BossTimerHud extends HudElement {
         if (activeWaypoints.contains(bossKey)) {
             activeWaypoints.remove(bossKey);
             // Send chat message to confirm removal
-            client.player.displayClientMessage(
-                net.minecraft.network.chat.Component.literal("\u00a7c[MinePiece] \u00a77Waypoint retir\u00e9: \u00a7f" + boss.name),
-                false);
+            client.player.sendSystemMessage(
+                net.minecraft.network.chat.Component.literal("\u00a7c[MinePiece] \u00a77Waypoint retir\u00e9: \u00a7f" + boss.name));
         } else {
             activeWaypoints.add(bossKey);
             // Copy coords to clipboard
             String coords = boss.x + " " + boss.y + " " + boss.z;
             client.keyboardHandler.setClipboard(coords);
             // Send chat message with coords
-            client.player.displayClientMessage(
+            client.player.sendSystemMessage(
                 net.minecraft.network.chat.Component.literal(
                     "\u00a7a[MinePiece] \u00a77Waypoint: \u00a7f" + boss.name +
                     " \u00a77[\u00a7b" + boss.x + " " + boss.y + " " + boss.z +
-                    "\u00a77] \u00a78(coords copi\u00e9es)"),
-                false);
+                    "\u00a77] \u00a78(coords copi\u00e9es)"));
         }
     }
 

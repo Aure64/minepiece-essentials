@@ -1,5 +1,18 @@
 # Upgrading to a new Minecraft version
 
+## Prerequisites since 26.x
+
+- **JDK 25 is required** to build (Minecraft 26.2's manifest declares
+  `javaVersion.majorVersion = 25`), and Gradle itself must run on it:
+  `JAVA_HOME=/path/to/jdk-25 ./gradlew build`. No machine path is committed.
+- **There are no mappings any more.** From 26.1 onwards Minecraft ships
+  unobfuscated, Mojang no longer publishes a mappings file (the 26.2 manifest
+  only has `client` and `server`), and `loom.officialMojangMappings()` fails.
+  `build.gradle` declares no `mappings` line at all.
+- The Loom plugin is `net.fabricmc.fabric-loom`, and mods are plain
+  `implementation` dependencies — nothing gets remapped, so there is no
+  `remapJar` step.
+
 This mod uses **Mojang official mappings**. Yarn and Intermediary were discontinued after
 1.21.11 (Mojang now ships Java Edition unobfuscated), so every version from 26.1 onwards is
 mojmap-only. The migration off Yarn was done on 1.21.11 — nothing to redo.
@@ -78,15 +91,35 @@ fine and fails at runtime, when the mixin is applied. Check each target exists b
 
 | Mixin | Target class | Members it depends on |
 |---|---|---|
-| `BossBarHudMixin` | `BossHealthOverlay` | `render(GuiGraphics)`, field `events` |
+| `BossBarHudMixin` | `BossHealthOverlay` | `extractRenderState(GuiGraphicsExtractor)`, field `events` |
 | `ClientPlayNetworkHandlerMixin` | `ClientPacketListener` | `handleTabListCustomisation`, `handleOpenScreen`, `handleContainerContent`, `handleContainerSetSlot` |
 | `HandledScreenAccessor` | `AbstractContainerScreen` | fields `leftPos`, `topPos` |
-| `InGameHudMixin` | `Gui` | `setOverlayMessage(Component, boolean)` |
-| `MinecraftClientMixin` | `Minecraft` | `tick()`, field `screen` |
-| `ScreenRenderMixin` | `Screen` | `renderWithTooltipAndSubtitles`, **and** the `@At` descriptor `Lnet/minecraft/client/gui/GuiGraphics;renderDeferredElements()V` |
+| `InGameHudMixin` | `Hud` | `setOverlayMessage(Component, boolean)` |
+| `MinecraftClientMixin` | `Minecraft` | `tick()` (the current screen now lives in `Gui`, reached via `gui.screen()`) |
+| `ScreenRenderMixin` | `Screen` | `extractRenderStateWithTooltipAndSubtitles`, **and** the `@At` descriptor `Lnet/minecraft/client/gui/GuiGraphicsExtractor;extractDeferredElements()V` |
 
 `ScreenRenderMixin`'s `@At(target = ...)` is a raw descriptor string — the compiler never checks
 it. Verify it by hand with `javap` every single time.
+
+### What 26.2 changed, as a worked example
+
+26.2 moved the GUI to a retained render-state pipeline, and every one of these was invisible to
+the compiler until the right class was inspected:
+
+| Was (1.21.11) | Is (26.2) |
+|---|---|
+| `GuiGraphics` | `GuiGraphicsExtractor` |
+| `GuiGraphics.drawString` / `drawCenteredString` | `text` / `centeredText` |
+| `Screen.render` / `renderBackground` | `extractRenderState` / `extractBackground` |
+| `Minecraft.setScreen` | `setScreenAndShow` |
+| `Minecraft.screen` (field) | moved to `Gui`: `mc.gui.screen()` |
+| `Options.hideGui` | moved to `Hud`: `mc.gui.hud.isHidden()` |
+| `Player.displayClientMessage(c, false)` | `sendSystemMessage(c)` |
+| `ClickType` | `ContainerInput` |
+| `MultiPlayerGameMode.handleInventoryMouseClick` | `handleContainerInput` |
+| `Identifier.of` | `Identifier.fromNamespaceAndPath` |
+| Fabric `HudRenderCallback` | Fabric `hud.HudElementRegistry.addLast(Identifier, HudElement)` |
+| Fabric `KeyBindingHelper.registerKeyBinding` | `KeyMappingHelper.registerKeyMapping` |
 
 Then launch the client (`./gradlew runClient`) and confirm no mixin apply errors in the log. That
 is the only real proof.

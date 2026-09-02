@@ -7,7 +7,7 @@ import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ChestMenu;
-import net.minecraft.world.inventory.ClickType;
+import net.minecraft.world.inventory.ContainerInput;
 import net.minecraft.world.inventory.ShulkerBoxMenu;
 import net.minecraft.world.item.ItemStack;
 
@@ -64,9 +64,9 @@ public final class RaritySorter {
             }
             if (j < 0) continue; // robustesse : introuvable (resync), on saute
             // swap(i, j) : pickup i, click j, place i
-            mc.gameMode.handleInventoryMouseClick(syncId, i, 0, ClickType.PICKUP, mc.player);
-            mc.gameMode.handleInventoryMouseClick(syncId, j, 0, ClickType.PICKUP, mc.player);
-            mc.gameMode.handleInventoryMouseClick(syncId, i, 0, ClickType.PICKUP, mc.player);
+            mc.gameMode.handleContainerInput(syncId, i, 0, ContainerInput.PICKUP, mc.player);
+            mc.gameMode.handleContainerInput(syncId, j, 0, ContainerInput.PICKUP, mc.player);
+            mc.gameMode.handleContainerInput(syncId, i, 0, ContainerInput.PICKUP, mc.player);
             ItemStack tmp = cur[i]; cur[i] = cur[j]; cur[j] = tmp;
         }
     }

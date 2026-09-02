@@ -7,7 +7,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.network.HashedStack;
 import net.minecraft.network.protocol.game.ServerboundContainerClickPacket;
 import net.minecraft.network.protocol.game.ServerboundContainerClosePacket;
-import net.minecraft.world.inventory.ClickType;
+import net.minecraft.world.inventory.ContainerInput;
 import net.minecraft.world.item.ItemStack;
 
 public class BackgroundGuiRefresh {
@@ -77,7 +77,7 @@ public class BackgroundGuiRefresh {
         client.getConnection().send(
             new ServerboundContainerClickPacket(
                 syncId, 0, (short) slot, (byte) 0,
-                ClickType.PICKUP,
+                ContainerInput.PICKUP,
                 new it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap<>(),
                 HashedStack.EMPTY));
     }
@@ -111,8 +111,8 @@ public class BackgroundGuiRefresh {
                 client.getConnection().send(new ServerboundContainerClosePacket(syncId));
             }
             // Also close any screen the client might have open
-            if (client.screen != null) {
-                client.setScreen(null);
+            if (client.gui.screen() != null) {
+                client.setScreenAndShow(null);
             }
         }
     }

@@ -49,7 +49,7 @@ public final class ActivePetsScanner {
         if (ticks++ % SCAN_INTERVAL != 0) return;
 
         Minecraft client = Minecraft.getInstance();
-        if (client.screen instanceof AbstractContainerScreen<?> screen && ServerDetector.isOnMinePiece()) {
+        if (client.gui.screen() instanceof AbstractContainerScreen<?> screen && ServerDetector.isOnMinePiece()) {
             scan(screen, client);
         }
     }

@@ -6,7 +6,7 @@ import com.minepiece.essentials.util.ColorUtils;
 import com.minepiece.essentials.util.RenderUtils;
 import java.util.Comparator;
 import java.util.List;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
 
 public class ParcheminHud extends HudElement {
@@ -21,7 +21,7 @@ public class ParcheminHud extends HudElement {
     }
 
     @Override
-    public void render(GuiGraphics ctx, float tickDelta) {
+    public void render(GuiGraphicsExtractor ctx, float tickDelta) {
         List<ParcheminScanner.QuestInfo> parchemins = sorted;
         if (parchemins.isEmpty()) return;
         com.minepiece.essentials.telemetry.Telemetry.feature("parchment_hud");

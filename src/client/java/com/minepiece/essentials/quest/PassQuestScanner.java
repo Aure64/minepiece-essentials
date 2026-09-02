@@ -50,7 +50,7 @@ public final class PassQuestScanner {
         }
 
         Minecraft client = Minecraft.getInstance();
-        if (client.screen instanceof AbstractContainerScreen<?> screen && ServerDetector.isOnMinePiece()) {
+        if (client.gui.screen() instanceof AbstractContainerScreen<?> screen && ServerDetector.isOnMinePiece()) {
             scan(screen, client);
         }
     }

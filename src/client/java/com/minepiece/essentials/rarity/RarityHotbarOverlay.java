@@ -3,9 +3,9 @@ package com.minepiece.essentials.rarity;
 import com.minepiece.essentials.MinepieceEssentialsClient;
 import com.minepiece.essentials.ServerDetector;
 import com.minepiece.essentials.util.RenderUtils;
-import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.GameType;
@@ -15,12 +15,14 @@ public final class RarityHotbarOverlay {
     private RarityHotbarOverlay() {}
 
     public static void register() {
-        HudRenderCallback.EVENT.register((ctx, tickCounter) -> render(ctx));
+        net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry.addLast(
+                Identifier.fromNamespaceAndPath("minepiece-essentials", "rarity_hotbar"),
+                (ctx, tickCounter) -> render(ctx));
     }
 
-    private static void render(GuiGraphics ctx) {
+    private static void render(GuiGraphicsExtractor ctx) {
         Minecraft mc = Minecraft.getInstance();
-        if (mc.player == null || mc.options.hideGui) return;
+        if (mc.player == null || mc.gui.hud.isHidden()) return;
         if (!ServerDetector.isOnMinePiece()) return;
         if (!MinepieceEssentialsClient.getInstance().getConfigManager().config().rarityHotbarEnabled) return;
         if (mc.gameMode != null

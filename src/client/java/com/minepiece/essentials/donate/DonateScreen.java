@@ -3,7 +3,7 @@ package com.minepiece.essentials.donate;
 import com.minepiece.essentials.ServerDetector;
 import com.minepiece.essentials.hud.ParchmentRenderer;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
@@ -215,7 +215,7 @@ public class DonateScreen extends Screen {
      * même frame et Minecraft lève "Can only blur once per frame".
      */
     @Override
-    public void renderBackground(GuiGraphics ctx, int mouseX, int mouseY, float delta) {
+    public void extractBackground(GuiGraphicsExtractor ctx, int mouseX, int mouseY, float delta) {
         ctx.fill(0, 0, width, height, 0xB0000000);
         int[] panel = panelBounds();
         ParchmentRenderer.renderPanel(ctx, panel[0], panel[1], panel[2], panel[3], null);
@@ -237,27 +237,27 @@ public class DonateScreen extends Screen {
     }
 
     @Override
-    public void render(GuiGraphics ctx, int mouseX, int mouseY, float delta) {
-        super.render(ctx, mouseX, mouseY, delta);
+    public void extractRenderState(GuiGraphicsExtractor ctx, int mouseX, int mouseY, float delta) {
+        super.extractRenderState(ctx, mouseX, mouseY, delta);
 
         int centerX = width / 2;
         if (state == State.AMOUNT) {
-            ctx.drawCenteredString(font, title, centerX, height / 2 - 70, 0xFFF0A857);
+            ctx.centeredText(font, title, centerX, height / 2 - 70, 0xFFF0A857);
             if (errorMessage != null) {
-                ctx.drawCenteredString(font, errorMessage, centerX, height / 2 - 20, 0xFFFF5555);
+                ctx.centeredText(font, errorMessage, centerX, height / 2 - 20, 0xFFFF5555);
             }
         } else {
-            ctx.drawCenteredString(font, title, centerX, height / 2 - 40, 0xFFF0A857);
-            ctx.drawCenteredString(font,
+            ctx.centeredText(font, title, centerX, height / 2 - 40, 0xFFF0A857);
+            ctx.centeredText(font,
                     Component.translatable("minepiece.ui.donate.confirm_prompt").getString(),
                     centerX, height / 2 - 20, 0xFFFFE9D5);
-            ctx.drawCenteredString(font, commandPreview(), centerX, height / 2, 0xFFFFD27F);
+            ctx.centeredText(font, commandPreview(), centerX, height / 2, 0xFFFFD27F);
         }
     }
 
     @Override
     public void onClose() {
-        Minecraft.getInstance().setScreen(parent);
+        Minecraft.getInstance().setScreenAndShow(parent);
     }
 
     @Override

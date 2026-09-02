@@ -6,7 +6,7 @@ import com.minepiece.essentials.hud.HudElement;
 import com.minepiece.essentials.hud.ParchmentRenderer;
 import com.minepiece.essentials.util.RenderUtils;
 import java.util.Locale;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
 
 /**
@@ -30,7 +30,7 @@ public class JobHud extends HudElement {
     public void tick() {}
 
     @Override
-    public void render(GuiGraphics ctx, float tickDelta) {
+    public void render(GuiGraphicsExtractor ctx, float tickDelta) {
         if (!config().jobHudEnabled) return;
 
         if (!JobTracker.hasData()) {

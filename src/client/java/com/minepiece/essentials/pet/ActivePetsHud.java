@@ -5,7 +5,7 @@ import com.minepiece.essentials.hud.HudElement;
 import com.minepiece.essentials.hud.ParchmentRenderer;
 import com.minepiece.essentials.util.RenderUtils;
 import java.util.Map;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
 
 /** HUD panel listing the active pets and the total combat stats they grant. */
@@ -19,7 +19,7 @@ public class ActivePetsHud extends HudElement {
     }
 
     @Override
-    public void render(GuiGraphics ctx, float tickDelta) {
+    public void render(GuiGraphicsExtractor ctx, float tickDelta) {
         if (!MinepieceEssentialsClient.getInstance().getConfigManager().config().petPanelEnabled) {
             return;
         }

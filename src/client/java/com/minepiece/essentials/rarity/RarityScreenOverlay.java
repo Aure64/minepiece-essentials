@@ -5,7 +5,7 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.inventory.Slot;
@@ -39,7 +39,7 @@ public final class RarityScreenOverlay {
     }
 
     /** Liseré 1px collé autour de la case (à l'extérieur du 16×16), l'item reste net. */
-    private static void drawPriceBorder(GuiGraphics ctx, int x, int y, int color) {
+    private static void drawPriceBorder(GuiGraphicsExtractor ctx, int x, int y, int color) {
         ctx.fill(x - 1, y - 1, x + 17, y,      color); // haut
         ctx.fill(x - 1, y + 16, x + 17, y + 17, color); // bas
         ctx.fill(x - 1, y, x, y + 16,          color); // gauche
@@ -47,7 +47,7 @@ public final class RarityScreenOverlay {
     }
 
     // ---- Rendu (appelé en TAIL de HandledScreen.render) ----
-    public static void render(AbstractContainerScreen<?> screen, GuiGraphics ctx,
+    public static void render(AbstractContainerScreen<?> screen, GuiGraphicsExtractor ctx,
                               int bgX, int bgY, int mouseX, int mouseY) {
         HITS.clear();
         if (!ServerDetector.isOnMinePiece()) return;

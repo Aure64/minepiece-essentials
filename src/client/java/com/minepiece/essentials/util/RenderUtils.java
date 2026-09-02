@@ -1,7 +1,7 @@
 package com.minepiece.essentials.util;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.resources.Identifier;
 
@@ -13,7 +13,7 @@ public final class RenderUtils {
      * by the server resource pack) at {@code (x, y)} scaled to {@code size} px.
      * Assumes a 16×16 source. Renders nothing visible if the pack isn't loaded.
      */
-    public static void drawIcon(GuiGraphics ctx, Identifier texture, int x, int y, int size) {
+    public static void drawIcon(GuiGraphicsExtractor ctx, Identifier texture, int x, int y, int size) {
         float s = size / 16f;
         ctx.pose().pushMatrix();
         ctx.pose().translate(x, y);
@@ -26,7 +26,7 @@ public final class RenderUtils {
      * Dessine une texture de taille native arbitraire ({@code texW}×{@code texH}),
      * mise à l'échelle par {@code scale}, en haut-gauche de {@code (x, y)}.
      */
-    public static void drawTextureScaled(GuiGraphics ctx, Identifier texture,
+    public static void drawTextureScaled(GuiGraphicsExtractor ctx, Identifier texture,
                                          int x, int y, float scale, int texW, int texH) {
         ctx.pose().pushMatrix();
         ctx.pose().translate(x, y);
@@ -36,7 +36,7 @@ public final class RenderUtils {
     }
 
     /** Parchment-style box with the classic colours. */
-    public static void drawParchmentBox(GuiGraphics ctx, int x, int y, int w, int h) {
+    public static void drawParchmentBox(GuiGraphicsExtractor ctx, int x, int y, int w, int h) {
         drawParchmentBox(ctx, x, y, w, h, ColorUtils.PARCHMENT_BG, ColorUtils.PARCHMENT_BORDER);
     }
 
@@ -44,7 +44,7 @@ public final class RenderUtils {
      * Panel box with explicit fill and border colours. A fully-transparent
      * (alpha 0) fill or border is skipped, so a "transparent" preset draws nothing.
      */
-    public static void drawParchmentBox(GuiGraphics ctx, int x, int y, int w, int h,
+    public static void drawParchmentBox(GuiGraphicsExtractor ctx, int x, int y, int w, int h,
                                         int bgColor, int borderColor) {
         if ((bgColor >>> 24) != 0) {
             ctx.fill(x + 2, y + 2, x + w - 2, y + h - 2, bgColor);
@@ -61,37 +61,37 @@ public final class RenderUtils {
         }
     }
 
-    public static void drawProgressBar(GuiGraphics ctx, int x, int y, int w, int h,
+    public static void drawProgressBar(GuiGraphicsExtractor ctx, int x, int y, int w, int h,
                                         float progress, int color) {
         ctx.fill(x, y, x + w, y + h, 0x80000000);
         int fillWidth = (int)(w * Math.max(0, Math.min(1, progress)));
         ctx.fill(x, y, x + fillWidth, y + h, color);
     }
 
-    public static void drawText(GuiGraphics ctx, String text, int x, int y, int color) {
-        ctx.drawString(Minecraft.getInstance().font, text, x, y, color, true);
+    public static void drawText(GuiGraphicsExtractor ctx, String text, int x, int y, int color) {
+        ctx.text(Minecraft.getInstance().font, text, x, y, color, true);
     }
 
     /**
      * Draws text shrunk uniformly so its full content fits within {@code maxWidth}
      * (never enlarged). Lets long lines stay readable instead of being clipped to "..".
      */
-    public static void drawTextFit(GuiGraphics ctx, String text, int x, int y, int maxWidth, int color) {
+    public static void drawTextFit(GuiGraphicsExtractor ctx, String text, int x, int y, int maxWidth, int color) {
         var tr = Minecraft.getInstance().font;
         int w = tr.width(text);
         if (w <= maxWidth || w == 0) {
-            ctx.drawString(tr, text, x, y, color, true);
+            ctx.text(tr, text, x, y, color, true);
             return;
         }
         float scale = (float) maxWidth / w;
         ctx.pose().pushMatrix();
         ctx.pose().translate(x, y);
         ctx.pose().scale(scale, scale);
-        ctx.drawString(tr, text, 0, 0, color, true);
+        ctx.text(tr, text, 0, 0, color, true);
         ctx.pose().popMatrix();
     }
 
-    public static void drawCenteredText(GuiGraphics ctx, String text, int centerX, int y, int color) {
+    public static void drawCenteredText(GuiGraphicsExtractor ctx, String text, int centerX, int y, int color) {
         int w = Minecraft.getInstance().font.width(text);
         drawText(ctx, text, centerX - w / 2, y, color);
     }

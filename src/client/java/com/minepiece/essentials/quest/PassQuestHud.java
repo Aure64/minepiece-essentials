@@ -5,7 +5,7 @@ import com.minepiece.essentials.hud.HudElement;
 import com.minepiece.essentials.hud.ParchmentRenderer;
 import com.minepiece.essentials.util.RenderUtils;
 import java.util.List;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
 
 /** HUD listing the daily pass quests with their objective and progress. */
@@ -25,7 +25,7 @@ public class PassQuestHud extends HudElement {
     }
 
     @Override
-    public void render(GuiGraphics ctx, float tickDelta) {
+    public void render(GuiGraphicsExtractor ctx, float tickDelta) {
         if (!MinepieceEssentialsClient.getInstance().getConfigManager().config().passQuestHudEnabled) {
             return;
         }

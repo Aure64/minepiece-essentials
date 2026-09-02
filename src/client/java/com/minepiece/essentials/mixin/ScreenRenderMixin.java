@@ -1,7 +1,7 @@
 package com.minepiece.essentials.mixin;
 
 import com.minepiece.essentials.rarity.RarityScreenOverlay;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import org.spongepowered.asm.mixin.Mixin;
@@ -21,10 +21,10 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public class ScreenRenderMixin {
 
     @Inject(
-        method = "renderWithTooltipAndSubtitles",
+        method = "extractRenderStateWithTooltipAndSubtitles",
         at = @At(value = "INVOKE",
-                 target = "Lnet/minecraft/client/gui/GuiGraphics;renderDeferredElements()V"))
-    private void minepiece$renderRarityOverlay(GuiGraphics ctx, int mouseX, int mouseY,
+                 target = "Lnet/minecraft/client/gui/GuiGraphicsExtractor;extractDeferredElements()V"))
+    private void minepiece$renderRarityOverlay(GuiGraphicsExtractor ctx, int mouseX, int mouseY,
                                                float delta, CallbackInfo ci) {
         if (!((Object) this instanceof AbstractContainerScreen<?> hs)) return;
         HandledScreenAccessor acc = (HandledScreenAccessor) hs;

@@ -9,7 +9,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import java.util.Map;
 import java.util.UUID;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.BossHealthOverlay;
 import net.minecraft.client.gui.components.LerpingBossEvent;
 
@@ -23,8 +23,8 @@ public class BossBarHudMixin {
     @Unique
     private long minepiece$lastBossbarScan;
 
-    @Inject(method = "render", at = @At("HEAD"))
-    private void onRender(GuiGraphics context, CallbackInfo ci) {
+    @Inject(method = "extractRenderState", at = @At("HEAD"))
+    private void onRender(GuiGraphicsExtractor context, CallbackInfo ci) {
         long now = System.currentTimeMillis();
         if (now - minepiece$lastBossbarScan < 200) return;
         minepiece$lastBossbarScan = now;

@@ -69,17 +69,17 @@ public final class UpdateChecker {
         String current = currentVersion();
         if (!isNewer(latestVersion, current)) return;
 
-        client.player.displayClientMessage(Component.literal("[Minepiece Essentials] ").withColor(0xF0A857)
+        client.player.sendSystemMessage(Component.literal("[Minepiece Essentials] ").withColor(0xF0A857)
             .append(Component.literal("Mise à jour disponible : ").withColor(0xFFFFFF))
             .append(Component.literal("v" + latestVersion).withColor(0x7CFC55))
-            .append(Component.literal("  (tu as v" + current + ")").withColor(0x999999)), false);
+            .append(Component.literal("  (tu as v" + current + ")").withColor(0x999999)));
 
         Component link = Component.literal(RELEASES_URL).withStyle(s -> s
             .withColor(TextColor.fromRgb(0x55AAFF))
             .withUnderlined(true)
             .withClickEvent(new ClickEvent.OpenUrl(URI.create(RELEASES_URL))));
-        client.player.displayClientMessage(
-            Component.literal("Télécharger : ").withColor(0xCCCCCC).append(link), false);
+        client.player.sendSystemMessage(
+            Component.literal("Télécharger : ").withColor(0xCCCCCC).append(link));
     }
 
     private static String currentVersion() {

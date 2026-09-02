@@ -26,7 +26,7 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.resources.Identifier;
-import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
+import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import org.lwjgl.glfw.GLFW;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -113,9 +113,9 @@ public class MinepieceEssentialsClient implements ClientModInitializer {
             com.minepiece.essentials.telemetry.Telemetry.tick();
             if (pendingTelemetryNotice && client.player != null) {
                 pendingTelemetryNotice = false;
-                client.player.displayClientMessage(
+                client.player.sendSystemMessage(
                     net.minecraft.network.chat.Component.translatable("minepiece.telemetry.notice")
-                        .withColor(0xF0A857), false);
+                        .withColor(0xF0A857));
                 com.minepiece.essentials.telemetry.Telemetry.markAnnounced();
             }
 
@@ -126,8 +126,8 @@ public class MinepieceEssentialsClient implements ClientModInitializer {
 
             BossTracker.getInstance().tick();
 
-            if (pendingHelp && client.screen == null && client.player != null) {
-                client.setScreen(new HelpScreen());
+            if (pendingHelp && client.gui.screen() == null && client.player != null) {
+                client.setScreenAndShow(new HelpScreen());
                 pendingHelp = false;
                 helpShownThisSession = true;
             }
@@ -136,10 +136,10 @@ public class MinepieceEssentialsClient implements ClientModInitializer {
                 // Comptée ici uniquement : c'est une pression volontaire de H, à
                 // distinguer de l'ouverture automatique au premier lancement (pendingHelp).
                 com.minepiece.essentials.telemetry.Telemetry.feature("help_screen");
-                client.setScreen(new HelpScreen());
+                client.setScreenAndShow(new HelpScreen());
             }
             while (editHudKey.consumeClick()) {
-                client.setScreen(new HudEditScreen());
+                client.setScreenAndShow(new HudEditScreen());
             }
         });
 
@@ -163,9 +163,9 @@ public class MinepieceEssentialsClient implements ClientModInitializer {
     }
 
     private void registerKeybinds() {
-        editHudKey = KeyBindingHelper.registerKeyBinding(new KeyMapping(
+        editHudKey = KeyMappingHelper.registerKeyMapping(new KeyMapping(
             "key.minepiece-essentials.edit_hud", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_K, CATEGORY));
-        helpKey = KeyBindingHelper.registerKeyBinding(new KeyMapping(
+        helpKey = KeyMappingHelper.registerKeyMapping(new KeyMapping(
             "key.minepiece-essentials.help", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_H, CATEGORY));
     }
 

@@ -7,7 +7,7 @@ import com.minepiece.essentials.hud.ParchmentRenderer;
 import com.minepiece.essentials.util.RenderUtils;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
@@ -133,7 +133,7 @@ public class HelpScreen extends Screen {
     }
 
     @Override
-    public void render(GuiGraphics ctx, int mouseX, int mouseY, float delta) {
+    public void extractRenderState(GuiGraphicsExtractor ctx, int mouseX, int mouseY, float delta) {
         ctx.fill(0, 0, this.width, this.height, 0xB0000000);
         ParchmentRenderer.renderPanel(ctx, left, top, PANEL_W, PANEL_H, "Minepiece Essentials");
 
@@ -169,7 +169,7 @@ public class HelpScreen extends Screen {
     }
 
     /** Bouton de don : palette dorée/parchemin, bordure claire/sombre, glyphe berries. */
-    private void drawDonateButton(GuiGraphics ctx, int x, int y, int w, String label, int mouseX, int mouseY) {
+    private void drawDonateButton(GuiGraphicsExtractor ctx, int x, int y, int w, String label, int mouseX, int mouseY) {
         boolean hover = mouseX >= x && mouseX <= x + w && mouseY >= y && mouseY <= y + BTN_H;
         int fill = hover ? DONATE_FILL_HOVER : DONATE_FILL;
         int textColor = hover ? DONATE_TEXT_HOVER : DONATE_TEXT;
@@ -184,10 +184,10 @@ public class HelpScreen extends Screen {
         Component text = Component.literal(label + " ").append(Component.literal(BERRY)
                 .withStyle(s -> s.withFont(new FontDescription.Resource(BERRY_FONT))));
         int tw = tr.width(text);
-        ctx.drawString(tr, text, x + (w - tw) / 2, y + (BTN_H - tr.lineHeight) / 2, textColor, false);
+        ctx.text(tr, text, x + (w - tw) / 2, y + (BTN_H - tr.lineHeight) / 2, textColor, false);
     }
 
-    private void drawButton(GuiGraphics ctx, int x, int y, int w, String label, int mouseX, int mouseY) {
+    private void drawButton(GuiGraphicsExtractor ctx, int x, int y, int w, String label, int mouseX, int mouseY) {
         boolean hover = mouseX >= x && mouseX <= x + w && mouseY >= y && mouseY <= y + BTN_H;
         ctx.fill(x, y, x + w, y + BTN_H, hover ? 0xFF5A4632 : 0xFF3A2A1C);
         ctx.fill(x, y, x + w, y + 1, 0xFF8A6A44);
@@ -212,7 +212,7 @@ public class HelpScreen extends Screen {
             }
             // Le don reste gate sur MinePiece à la fois pour l'affichage (render) et le clic.
             if (ServerDetector.isOnMinePiece() && inside(click, left + 12, donateRowY(), PANEL_W - 24)) {
-                Minecraft.getInstance().setScreen(new DonateScreen(this));
+                Minecraft.getInstance().setScreenAndShow(new DonateScreen(this));
                 return true;
             }
         }

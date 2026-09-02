@@ -2,8 +2,8 @@ package com.minepiece.essentials.hud;
 
 import com.minepiece.essentials.ServerDetector;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.minecraft.client.Minecraft;
+import net.minecraft.resources.Identifier;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -16,9 +16,11 @@ public class HudElementRegistry {
     }
 
     public static void init() {
-        HudRenderCallback.EVENT.register((context, renderTickCounter) -> {
+        net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry.addLast(
+                Identifier.fromNamespaceAndPath("minepiece-essentials", "huds"),
+                (context, renderTickCounter) -> {
             Minecraft client = Minecraft.getInstance();
-            if (client.player == null || client.options.hideGui) return;
+            if (client.player == null || client.gui.hud.isHidden()) return;
             if (!ServerDetector.isOnMinePiece()) return;
 
             float tickDelta = renderTickCounter.getGameTimeDeltaPartialTick(true);

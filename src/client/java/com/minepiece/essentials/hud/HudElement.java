@@ -4,7 +4,7 @@ import com.minepiece.essentials.MinepieceEssentialsClient;
 import com.minepiece.essentials.config.HudBackground;
 import com.minepiece.essentials.config.LayoutConfig;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 
 public abstract class HudElement {
     protected final String id;
@@ -19,7 +19,7 @@ public abstract class HudElement {
         this.height = height;
     }
 
-    public abstract void render(GuiGraphics context, float tickDelta);
+    public abstract void render(GuiGraphicsExtractor context, float tickDelta);
     public abstract void tick();
 
     public LayoutConfig.ElementLayout getLayout() {
