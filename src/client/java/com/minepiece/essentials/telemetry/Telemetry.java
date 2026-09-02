@@ -32,8 +32,11 @@ public final class Telemetry {
     private static final String API_KEY = "phc_nfmqDHNYpEDmGAvnb62NS8SodTa6W73QZAbjSFkSVbRj";
     private static final String BATCH_URL = "https://eu.i.posthog.com/batch/";
     private static final long FLUSH_INTERVAL_MS = 60_000;
-    /** Délai après la connexion avant d'émettre mp_session_start : ServerDetector a besoin de se stabiliser. */
-    private static final long SESSION_DELAY_MS = 5_000;
+    /** Repli si ServerDetector ne détecte jamais MinePiece (autre serveur, ou détection
+     * qui échoue) : on envoie quand même mp_session_start, avec on_minepiece=false,
+     * pour compter la session une seule fois. Assez long pour laisser le temps au
+     * rechargement de resource pack (queue + pack serveur) de se terminer sur MinePiece. */
+    private static final long SESSION_FALLBACK_MS = 60_000;
 
     /** En dessous de ce délai depuis le dernier mp_session_start, un nouveau JOIN
      * (hop de proxy, reconnexion) n'est pas compté comme une nouvelle session. */
@@ -143,9 +146,20 @@ public final class Telemetry {
             if (!isEnabled() || identity == null) return;
 
             long now = System.currentTimeMillis();
-            if (!sessionSent && joinedAt > 0 && now - joinedAt >= SESSION_DELAY_MS) {
-                sessionSent = true;
-                sendSessionStart();
+            if (!sessionSent && joinedAt > 0) {
+                // On envoie dès que ServerDetector confirme MinePiece (souvent bien avant
+                // le repli), sinon on retombe sur le délai fixe pour ne pas perdre les
+                // joueurs d'autres serveurs. Un délai fixe seul est faux ici : la queue
+                // et le resource pack serveur de MinePiece rechargent le monde (world
+                // devient temporairement null) et peuvent traverser tout délai court.
+                boolean onMinePiece = ServerDetector.isOnMinePiece();
+                if (onMinePiece) {
+                    sessionSent = true;
+                    sendSessionStart(true);
+                } else if (now - joinedAt >= SESSION_FALLBACK_MS) {
+                    sessionSent = true;
+                    sendSessionStart(false);
+                }
             }
             if (now - lastFlush >= FLUSH_INTERVAL_MS) {
                 lastFlush = now;
@@ -156,7 +170,7 @@ public final class Telemetry {
         }
     }
 
-    private static void sendSessionStart() {
+    private static void sendSessionStart(boolean onMinePiece) {
         long now = System.currentTimeMillis();
         if (lastSessionSentAt != 0 && now - lastSessionSentAt < SESSION_DEDUP_MS) {
             // Hop de proxy / reconnexion rapprochée : ni nouvelle session comptée,
@@ -175,7 +189,7 @@ public final class Telemetry {
         props.put("java_version", System.getProperty("java.version", "unknown"));
         props.put("os", System.getProperty("os.name", "unknown").toLowerCase().split(" ")[0]);
         props.put("client_language", MinecraftClient.getInstance().options.language);
-        props.put("on_minepiece", ServerDetector.isOnMinePiece());
+        props.put("on_minepiece", onMinePiece);
         try {
             BUFFER.add(TelemetryEvent.of("mp_session_start", props));
         } catch (IllegalArgumentException e) {

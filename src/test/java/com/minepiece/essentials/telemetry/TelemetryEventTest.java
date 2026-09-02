@@ -74,6 +74,21 @@ class TelemetryEventTest {
     }
 
     @Test
+    void batchJsonDisablesGeoipOnEveryItem() {
+        String json = TelemetryEvent.batchJson("phc_test", "install-42", List.of(
+                TelemetryEvent.of("mp_session_start", Map.of("mod_version", "1.7.2")),
+                TelemetryEvent.of("mp_feature_used", Map.of("feature", "hud_edit"))));
+
+        JsonObject root = JsonParser.parseString(json).getAsJsonObject();
+        for (var item : root.getAsJsonArray("batch")) {
+            JsonObject props = item.getAsJsonObject().getAsJsonObject("properties");
+            assertTrue(props.has("$geoip_disable"), "$geoip_disable doit être présent sur chaque item");
+            assertTrue(props.get("$geoip_disable").getAsBoolean(),
+                    "$geoip_disable doit valoir true pour bloquer la géolocalisation par IP");
+        }
+    }
+
+    @Test
     void setPropertyOnlyOnSessionStart() {
         String json = TelemetryEvent.batchJson("phc_test", "install-42", List.of(
                 TelemetryEvent.of("mp_session_start", Map.of("mod_version", "1.7.2")),

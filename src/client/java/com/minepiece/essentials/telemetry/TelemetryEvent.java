@@ -79,6 +79,10 @@ public final class TelemetryEvent {
             // on annonce publiquement qu'aucune IP n'est collectée, donc c'est garanti
             // ici, dans le sérialiseur, plutôt que délégué à un réglage de dashboard.
             props.add("$ip", com.google.gson.JsonNull.INSTANCE);
+            // $geoip_disable=true empêche PostHog de géolocaliser l'IP de l'expéditeur
+            // (ville/CP/latitude/longitude) : $ip=null seul ne suffit pas, vérifié en
+            // envoyant deux sondes réelles sur l'endpoint (avec/sans ce flag).
+            props.addProperty("$geoip_disable", true);
             for (Map.Entry<String, Object> p : e.properties.entrySet()) {
                 Object v = p.getValue();
                 if (v instanceof Boolean b) props.addProperty(p.getKey(), b);
