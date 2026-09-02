@@ -2,6 +2,7 @@ package com.minepiece.essentials;
 
 import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -35,5 +36,28 @@ class ServerDetectorTest {
     @Test
     void otherServerFooterDoesNotMatch() {
         assertFalse(ServerDetector.tabListMatches(null, "PLAY.HYPIXEL.NET"));
+    }
+
+    @Test
+    void escapeNonAsciiLeavesPlainAsciiUnchanged() {
+        assertEquals("PLAY.MINEPIECE.NET", ServerDetector.escapeNonAscii("PLAY.MINEPIECE.NET", 300));
+    }
+
+    @Test
+    void escapeNonAsciiEscapesCjkChar() {
+        assertEquals("\\u9752", ServerDetector.escapeNonAscii("青", 300));
+    }
+
+    @Test
+    void escapeNonAsciiTruncatesToLimit() {
+        String longAscii = "a".repeat(400);
+        String result = ServerDetector.escapeNonAscii(longAscii, 300);
+        assertEquals(300, result.length());
+        assertEquals("a".repeat(300), result);
+    }
+
+    @Test
+    void escapeNonAsciiHandlesNull() {
+        assertEquals("null", ServerDetector.escapeNonAscii(null, 300));
     }
 }
