@@ -57,13 +57,6 @@ public final class ServerDetector {
     // à la connexion puis le peuplent quelques secondes plus tard).
     private static boolean tabListMatchLogged = false;
 
-    // DIAGNOSTIC TEMPORAIRE (a retirer) : log le contenu brut (échappé) du
-    // premier tab-list non vide par connexion, pour voir si le serveur envoie
-    // des glyphes personnalisés (codepoints CJK) plutôt que du texte ASCII.
-    private static boolean rawTabListLogged = false;
-
-    private static final int RAW_TAB_LIST_LOG_LIMIT = 300;
-
     // Horodatage de la première évaluation avec un monde chargé (0 = pas encore
     // vu). Sert de référence pour la période de grâce du diagnostic : les
     // signaux (notamment le tab-list et la boss bar) peuvent mettre jusqu'à
@@ -119,7 +112,6 @@ public final class ServerDetector {
         worldSeenAt = 0;
         tabListReceptionLogged = false;
         tabListMatchLogged = false;
-        rawTabListLogged = false;
     }
 
     /**
@@ -145,20 +137,6 @@ public final class ServerDetector {
             MinepieceEssentialsClient.LOGGER.info(
                 "[ServerDetector] tab-list reçu — minepiece={} (header vide={}, footer vide={})",
                 matches, headerEmpty, footerEmpty);
-        }
-
-        // DIAGNOSTIC TEMPORAIRE (a retirer) : dès le premier paquet où header
-        // ou footer est non vide, on logue le contenu brut échappé (une seule
-        // fois par connexion) pour voir les vrais codepoints envoyés par le
-        // serveur.
-        boolean headerNonEmpty = header != null && !header.isEmpty();
-        boolean footerNonEmpty = footer != null && !footer.isEmpty();
-        if (!rawTabListLogged && (headerNonEmpty || footerNonEmpty)) {
-            rawTabListLogged = true;
-            MinepieceEssentialsClient.LOGGER.info("[ServerDetector] DEBUG header = {}",
-                escapeNonAscii(header, RAW_TAB_LIST_LOG_LIMIT));
-            MinepieceEssentialsClient.LOGGER.info("[ServerDetector] DEBUG footer = {}",
-                escapeNonAscii(footer, RAW_TAB_LIST_LOG_LIMIT));
         }
 
         // Log séparé, une seule fois par connexion, la première fois que le
@@ -254,39 +232,68 @@ public final class ServerDetector {
 
     /**
      * Le pied de page (et l'en-tête) du tab-list contiennent "PLAY.MINEPIECE.NET"
-     * sur toutes les cartes du serveur, y compris l'île perso. Correspondance
-     * insensible à la casse sur le sous-texte "minepiece", combinée header+footer.
-     * Extrait en méthode pure (aucune dépendance Minecraft) pour être testable
+     * sur toutes les cartes du serveur, y compris l'île perso. Le serveur écrit
+     * ce texte en petites capitales Unicode (ex. "ᴘʟᴀʏ.ᴍɪɴᴇᴘɪᴇᴄᴇ.ɴᴇᴛ") : ce sont
+     * de vraies lettres, mais {@code Character.toLowerCase} ne les convertit
+     * pas vers l'ASCII correspondant, donc on normalise explicitement via
+     * {@link #normalizeSmallCaps} avant de chercher "minepiece". Extrait en
+     * méthode pure (aucune dépendance Minecraft) pour être testable
      * unitairement.
      */
     static boolean tabListMatches(String header, String footer) {
         String combined = (header != null ? header : "") + (footer != null ? footer : "");
-        return combined.toLowerCase().contains("minepiece");
+        return normalizeSmallCaps(combined).contains("minepiece");
     }
 
     /**
-     * DIAGNOSTIC TEMPORAIRE (a retirer) : échappe tout caractère non-ASCII
-     * imprimable (hors 0x20-0x7E) au format "backslash-u" suivi de 4 chiffres
-     * hexadecimaux, puis tronque à {@code limit} caractères (après
-     * échappement). Méthode pure, testable unitairement.
+     * Normalise une chaîne en minuscules ASCII, en convertissant au passage les
+     * petites capitales Unicode (ex. "ᴍ" U+1D0D) vers leur lettre ASCII
+     * minuscule équivalente ("m"). {@code Normalizer.normalize(..., NFKD)} ne
+     * suffit pas ici : ces caractères n'ont pas de décomposition de
+     * compatibilité. Tout caractère hors de la table est laissé tel quel après
+     * {@code Character.toLowerCase}. Méthode pure, testable unitairement.
      */
-    static String escapeNonAscii(String s, int limit) {
-        if (s == null) return "null";
-        StringBuilder sb = new StringBuilder();
+    static String normalizeSmallCaps(String s) {
+        if (s == null) return "";
+        StringBuilder sb = new StringBuilder(s.length());
         for (int i = 0; i < s.length(); i++) {
             char c = s.charAt(i);
-            if (c >= 0x20 && c <= 0x7E) {
-                sb.append(c);
-            } else {
-                sb.append(String.format("\\u%04X", (int) c));
-            }
-            if (sb.length() >= limit) break;
-        }
-        if (sb.length() > limit) {
-            sb.setLength(limit);
+            char mapped = SMALL_CAPS_TO_ASCII.getOrDefault(c, Character.toLowerCase(c));
+            sb.append(mapped);
         }
         return sb.toString();
     }
+
+    // Table des petites capitales Unicode (small capitals) utilisées par le
+    // serveur vers leur lettre ASCII minuscule. Il n'existe pas de petite
+    // capitale pour "x" (le serveur utilise le "x" ASCII normal).
+    private static final java.util.Map<Character, Character> SMALL_CAPS_TO_ASCII = java.util.Map.ofEntries(
+        java.util.Map.entry('ᴀ', 'a'),
+        java.util.Map.entry('ʙ', 'b'),
+        java.util.Map.entry('ᴄ', 'c'),
+        java.util.Map.entry('ᴅ', 'd'),
+        java.util.Map.entry('ᴇ', 'e'),
+        java.util.Map.entry('ꜰ', 'f'),
+        java.util.Map.entry('ɢ', 'g'),
+        java.util.Map.entry('ʜ', 'h'),
+        java.util.Map.entry('ɪ', 'i'),
+        java.util.Map.entry('ᴊ', 'j'),
+        java.util.Map.entry('ᴋ', 'k'),
+        java.util.Map.entry('ʟ', 'l'),
+        java.util.Map.entry('ᴍ', 'm'),
+        java.util.Map.entry('ɴ', 'n'),
+        java.util.Map.entry('ᴏ', 'o'),
+        java.util.Map.entry('ᴘ', 'p'),
+        java.util.Map.entry('ꞯ', 'q'),
+        java.util.Map.entry('ʀ', 'r'),
+        java.util.Map.entry('ꜱ', 's'),
+        java.util.Map.entry('ᴛ', 't'),
+        java.util.Map.entry('ᴜ', 'u'),
+        java.util.Map.entry('ᴠ', 'v'),
+        java.util.Map.entry('ᴡ', 'w'),
+        java.util.Map.entry('ʏ', 'y'),
+        java.util.Map.entry('ᴢ', 'z')
+    );
 
     /** The hostname of the live connection (lower-cased), or null. Covers Direct Connect. */
     private static String connectionHost(MinecraftClient client) {
