@@ -78,5 +78,15 @@
     "minepiece.ui.help.this_help.line1": "Press H to reopen this guide at any time.",
 
     "minepiece.ui.help.btn_dismiss": "Don't show again",
-    "minepiece.ui.help.btn_close": "Close"
+    "minepiece.ui.help.btn_close": "Close",
+
+    "minepiece.ui.donate.title": "Make a donation",
+    "minepiece.ui.donate.field_amount": "Amount in berries",
+    "minepiece.ui.donate.btn_next": "Next",
+    "minepiece.ui.donate.btn_cancel": "Cancel",
+    "minepiece.ui.donate.btn_confirm": "Confirm",
+    "minepiece.ui.donate.btn_back": "Back",
+    "minepiece.ui.donate.error_invalid": "Invalid amount: enter a positive whole number.",
+    "minepiece.ui.donate.confirm_prompt": "This command will be sent:",
+    "minepiece.ui.donate.btn_donate": "Donate"
 }

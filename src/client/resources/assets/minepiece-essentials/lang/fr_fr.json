@@ -78,5 +78,15 @@
     "minepiece.ui.help.this_help.line1": "Touche H pour rouvrir ce guide à tout moment.",
 
     "minepiece.ui.help.btn_dismiss": "Ne plus afficher",
-    "minepiece.ui.help.btn_close": "Fermer"
+    "minepiece.ui.help.btn_close": "Fermer",
+
+    "minepiece.ui.donate.title": "Faire un don",
+    "minepiece.ui.donate.field_amount": "Montant en berries",
+    "minepiece.ui.donate.btn_next": "Suivant",
+    "minepiece.ui.donate.btn_cancel": "Annuler",
+    "minepiece.ui.donate.btn_confirm": "Confirmer",
+    "minepiece.ui.donate.btn_back": "Retour",
+    "minepiece.ui.donate.error_invalid": "Montant invalide : entre un nombre entier positif.",
+    "minepiece.ui.donate.confirm_prompt": "Cette commande va être envoyée :",
+    "minepiece.ui.donate.btn_donate": "Faire un don"
 }
