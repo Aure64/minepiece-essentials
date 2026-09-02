@@ -51,6 +51,12 @@ public final class ServerDetector {
     // diagnostic existant ne prouve jamais que ce chemin fonctionne).
     private static boolean tabListReceptionLogged = false;
 
+    // Garantit un seul log "tab-list correspond" par connexion : se déclenche
+    // la première fois que le tab-list bascule à minepiece=true, même si ce
+    // n'est pas au premier paquet (certains serveurs envoient un tab-list vide
+    // à la connexion puis le peuplent quelques secondes plus tard).
+    private static boolean tabListMatchLogged = false;
+
     // Horodatage de la première évaluation avec un monde chargé (0 = pas encore
     // vu). Sert de référence pour la période de grâce du diagnostic : les
     // signaux (notamment le tab-list et la boss bar) peuvent mettre jusqu'à
@@ -105,6 +111,7 @@ public final class ServerDetector {
         diagnosticLogged = false;
         worldSeenAt = 0;
         tabListReceptionLogged = false;
+        tabListMatchLogged = false;
     }
 
     /**
@@ -121,10 +128,23 @@ public final class ServerDetector {
         // detectSignals(). Une seule ligne par connexion (le paquet peut être
         // renvoyé plusieurs fois par le serveur) ; le texte brut n'est jamais
         // loggé (peut contenir des pseudos et du texte serveur).
+        boolean matches = tabListMatches(header, footer);
+
         if (!tabListReceptionLogged) {
             tabListReceptionLogged = true;
+            boolean headerEmpty = header == null || header.isEmpty();
+            boolean footerEmpty = footer == null || footer.isEmpty();
             MinepieceEssentialsClient.LOGGER.info(
-                "[ServerDetector] tab-list reçu — minepiece={}", tabListMatches(header, footer));
+                "[ServerDetector] tab-list reçu — minepiece={} (header vide={}, footer vide={})",
+                matches, headerEmpty, footerEmpty);
+        }
+
+        // Log séparé, une seule fois par connexion, la première fois que le
+        // tab-list bascule à "true" — permet de distinguer "jamais peuplé" de
+        // "peuplé après N secondes" sans dépendre du premier paquet.
+        if (matches && !tabListMatchLogged) {
+            tabListMatchLogged = true;
+            MinepieceEssentialsClient.LOGGER.info("[ServerDetector] tab-list correspond — minepiece=true");
         }
     }
 
