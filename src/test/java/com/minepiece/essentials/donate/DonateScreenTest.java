@@ -3,7 +3,9 @@ package com.minepiece.essentials.donate;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Couvre uniquement le parsing/validation pur du montant, sans dépendance à un
@@ -48,5 +50,28 @@ class DonateScreenTest {
     void valueAboveIntMaxParsesAsLong() {
         String big = Long.toString((long) Integer.MAX_VALUE + 1L);
         assertEquals((long) Integer.MAX_VALUE + 1L, DonateScreen.parseAmount(big));
+    }
+
+    // --- isArmed : délai d'armement de la confirmation (défense anti double-clic) ---
+
+    @Test
+    void notArmedBeforeDelayElapsed() {
+        long enteredAt = 1_000L;
+        long justBefore = enteredAt + DonateScreen.CONFIRM_ARM_DELAY_MS - 1;
+        assertFalse(DonateScreen.isArmed(enteredAt, justBefore));
+    }
+
+    @Test
+    void armedExactlyAtDelay() {
+        long enteredAt = 1_000L;
+        long atThreshold = enteredAt + DonateScreen.CONFIRM_ARM_DELAY_MS;
+        assertTrue(DonateScreen.isArmed(enteredAt, atThreshold));
+    }
+
+    @Test
+    void armedAfterDelayElapsed() {
+        long enteredAt = 1_000L;
+        long justAfter = enteredAt + DonateScreen.CONFIRM_ARM_DELAY_MS + 1;
+        assertTrue(DonateScreen.isArmed(enteredAt, justAfter));
     }
 }

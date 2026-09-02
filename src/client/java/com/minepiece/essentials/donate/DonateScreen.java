@@ -1,5 +1,6 @@
 package com.minepiece.essentials.donate;
 
+import com.minepiece.essentials.ServerDetector;
 import com.minepiece.essentials.hud.ParchmentRenderer;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
@@ -25,6 +26,30 @@ public class DonateScreen extends Screen {
 
     private static final int[] PRESETS = {50_000, 100_000, 250_000};
 
+    // Géométrie de l'état AMOUNT (voir initAmountState) : sert de référence pour
+    // calculer, sans jamais recouvrir, la position des boutons de l'état CONFIRM.
+    private static final int AMOUNT_FIRST_ROW_Y = -50; // relatif à height/2
+    private static final int AMOUNT_ROW_GAP_1 = 28;
+    private static final int AMOUNT_ROW_GAP_2 = 32;
+    private static final int BUTTON_HEIGHT = 20;
+    private static final int AMOUNT_BUTTONS_Y =
+            AMOUNT_FIRST_ROW_Y + AMOUNT_ROW_GAP_1 + AMOUNT_ROW_GAP_2; // = height/2 - 50 + 28 + 32 = height/2 + 10
+    private static final int AMOUNT_BUTTONS_BOTTOM = AMOUNT_BUTTONS_Y + BUTTON_HEIGHT; // = height/2 + 30
+
+    // Marge de sécurité entre le bas des boutons AMOUNT et le haut des boutons
+    // CONFIRM : garantit qu'un double-clic rapide sur "Suivant" ne peut jamais
+    // faire tomber le second clic sur "Confirmer" (voir aussi CONFIRM_ARM_DELAY_MS
+    // ci-dessous, seconde défense indépendante).
+    private static final int CONFIRM_SAFETY_MARGIN = 20;
+    private static final int CONFIRM_BUTTONS_Y = AMOUNT_BUTTONS_BOTTOM + CONFIRM_SAFETY_MARGIN; // = height/2 + 50
+
+    // Délai minimal (ms) entre l'entrée dans l'état CONFIRM et la prise en compte
+    // d'un clic sur "Confirmer". Défense indépendante de la géométrie : même si
+    // un futur changement de layout réintroduisait un chevauchement, un double-clic
+    // en rafale (les deux clics arrivent dans la même frame ou la suivante) ne
+    // pourrait plus déclencher un envoi.
+    static final long CONFIRM_ARM_DELAY_MS = 300;
+
     private enum State { AMOUNT, CONFIRM }
 
     private final Screen parent;
@@ -37,6 +62,9 @@ public class DonateScreen extends Screen {
 
     // Montant validé, en attente de confirmation (état CONFIRM).
     private long confirmedAmount;
+
+    // Horodatage d'entrée dans l'état CONFIRM ; voir CONFIRM_ARM_DELAY_MS.
+    private long confirmEnteredAt = 0;
 
     public DonateScreen(Screen parent) {
         super(Text.translatable("minepiece.ui.donate.title"));
@@ -122,23 +150,44 @@ public class DonateScreen extends Screen {
         }
         errorMessage = null;
         state = State.CONFIRM;
+        confirmEnteredAt = System.currentTimeMillis();
         clearAndInit();
     }
 
     private void initConfirmState() {
         int centerX = width / 2;
-        int y = height / 2;
 
         addDrawableChild(ButtonWidget.builder(Text.translatable("minepiece.ui.donate.btn_confirm"),
-                b -> sendDonation()).dimensions(centerX - 100, y + 20, 96, 20).build());
+                b -> sendDonation()).dimensions(centerX - 100, height / 2 + CONFIRM_BUTTONS_Y, 96, BUTTON_HEIGHT).build());
         addDrawableChild(ButtonWidget.builder(Text.translatable("minepiece.ui.donate.btn_back"),
                 b -> {
                     state = State.AMOUNT;
                     clearAndInit();
-                }).dimensions(centerX + 4, y + 20, 96, 20).build());
+                }).dimensions(centerX + 4, height / 2 + CONFIRM_BUTTONS_Y, 96, BUTTON_HEIGHT).build());
+    }
+
+    /**
+     * Vrai si le délai d'armement est écoulé depuis l'entrée en état CONFIRM.
+     * Extrait en méthode statique pure pour être testable sans écran réel :
+     * seconde défense contre un envoi accidentel (voir CONFIRM_ARM_DELAY_MS),
+     * indépendante de la géométrie des boutons.
+     */
+    static boolean isArmed(long enteredAt, long now) {
+        return now - enteredAt >= CONFIRM_ARM_DELAY_MS;
     }
 
     private void sendDonation() {
+        if (!ServerDetector.isOnMinePiece()) {
+            // Ecran ouvert sur MinePiece mais qui aurait survécu à un changement
+            // de contexte (autre serveur) : on n'envoie rien.
+            close();
+            return;
+        }
+        if (!isArmed(confirmEnteredAt, System.currentTimeMillis())) {
+            // Clic trop rapproché de l'entrée en état CONFIRM (ex. double-clic
+            // sur "Suivant") : on ignore, la confirmation n'a pas pu être lue.
+            return;
+        }
         MinecraftClient client = MinecraftClient.getInstance();
         if (client.player == null) {
             close();
@@ -180,7 +229,10 @@ public class DonateScreen extends Screen {
             return new int[]{centerX - 130, y, 260, 146};
         } else {
             int y = height / 2 - 56;
-            return new int[]{centerX - 130, y, 260, 106};
+            // Hauteur agrandie pour couvrir les boutons CONFIRM, désormais plus bas
+            // (CONFIRM_BUTTONS_Y) qu'avant le correctif anti-chevauchement.
+            int bottom = height / 2 + CONFIRM_BUTTONS_Y + BUTTON_HEIGHT + 10;
+            return new int[]{centerX - 130, y, 260, bottom - y};
         }
     }
 
