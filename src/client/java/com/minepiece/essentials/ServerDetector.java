@@ -43,6 +43,14 @@ public final class ServerDetector {
     // évalué à chaque frame/tick.
     private static boolean diagnosticLogged = false;
 
+    // Garantit un seul log "tab-list reçu" par connexion, même si le serveur
+    // renvoie plusieurs fois le PlayerListHeaderS2CPacket. Sert à prouver que
+    // le mixin capture bien le paquet, indépendamment de l'ordre des signaux
+    // dans detectSignals() (sur la machine de l'auteur, le signal "address"
+    // verrouille la détection avant que le tab-list ne soit consulté, donc le
+    // diagnostic existant ne prouve jamais que ce chemin fonctionne).
+    private static boolean tabListReceptionLogged = false;
+
     // Horodatage de la première évaluation avec un monde chargé (0 = pas encore
     // vu). Sert de référence pour la période de grâce du diagnostic : les
     // signaux (notamment le tab-list et la boss bar) peuvent mettre jusqu'à
@@ -96,6 +104,7 @@ public final class ServerDetector {
         lastTabFooter = null;
         diagnosticLogged = false;
         worldSeenAt = 0;
+        tabListReceptionLogged = false;
     }
 
     /**
@@ -106,6 +115,17 @@ public final class ServerDetector {
     public static void onTabListHeaderFooter(String header, String footer) {
         lastTabHeader = header;
         lastTabFooter = footer;
+
+        // Preuve indépendante que le paquet arrive bien et que le mixin se
+        // déclenche, sans dépendre de l'ordre d'évaluation des signaux dans
+        // detectSignals(). Une seule ligne par connexion (le paquet peut être
+        // renvoyé plusieurs fois par le serveur) ; le texte brut n'est jamais
+        // loggé (peut contenir des pseudos et du texte serveur).
+        if (!tabListReceptionLogged) {
+            tabListReceptionLogged = true;
+            MinepieceEssentialsClient.LOGGER.info(
+                "[ServerDetector] tab-list reçu — minepiece={}", tabListMatches(header, footer));
+        }
     }
 
     private static boolean detect() {
