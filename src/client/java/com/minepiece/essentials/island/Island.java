@@ -80,7 +80,36 @@ public enum Island {
         return UNKNOWN;
     }
 
-    public String getCommand() {
-        return "/" + id;
+    /**
+     * Île correspondant au nom d'un item de l'écran {@code /boss} ("Drum",
+     * "Whole Cake Island", "Île des Hommes-Poissons"...). Comparaison exacte
+     * après normalisation (minuscules, accents retirés), avec quelques alias.
+     */
+    public static Island fromScreenName(String name) {
+        if (name == null) return UNKNOWN;
+        String key = normalize(name);
+        if (key.isEmpty()) return UNKNOWN;
+        Island alias = SCREEN_ALIASES.get(key);
+        if (alias != null) return alias;
+        for (Island island : values()) {
+            if (island != UNKNOWN && normalize(island.displayName).equals(key)) return island;
+        }
+        return UNKNOWN;
+    }
+
+    private static final Map<String, Island> SCREEN_ALIASES = Map.of(
+        "drum", DRUM,
+        "royaume de drum", DRUM,
+        "whole cake island", WHOLE_CAKE,
+        "komugi island", KOMUGI,
+        "archipel des sabaody", SABAODY,
+        "ile de zou", ZOU,
+        "ile des hommes poissons", ILE_HOMMES_POISSONS
+    );
+
+    private static String normalize(String s) {
+        String n = java.text.Normalizer.normalize(s, java.text.Normalizer.Form.NFD)
+            .replaceAll("\\p{M}", "");
+        return n.toLowerCase(java.util.Locale.ROOT).trim();
     }
 }

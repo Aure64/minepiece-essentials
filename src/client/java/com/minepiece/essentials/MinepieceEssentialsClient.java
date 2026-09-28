@@ -163,6 +163,15 @@ public class MinepieceEssentialsClient implements ClientModInitializer {
     }
 
     private void registerKeybinds() {
+        // TEMP : dumper de debug (touche P dans un conteneur) — à retirer avant release
+        net.fabricmc.fabric.api.client.screen.v1.ScreenEvents.AFTER_INIT.register((mc, screen, sw, sh) ->
+            net.fabricmc.fabric.api.client.screen.v1.ScreenKeyboardEvents.afterKeyPress(screen)
+                .register((scr, keyEvent) -> {
+                    if (keyEvent.input() == GLFW.GLFW_KEY_P
+                            && scr instanceof net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<?> cs) {
+                        com.minepiece.essentials.debug.DebugDumper.dump(cs);
+                    }
+                }));
         editHudKey = KeyMappingHelper.registerKeyMapping(new KeyMapping(
             "key.minepiece-essentials.edit_hud", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_K, CATEGORY));
         helpKey = KeyMappingHelper.registerKeyMapping(new KeyMapping(

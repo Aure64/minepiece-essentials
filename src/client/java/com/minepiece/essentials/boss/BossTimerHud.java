@@ -111,10 +111,8 @@ public class BossTimerHud extends HudElement {
 
         // Queue ETA banner
         if (queueActive) {
-            int total = BossTracker.TRACKED_ISLANDS.size();
-            int done = total - queueSize;
             int eta = BossTracker.getInstance().getEtaSeconds();
-            String etaText = String.format("Refresh: %d/%d - ETA %ds", done, total, eta);
+            String etaText = String.format("Refresh /boss - ETA %ds", eta);
             RenderUtils.drawText(ctx, etaText, 6, y, 0xFFAA6600);
             y += 12;
         }

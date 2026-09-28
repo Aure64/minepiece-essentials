@@ -1,7 +1,6 @@
 package com.minepiece.essentials.boss;
 
 import com.minepiece.essentials.MinepieceEssentialsClient;
-import com.minepiece.essentials.i18n.ServerText;
 import com.minepiece.essentials.island.Island;
 import com.minepiece.essentials.island.IslandDetector;
 import com.minepiece.essentials.network.BackgroundGuiRefresh;
@@ -9,13 +8,21 @@ import com.minepiece.essentials.util.JsonHelper;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.regex.Matcher;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.ItemLore;
 
+/**
+ * Timers de boss. Source unique : l'écran {@code /boss} du serveur, qui liste
+ * toutes les îles et leurs boss en un seul écran (un envoi, aucun clic —
+ * lecture puis fermeture). Voir {@link BossScreenParser} pour le format.
+ */
 public class BossTracker {
     private static BossTracker instance;
     private final Map<Island, List<BossData>> bossMap = new ConcurrentHashMap<>();
+
+    public static final String BOSS_COMMAND = "/boss";
 
     // Ordered (LinkedHashSet) so the HUD can group region islands consecutively;
     // Whole Cake & Komugi are adjacent (both in the Totto Land region).
@@ -57,10 +64,9 @@ public class BossTracker {
     private boolean initialScanDone = false;
     private boolean wasConnected = false;
 
-    // Refresh queue — clicks add to it, tick() polls one at a time respecting cooldown.
-    // Each cycle takes ~5s (BGRefresh global cooldown is the bottleneck).
-    private static final long PER_ISLAND_SECONDS = 5L;
-    private final Deque<Island> refreshQueue = new ArrayDeque<>();
+    // Un seul refresh couvre toutes les îles : la file est un simple drapeau.
+    private boolean refreshPending = false;
+    private static final long REFRESH_SECONDS = 5L;
 
     public void tick() {
         BackgroundGuiRefresh.tick();
@@ -68,169 +74,89 @@ public class BossTracker {
         boolean connected = IslandDetector.getInstance().getCurrentIsland() != Island.UNKNOWN;
         if (wasConnected && !connected) {
             initialScanDone = false;
-            refreshQueue.clear();
+            refreshPending = false;
             BossAlertManager.getInstance().reset();
         }
         wasConnected = connected;
 
         BossAlertManager.getInstance().tick();
 
+        // Premier relevé automatique une fois en jeu sur une île connue.
         if (!initialScanDone && connected) {
             initialScanDone = true;
+            refreshPending = true;
         }
 
-        if (!refreshQueue.isEmpty() && !BackgroundGuiRefresh.isBusy() && BackgroundGuiRefresh.isReady()) {
-            Island next = refreshQueue.poll();
-            if (next != null) {
-                doRefresh(next);
-            }
+        if (refreshPending && !BackgroundGuiRefresh.isBusy() && BackgroundGuiRefresh.isReady()) {
+            refreshPending = false;
+            doRefresh();
         }
     }
 
-    /**
-     * Queue an island for refresh. Clicking the refresh button always enqueues —
-     * no silent failures from cooldown / busy state.
-     */
-    public void refreshIsland(Island island) {
+    /** Demande un refresh (toutes les îles d'un coup). Jamais d'échec silencieux. */
+    public void refresh() {
         com.minepiece.essentials.telemetry.Telemetry.feature("boss_refresh");
-        if (refreshQueue.contains(island)) return;
-        refreshQueue.add(island);
+        refreshPending = true;
     }
 
-    public void refreshAllIslands() {
-        for (Island island : TRACKED_ISLANDS) {
-            if (!refreshQueue.contains(island)) {
-                refreshQueue.add(island);
-            }
-        }
-    }
+    /** Conservé pour le HUD : /boss renvoie toutes les îles, un refresh suffit. */
+    public void refreshIsland(Island island) { refresh(); }
 
-    public void cancelRefreshQueue() {
-        refreshQueue.clear();
-    }
+    public void refreshAllIslands() { refresh(); }
+
+    public void cancelRefreshQueue() { refreshPending = false; }
 
     public void onConnectionChange() {
-        refreshQueue.clear();
+        refreshPending = false;
         initialScanDone = false;
         wasConnected = false;
         BossAlertManager.getInstance().reset();
     }
 
-    public int getQueueSize() { return refreshQueue.size(); }
-    public boolean isInQueue(Island island) { return refreshQueue.contains(island); }
+    public boolean isRefreshPending() { return refreshPending; }
+    public int getQueueSize() { return refreshPending ? 1 : 0; }
+    public boolean isInQueue(Island island) { return refreshPending; }
 
-    /** Estimated seconds until queue is fully drained. */
+    /** Estimated seconds until the pending refresh completes. */
     public int getEtaSeconds() {
-        int pending = refreshQueue.size();
+        if (!refreshPending) return 0;
         long cooldownRemaining = BackgroundGuiRefresh.getCooldownRemainingMs();
-        return (int) Math.ceil((pending * PER_ISLAND_SECONDS * 1000L + cooldownRemaining) / 1000.0);
+        return (int) Math.ceil((REFRESH_SECONDS * 1000L + cooldownRemaining) / 1000.0);
     }
 
-    private void doRefresh(Island island) {
-        String command = island.getCommand();
-        MinepieceEssentialsClient.LOGGER.info("[BossTracker] Refresh: {} ({})", island.displayName, command);
-
-        BackgroundGuiRefresh.sendCommand(command, items -> {
-            int mobSlot = findMobSlot(items);
-            MinepieceEssentialsClient.LOGGER.info("[BossTracker] 1st screen: {} items, clicking slot {}", items.size(), mobSlot);
-
-            BackgroundGuiRefresh.clickSlotAndListen(mobSlot, mobItems -> {
-                MinepieceEssentialsClient.LOGGER.info("[BossTracker] 2nd screen: {} mob items", mobItems.size());
-                parseBossItems(island, mobItems);
-            });
+    private void doRefresh() {
+        MinepieceEssentialsClient.LOGGER.info("[BossTracker] Refresh via {}", BOSS_COMMAND);
+        BackgroundGuiRefresh.sendCommand(BOSS_COMMAND, items -> {
+            MinepieceEssentialsClient.LOGGER.info("[BossTracker] /boss screen: {} items", items.size());
+            applyScreen(items);
         });
     }
 
-    private int findMobSlot(Map<Integer, ItemStack> items) {
-        // Pass 1: by item name (islands whose mob item is named "Marine"/"Pirate"/…).
-        for (Map.Entry<Integer, ItemStack> entry : items.entrySet()) {
-            ItemStack stack = entry.getValue();
-            if (stack.isEmpty()) continue;
-            String name = stack.getHoverName().getString().toLowerCase();
-            if (ServerText.matches(name, ServerText.BOSS_MOB_KEYWORDS)) {
-                return entry.getKey();
-            }
-        }
-        // Pass 2: the mini-boss CATEGORY — its lore says "Mini-Boss(es) présents",
-        // e.g. Komugi's "Soldats biscuits". This list has spawn coords/timers; the
-        // single island boss ("le Boss de cette île") only leads to its loot.
-        int byLore = loreSlot(items, true);
-        if (byLore >= 0) return byLore;
-        // Pass 3: fallback — any "Voir les loots" category.
-        byLore = loreSlot(items, false);
-        if (byLore >= 0) return byLore;
-        return 16;
-    }
-
-    /** First slot whose lore matches: mini-boss category if {@code miniBossOnly}, else any mob category. */
-    private int loreSlot(Map<Integer, ItemStack> items, boolean miniBossOnly) {
-        for (Map.Entry<Integer, ItemStack> entry : items.entrySet()) {
-            ItemStack stack = entry.getValue();
+    private void applyScreen(Map<Integer, ItemStack> items) {
+        List<BossScreenParser.Entry> entries = new ArrayList<>();
+        for (ItemStack stack : items.values()) {
             if (stack == null || stack.isEmpty()) continue;
-            StringBuilder lore = new StringBuilder();
-            for (net.minecraft.network.chat.Component line : stack.getTooltipLines(
-                    net.minecraft.world.item.Item.TooltipContext.EMPTY, null,
-                    net.minecraft.world.item.TooltipFlag.NORMAL)) {
-                lore.append(line.getString().toLowerCase()).append('\n');
-            }
-            String l = lore.toString();
-            boolean match = miniBossOnly
-                ? ServerText.matches(l, ServerText.BOSS_MINIBOSS_CATEGORY)
-                : ServerText.matches(l, ServerText.BOSS_VIEW_LOOTS);
-            if (match) return entry.getKey();
-        }
-        return -1;
-    }
-
-    private void parseBossItems(Island island, Map<Integer, ItemStack> items) {
-        List<BossData> bosses = new ArrayList<>();
-        for (Map.Entry<Integer, ItemStack> entry : items.entrySet()) {
-            ItemStack stack = entry.getValue();
-            if (stack == null || stack.isEmpty()) continue;
-
             String name = stack.getHoverName().getString();
             if (name.isEmpty()) continue;
-
-            String nameLower = name.toLowerCase();
-            if (ServerText.matches(nameLower, ServerText.BOSS_NAV)) continue;
-
-            BossData boss = new BossData(name, island);
-
-            var tooltip = stack.getTooltipLines(net.minecraft.world.item.Item.TooltipContext.EMPTY,
-                    null, net.minecraft.world.item.TooltipFlag.NORMAL);
-            for (Component text : tooltip) {
-                String line = text.getString();
-                Matcher coordMatch = ServerText.BOSS_COORDS.matcher(line);
-                if (coordMatch.find()) {
-                    boss.x = Integer.parseInt(coordMatch.group(1));
-                    boss.y = Integer.parseInt(coordMatch.group(2));
-                    boss.z = Integer.parseInt(coordMatch.group(3));
-                    boss.hasCoords = true;
-                    boss.type = "mini_boss";
-                }
-                Matcher timerMatch = ServerText.BOSS_RESPAWN.matcher(line);
-                if (timerMatch.find()) {
-                    String minStr = timerMatch.group(1);
-                    int min = minStr != null ? Integer.parseInt(minStr) : 0;
-                    int sec = Integer.parseInt(timerMatch.group(2));
-                    boss.lastKnownTimerSeconds = min * 60 + sec;
-                    boss.lastKnownRespawnTimestamp = System.currentTimeMillis();
-                }
-                Matcher intervalMatch = ServerText.BOSS_INTERVAL.matcher(line);
-                if (intervalMatch.find()) {
-                    boss.respawnIntervalSeconds = Integer.parseInt(intervalMatch.group(1)) * 60;
-                }
+            List<String> lore = new ArrayList<>();
+            ItemLore lc = stack.get(DataComponents.LORE);
+            if (lc != null) {
+                for (Component line : lc.lines()) lore.add(line.getString());
             }
-
-            if (!boss.hasCoords) boss.type = "mob";
-            bosses.add(boss);
+            entries.add(new BossScreenParser.Entry(name, lore));
         }
 
-        bossMap.put(island, bosses);
-        saveBossData(island, bosses);
-        MinepieceEssentialsClient.LOGGER.info("[BossTracker] {} - {} bosses ({} with coords)",
-            island.displayName, bosses.size(),
-            bosses.stream().filter(b -> b.hasCoords).count());
+        Map<Island, List<BossData>> parsed = BossScreenParser.parse(entries);
+        if (parsed.isEmpty()) {
+            MinepieceEssentialsClient.LOGGER.warn("[BossTracker] /boss screen not recognised ({} items) — keeping previous data", items.size());
+            return;
+        }
+        for (Map.Entry<Island, List<BossData>> e : parsed.entrySet()) {
+            bossMap.put(e.getKey(), e.getValue());
+            saveBossData(e.getKey(), e.getValue());
+        }
+        MinepieceEssentialsClient.LOGGER.info("[BossTracker] {} islands, {} bosses updated",
+            parsed.size(), parsed.values().stream().mapToInt(List::size).sum());
     }
 
     public List<BossData> getBossesForIsland(Island island) {
