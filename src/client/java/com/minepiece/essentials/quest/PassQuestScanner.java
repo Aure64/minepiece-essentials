@@ -78,13 +78,15 @@ public final class PassQuestScanner {
         wasOnMinePiece = inWorld;
 
         if (refreshPending && inWorld && !BackgroundGuiRefresh.isBusy() && BackgroundGuiRefresh.isReady()) {
-            MinepieceEssentialsClient.LOGGER.info("[PassQuestScanner] Refresh via {}", PASS_COMMAND);
             boolean sent = BackgroundGuiRefresh.sendCommand(PASS_COMMAND, items -> {
                 boolean ok = scan(items.values());
                 MinepieceEssentialsClient.LOGGER.info("[PassQuestScanner] {} screen: {} items, quests={}",
                         PASS_COMMAND, items.size(), ok);
             });
-            if (sent) refreshPending = false;
+            if (sent) {
+                refreshPending = false;
+                MinepieceEssentialsClient.LOGGER.info("[PassQuestScanner] Refresh via {}", PASS_COMMAND);
+            }
         }
 
         if (client.gui.screen() instanceof AbstractContainerScreen<?> screen && onMinePiece) {

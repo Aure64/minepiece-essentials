@@ -90,9 +90,10 @@ public class BossTracker {
             refreshPending = true;
         }
 
+        // Reste en attente tant que l'envoi est refusé (occupé, cooldown, écran joueur
+        // ouvert — typiquement le clic sur ⟳ se fait dans l'éditeur K).
         if (refreshPending && !BackgroundGuiRefresh.isBusy() && BackgroundGuiRefresh.isReady()) {
-            refreshPending = false;
-            doRefresh();
+            if (doRefresh()) refreshPending = false;
         }
     }
 
@@ -127,12 +128,14 @@ public class BossTracker {
         return (int) Math.ceil((REFRESH_SECONDS * 1000L + cooldownRemaining) / 1000.0);
     }
 
-    private void doRefresh() {
-        MinepieceEssentialsClient.LOGGER.info("[BossTracker] Refresh via {}", BOSS_COMMAND);
-        BackgroundGuiRefresh.sendCommand(BOSS_COMMAND, items -> {
+    /** @return true si la commande est partie. */
+    private boolean doRefresh() {
+        boolean sent = BackgroundGuiRefresh.sendCommand(BOSS_COMMAND, items -> {
             MinepieceEssentialsClient.LOGGER.info("[BossTracker] /boss screen: {} items", items.size());
             applyScreen(items);
         });
+        if (sent) MinepieceEssentialsClient.LOGGER.info("[BossTracker] Refresh via {}", BOSS_COMMAND);
+        return sent;
     }
 
     private void applyScreen(Map<Integer, ItemStack> items) {
