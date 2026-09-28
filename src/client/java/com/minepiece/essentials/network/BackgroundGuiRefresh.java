@@ -5,48 +5,55 @@ import java.util.Map;
 import java.util.function.Consumer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
-import net.minecraft.network.HashedStack;
-import net.minecraft.network.protocol.game.ServerboundContainerClickPacket;
 import net.minecraft.network.protocol.game.ServerboundContainerClosePacket;
-import net.minecraft.world.inventory.ContainerInput;
 import net.minecraft.world.item.ItemStack;
 
-public class BackgroundGuiRefresh {
+/**
+ * Relevé silencieux d'un écran serveur : envoie une commande, laisse
+ * {@link ServerGuiInterceptor} lire le contenu, referme. Aucun clic n'est
+ * jamais envoyé. Un seul relevé à la fois, cooldown global de
+ * {@value #COOLDOWN_MS} ms, jamais pendant qu'un écran joueur est ouvert.
+ */
+public final class BackgroundGuiRefresh {
+    public static final long COOLDOWN_MS = 5000;
+    private static final long HARD_TIMEOUT_MS = 8000;
+
     private static long lastRefreshTime = 0;
     private static boolean busy = false;
     private static long busySince = 0;
-    private static final long HARD_TIMEOUT_MS = 8000; // Force reset after 8 seconds
+
+    private BackgroundGuiRefresh() {}
 
     public static boolean isBusy() { return busy; }
 
     /** True when the global cooldown has elapsed since the last refresh start. */
     public static boolean isReady() {
-        return System.currentTimeMillis() - lastRefreshTime >= 5000;
+        return System.currentTimeMillis() - lastRefreshTime >= COOLDOWN_MS;
     }
 
     /** Milliseconds remaining before another refresh can fire. 0 if ready. */
     public static long getCooldownRemainingMs() {
-        long elapsed = System.currentTimeMillis() - lastRefreshTime;
-        return Math.max(0, 5000 - elapsed);
+        return Math.max(0, COOLDOWN_MS - (System.currentTimeMillis() - lastRefreshTime));
     }
 
     /**
-     * Send a command and collect GUI items passively from slot updates.
-     * The screen is blocked from opening via mixin cancel on onOpenScreen.
+     * Envoie la commande et livre les items de l'écran qui s'ouvre.
+     * @return false si rien n'est parti (occupé, cooldown, écran joueur ouvert) —
+     *         l'appelant garde sa demande en attente.
      */
     public static boolean sendCommand(String command, Consumer<Map<Integer, ItemStack>> onItems) {
         Minecraft client = Minecraft.getInstance();
-        if (client.player == null || busy) return false;
+        if (client.player == null || client.getConnection() == null || busy) return false;
+        if (!isReady()) return false;
+        // Ne jamais voler un écran au joueur : on repassera au tick suivant.
+        if (client.gui.screen() != null) return false;
 
         long now = System.currentTimeMillis();
-        long cooldown = 5000;
-        if (now - lastRefreshTime < cooldown) return false;
-
         busy = true;
         busySince = now;
         lastRefreshTime = now;
 
-        ServerGuiInterceptor.startIntercept(items -> {
+        ServerGuiInterceptor.start(items -> {
             MinepieceEssentialsClient.LOGGER.info("[BGRefresh] Got {} items for {}", items.size(), command);
             onItems.accept(items);
         });
@@ -56,74 +63,46 @@ public class BackgroundGuiRefresh {
         return true;
     }
 
-    /**
-     * After receiving first screen items, click a slot to open a sub-menu.
-     */
-    public static void clickSlotAndListen(int slot, Consumer<Map<Integer, ItemStack>> onItems) {
-        Minecraft client = Minecraft.getInstance();
-        if (client.player == null || !busy) return;
-
-        int syncId = ServerGuiInterceptor.getExpectedSyncId();
-        if (syncId < 0) {
-            MinepieceEssentialsClient.LOGGER.warn("[BGRefresh] No syncId for clickSlot");
-            finish();
-            return;
-        }
-
-        MinepieceEssentialsClient.LOGGER.info("[BGRefresh] Clicking slot {} on syncId {}", slot, syncId);
-
-        // Prepare to collect the second screen's items
-        ServerGuiInterceptor.prepareForSecondScreen(onItems);
-
-        // Send click packet
-        client.getConnection().send(
-            new ServerboundContainerClickPacket(
-                syncId, 0, (short) slot, (byte) 0,
-                ContainerInput.PICKUP,
-                new it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap<>(),
-                HashedStack.EMPTY));
-    }
-
-    /**
-     * Called every client tick to drive the interceptor.
-     */
+    /** Thread client, chaque tick — toujours appelé, même hors MinePiece. */
     public static void tick() {
         if (!busy) return;
         ServerGuiInterceptor.tick();
 
-        // Data delivered (or interceptor gave up): close the server screen and release.
         if (ServerGuiInterceptor.isFinished() || !ServerGuiInterceptor.isIntercepting()) {
             finish();
             return;
         }
-
-        // Hard timeout — force reset if stuck
-        if (busy && System.currentTimeMillis() - busySince > HARD_TIMEOUT_MS) {
+        if (System.currentTimeMillis() - busySince > HARD_TIMEOUT_MS) {
             MinepieceEssentialsClient.LOGGER.warn("[BGRefresh] Hard timeout — forcing reset");
             finish();
         }
     }
 
-    private static void closeCurrentScreen() {
-        Minecraft client = Minecraft.getInstance();
-        if (client.getConnection() != null) {
-            int syncId = ServerGuiInterceptor.getExpectedSyncId();
-            if (syncId >= 0) {
-                // Tell server we closed the screen
-                client.getConnection().send(new ServerboundContainerClosePacket(syncId));
-            }
-            // Close the intercepted screen client-side — only that one, never a
-            // screen the player opened themselves.
-            if (client.gui.screen() instanceof AbstractContainerScreen<?> cs
-                    && (syncId < 0 || cs.getMenu().containerId == syncId)) {
-                client.setScreenAndShow(null);
-            }
-        }
-    }
-
+    /** Ferme l'écran intercepté (et seulement lui), puis libère. */
     public static void finish() {
-        closeCurrentScreen();
+        closeInterceptedScreen();
         ServerGuiInterceptor.stop();
         busy = false;
+    }
+
+    /** Oubli sans paquet : changement de serveur / déconnexion. */
+    public static void reset() {
+        ServerGuiInterceptor.stop();
+        busy = false;
+    }
+
+    private static void closeInterceptedScreen() {
+        Minecraft client = Minecraft.getInstance();
+        int syncId = ServerGuiInterceptor.getExpectedSyncId();
+        if (client.getConnection() == null || syncId < 0) return;
+
+        if (client.gui.screen() instanceof AbstractContainerScreen<?> cs
+                && cs.getMenu().containerId == syncId) {
+            // setScreen(null) sur un écran conteneur envoie lui-même le paquet de fermeture.
+            client.setScreenAndShow(null);
+        } else if (!ServerGuiInterceptor.wasScreenClosedClientSide()) {
+            // L'écran n'est plus affiché mais personne n'a prévenu le serveur.
+            client.getConnection().send(new ServerboundContainerClosePacket(syncId));
+        }
     }
 }

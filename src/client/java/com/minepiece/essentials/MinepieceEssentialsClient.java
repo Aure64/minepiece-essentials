@@ -87,6 +87,7 @@ public class MinepieceEssentialsClient implements ClientModInitializer {
         ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> {
             ServerDetector.reset();
             IslandDetector.getInstance().reset();
+            com.minepiece.essentials.network.BackgroundGuiRefresh.reset();
             BossTracker.getInstance().onConnectionChange();
             JobTracker.reset();
             if (!configManager.config().helpDismissed && !helpShownThisSession) {
@@ -99,6 +100,7 @@ public class MinepieceEssentialsClient implements ClientModInitializer {
         });
         ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> {
             IslandDetector.getInstance().reset();
+            com.minepiece.essentials.network.BackgroundGuiRefresh.reset();
             BossTracker.getInstance().onConnectionChange();
             com.minepiece.essentials.telemetry.Telemetry.onDisconnected();
         });
@@ -121,6 +123,9 @@ public class MinepieceEssentialsClient implements ClientModInitializer {
 
             // Auto-learn minion resource XP ratios from the feeding screen.
             MinionFeedLearner.tick();
+
+            // Toujours, même hors MinePiece : un relevé en cours doit pouvoir se terminer.
+            com.minepiece.essentials.network.BackgroundGuiRefresh.tick();
 
             if (!ServerDetector.isOnMinePiece()) return;
 

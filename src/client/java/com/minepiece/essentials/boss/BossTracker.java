@@ -72,9 +72,8 @@ public class BossTracker {
     /** Epoch millis of the last successful /boss read, 0 if none this session. */
     public long getLastRefreshMillis() { return lastRefreshMillis; }
 
+    /** Une fois par tick client, depuis {@code MinepieceEssentialsClient}. */
     public void tick() {
-        BackgroundGuiRefresh.tick();
-
         boolean connected = IslandDetector.getInstance().getCurrentIsland() != Island.UNKNOWN;
         if (wasConnected && !connected) {
             initialScanDone = false;

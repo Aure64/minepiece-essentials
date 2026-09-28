@@ -320,7 +320,7 @@ public class BossTimerHud extends HudElement {
 
     @Override
     public void tick() {
-        BossTracker.getInstance().tick();
+        // BossTracker est tické par MinepieceEssentialsClient (une seule fois par tick).
     }
 
     private static Set<String> collapsedSet() {

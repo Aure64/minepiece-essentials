@@ -1,49 +1,60 @@
 package com.minepiece.essentials.network;
 
 import com.minepiece.essentials.MinepieceEssentialsClient;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 import net.minecraft.world.item.ItemStack;
 
 /**
- * Passive interceptor: does NOT block screens from opening.
- * Instead, silently collects slot update data and delivers it via callbacks.
- * Screens open normally but are closed automatically after data is collected.
+ * Collecte passivement le contenu du prochain écran conteneur ouvert par le
+ * serveur (après une commande envoyée par {@link BackgroundGuiRefresh}).
+ *
+ * <p>Cycle : {@link #start} → {@link #onScreenOpen} → paquets de slots pendant
+ * {@value #COLLECT_DURATION_MS} ms → livraison au callback → {@link #isFinished}.
+ * {@link BackgroundGuiRefresh} ferme alors l'écran et appelle {@link #stop}.
+ *
+ * <p>Tout est confiné au thread client : les mixins réseau filtrent le thread
+ * Netty avant d'appeler ici.
  */
-public class ServerGuiInterceptor {
+public final class ServerGuiInterceptor {
+    private static final long COLLECT_DURATION_MS = 600;
+    /** Délai max entre l'envoi de la commande et l'ouverture de l'écran. */
+    private static final long OPEN_DEADLINE_MS = 3000;
+    /** Délai max entre l'ouverture et la livraison (sécurité). */
+    private static final long SCREEN_TIMEOUT_MS = 5000;
+
     private static boolean intercepting = false;
-    // Data delivered (or timed out): BackgroundGuiRefresh must now close the screen and stop().
     private static boolean finished = false;
+    private static boolean screenClosedClientSide = false;
     private static int currentSyncId = -1;
+    private static long startTime = 0;
+    private static long screenOpenTime = 0;
     private static final Map<Integer, ItemStack> collectedItems = new HashMap<>();
     private static Consumer<Map<Integer, ItemStack>> callback;
-    private static long interceptStartTime = 0;
-    private static final long COLLECT_DURATION_MS = 600;
 
-    // For two-step flows (command → first screen → click → second screen)
-    private static boolean waitingForSecondScreen = false;
-    private static Consumer<Map<Integer, ItemStack>> secondCallback;
+    private ServerGuiInterceptor() {}
 
     public static boolean isIntercepting() { return intercepting; }
+    /** Items livrés (ou abandon) : l'appelant doit fermer l'écran puis {@link #stop}. */
     public static boolean isFinished() { return finished; }
+    public static int getExpectedSyncId() { return currentSyncId; }
 
-    public static void startIntercept(Consumer<Map<Integer, ItemStack>> onItems) {
+    public static void start(Consumer<Map<Integer, ItemStack>> onItems) {
+        stop();
         intercepting = true;
-        finished = false;
         callback = onItems;
-        collectedItems.clear();
-        currentSyncId = -1;
-        interceptStartTime = 0;
-        waitingForSecondScreen = false;
-        secondCallback = null;
+        startTime = System.currentTimeMillis();
     }
 
+    /** Appelé (thread client) quand le serveur ouvre un écran pendant l'interception. */
     public static void onScreenOpen(int syncId) {
-        if (!intercepting) return;
+        if (!intercepting || currentSyncId >= 0) return; // un seul écran par cycle
         currentSyncId = syncId;
         collectedItems.clear();
-        interceptStartTime = System.currentTimeMillis();
-        MinepieceEssentialsClient.LOGGER.info("[Interceptor] Screen opened syncId={} waiting2nd={}", syncId, waitingForSecondScreen);
+        screenOpenTime = System.currentTimeMillis();
+        MinepieceEssentialsClient.LOGGER.info("[Interceptor] Screen opened syncId={}", syncId);
     }
 
     public static void onSlotUpdate(int syncId, int slot, ItemStack stack) {
@@ -54,71 +65,48 @@ public class ServerGuiInterceptor {
     public static void onInventoryUpdate(int syncId, List<ItemStack> items) {
         if (!intercepting || syncId != currentSyncId) return;
         for (int i = 0; i < items.size(); i++) {
-            if (!items.get(i).isEmpty()) {
-                collectedItems.put(i, items.get(i).copy());
-            }
+            if (!items.get(i).isEmpty()) collectedItems.put(i, items.get(i).copy());
         }
     }
 
-    /**
-     * Called every client tick. After enough time has passed collecting slot updates,
-     * deliver the items to the callback.
-     */
+    /** Le mixin a fermé l'écran intercepté côté client (paquet de fermeture déjà parti). */
+    public static void markScreenClosedClientSide() { screenClosedClientSide = true; }
+    public static boolean wasScreenClosedClientSide() { return screenClosedClientSide; }
+
+    /** Thread client, chaque tick. */
     public static void tick() {
-        if (!intercepting || interceptStartTime == 0) return;
+        if (!intercepting || finished) return;
+        long now = System.currentTimeMillis();
 
-        long elapsed = System.currentTimeMillis() - interceptStartTime;
+        if (currentSyncId < 0) {
+            // Pas d'écran : le serveur a répondu en chat (cooldown, lobby…) ou ne répond pas.
+            if (now - startTime > OPEN_DEADLINE_MS) {
+                MinepieceEssentialsClient.LOGGER.warn("[Interceptor] No screen opened within {} ms", OPEN_DEADLINE_MS);
+                finished = true;
+            }
+            return;
+        }
 
+        long elapsed = now - screenOpenTime;
         if (elapsed >= COLLECT_DURATION_MS && !collectedItems.isEmpty()) {
             Map<Integer, ItemStack> result = new HashMap<>(collectedItems);
-
-            if (waitingForSecondScreen) {
-                // Deliver second screen data
-                if (secondCallback != null) {
-                    MinepieceEssentialsClient.LOGGER.info("[Interceptor] Delivering 2nd screen: {} items", result.size());
-                    secondCallback.accept(result);
-                }
-                finished = true;
-            } else {
-                // Deliver first screen data
-                if (callback != null) {
-                    MinepieceEssentialsClient.LOGGER.info("[Interceptor] Delivering 1st screen: {} items", result.size());
-                    callback.accept(result);
-                }
-                // The callback may have set up a second screen via prepareForSecondScreen();
-                // otherwise this single-screen read is complete.
-                if (!waitingForSecondScreen) {
-                    finished = true;
-                } else {
-                    collectedItems.clear();
-                }
-            }
-        }
-
-        // Timeout
-        if (!finished && elapsed > 5000) {
-            MinepieceEssentialsClient.LOGGER.warn("[Interceptor] Timeout");
+            MinepieceEssentialsClient.LOGGER.info("[Interceptor] Delivering {} items", result.size());
+            finished = true;
+            if (callback != null) callback.accept(result);
+        } else if (elapsed > SCREEN_TIMEOUT_MS) {
+            MinepieceEssentialsClient.LOGGER.warn("[Interceptor] Timeout waiting for items");
             finished = true;
         }
-    }
-
-    public static void prepareForSecondScreen(Consumer<Map<Integer, ItemStack>> onItems) {
-        waitingForSecondScreen = true;
-        secondCallback = onItems;
-        collectedItems.clear();
-        interceptStartTime = System.currentTimeMillis();
     }
 
     public static void stop() {
         intercepting = false;
         finished = false;
+        screenClosedClientSide = false;
         currentSyncId = -1;
+        startTime = 0;
+        screenOpenTime = 0;
         callback = null;
-        secondCallback = null;
         collectedItems.clear();
-        interceptStartTime = 0;
-        waitingForSecondScreen = false;
     }
-
-    public static int getExpectedSyncId() { return currentSyncId; }
 }
