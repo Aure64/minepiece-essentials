@@ -16,13 +16,15 @@ All HUDs are draggable. Press `K` to enter edit mode, drag with the mouse, scrol
 
 ## Requirements
 
-- Minecraft 1.21.11
-- Fabric Loader ≥ 0.19.2
+- Minecraft 26.2 (for 1.21.11, use version 1.8.0)
+- Fabric Loader ≥ 0.19.5
 - Fabric API
-- Java 21
+- Java 25
 - *(optional)* Xaero's Minimap — boss coordinates are auto-synced as waypoints when installed.
 
 ## Build
+
+Requires JDK 25 (`JAVA_HOME=/path/to/jdk-25`).
 
 ```bash
 ./gradlew build
