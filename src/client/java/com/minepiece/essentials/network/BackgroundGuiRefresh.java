@@ -4,6 +4,7 @@ import com.minepiece.essentials.MinepieceEssentialsClient;
 import java.util.Map;
 import java.util.function.Consumer;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.HashedStack;
 import net.minecraft.network.protocol.game.ServerboundContainerClickPacket;
 import net.minecraft.network.protocol.game.ServerboundContainerClosePacket;
@@ -90,10 +91,10 @@ public class BackgroundGuiRefresh {
         if (!busy) return;
         ServerGuiInterceptor.tick();
 
-        // If interceptor finished, mark us as not busy
-        if (!ServerGuiInterceptor.isIntercepting() && busy) {
-            closeCurrentScreen();
-            busy = false;
+        // Data delivered (or interceptor gave up): close the server screen and release.
+        if (ServerGuiInterceptor.isFinished() || !ServerGuiInterceptor.isIntercepting()) {
+            finish();
+            return;
         }
 
         // Hard timeout — force reset if stuck
@@ -111,8 +112,10 @@ public class BackgroundGuiRefresh {
                 // Tell server we closed the screen
                 client.getConnection().send(new ServerboundContainerClosePacket(syncId));
             }
-            // Also close any screen the client might have open
-            if (client.gui.screen() != null) {
+            // Close the intercepted screen client-side — only that one, never a
+            // screen the player opened themselves.
+            if (client.gui.screen() instanceof AbstractContainerScreen<?> cs
+                    && (syncId < 0 || cs.getMenu().containerId == syncId)) {
                 client.setScreenAndShow(null);
             }
         }

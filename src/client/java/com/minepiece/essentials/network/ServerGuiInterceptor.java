@@ -12,6 +12,8 @@ import net.minecraft.world.item.ItemStack;
  */
 public class ServerGuiInterceptor {
     private static boolean intercepting = false;
+    // Data delivered (or timed out): BackgroundGuiRefresh must now close the screen and stop().
+    private static boolean finished = false;
     private static int currentSyncId = -1;
     private static final Map<Integer, ItemStack> collectedItems = new HashMap<>();
     private static Consumer<Map<Integer, ItemStack>> callback;
@@ -23,9 +25,11 @@ public class ServerGuiInterceptor {
     private static Consumer<Map<Integer, ItemStack>> secondCallback;
 
     public static boolean isIntercepting() { return intercepting; }
+    public static boolean isFinished() { return finished; }
 
     public static void startIntercept(Consumer<Map<Integer, ItemStack>> onItems) {
         intercepting = true;
+        finished = false;
         callback = onItems;
         collectedItems.clear();
         currentSyncId = -1;
@@ -74,23 +78,27 @@ public class ServerGuiInterceptor {
                     MinepieceEssentialsClient.LOGGER.info("[Interceptor] Delivering 2nd screen: {} items", result.size());
                     secondCallback.accept(result);
                 }
-                stop();
+                finished = true;
             } else {
                 // Deliver first screen data
                 if (callback != null) {
                     MinepieceEssentialsClient.LOGGER.info("[Interceptor] Delivering 1st screen: {} items", result.size());
                     callback.accept(result);
                 }
-                // Don't stop — caller may set up second screen via prepareForSecondScreen()
-                collectedItems.clear();
-                interceptStartTime = 0;
+                // The callback may have set up a second screen via prepareForSecondScreen();
+                // otherwise this single-screen read is complete.
+                if (!waitingForSecondScreen) {
+                    finished = true;
+                } else {
+                    collectedItems.clear();
+                }
             }
         }
 
         // Timeout
-        if (elapsed > 5000) {
+        if (!finished && elapsed > 5000) {
             MinepieceEssentialsClient.LOGGER.warn("[Interceptor] Timeout");
-            stop();
+            finished = true;
         }
     }
 
@@ -103,6 +111,7 @@ public class ServerGuiInterceptor {
 
     public static void stop() {
         intercepting = false;
+        finished = false;
         currentSyncId = -1;
         callback = null;
         secondCallback = null;
