@@ -3,21 +3,31 @@
     "id": "minepiece-essentials",
     "version": "${version}",
     "name": "Minepiece Essentials",
-    "description": "Boss timers and quest parchment reader for the MinePiece server.",
-    "authors": ["Aurelien"],
-    "contact": {},
+    "description": "QoL complet pour le serveur MinePiece : boss timers, pets, quêtes, ascension, métier, rareté. Affichage uniquement, aucune automatisation.",
+    "authors": [
+        "Aure64"
+    ],
+    "contact": {
+        "homepage": "https://modrinth.com/mod/minepiece-essentials",
+        "sources": "https://github.com/Aure64/minepiece-essentials",
+        "issues": "https://github.com/Aure64/minepiece-essentials/issues"
+    },
     "license": "All-Rights-Reserved",
     "icon": "assets/minepiece-essentials/icon.png",
     "environment": "client",
     "entrypoints": {
-        "client": ["com.minepiece.essentials.MinepieceEssentialsClient"]
+        "client": [
+            "com.minepiece.essentials.MinepieceEssentialsClient"
+        ]
     },
-    "mixins": ["minepiece-essentials.mixins.json"],
+    "mixins": [
+        "minepiece-essentials.mixins.json"
+    ],
     "depends": {
         "fabricloader": ">=0.19.5",
         "minecraft": "~26.2",
         "java": ">=25",
-        "fabric-api": "*"
+        "fabric-api": ">=0.159.0"
     },
     "suggests": {
         "xaerominimap": "*"
