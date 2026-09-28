@@ -8,7 +8,7 @@
     "minepiece.ui.job.harvest_hint": "Harvest to see",
 
     "minepiece.ui.quests.title": "Daily quests",
-    "minepiece.ui.quests.hint": "Open /pass, Quests tab",
+    "minepiece.ui.quests.hint": "Open /pass quest",
     "minepiece.ui.quests.done": "Daily quests done",
 
     "minepiece.ui.haki.title": "Haki",
@@ -66,7 +66,7 @@
 
     "minepiece.ui.help.daily_quests.title": "Daily quests",
     "minepiece.ui.help.daily_quests.line1": "Pass quests + progress as HUD.",
-    "minepiece.ui.help.daily_quests.line2": "Open /pass, Quests tab to populate.",
+    "minepiece.ui.help.daily_quests.line2": "Open /pass quest to populate.",
     "minepiece.ui.help.daily_quests.line3": "No auto-refresh: reopen the screen (completion",
     "minepiece.ui.help.daily_quests.line4": "is still detected live via chat).",
 
