@@ -1094,7 +1094,7 @@ Couper le réseau (ou bloquer `eu.i.posthog.com` dans le fichier hosts), lancer 
 ### Task 9 : Port 1.21.8, disclosure Modrinth et release
 
 **Files:**
-- Copy: tout `telemetry/`, `ModConfig.java`, `ConfigManager.java` et les fichiers de features **non version-spécifiques** vers `/home/aurelien/claude_project/Public_QoL_Minepiece-1.21.8/`
+- Copy: tout `telemetry/`, `ModConfig.java`, `ConfigManager.java` et les fichiers de features **non version-spécifiques** vers `/home/aurelien/Projets/jeux/Public_QoL_Minepiece-1.21.8/`
 - **Modify à la main (NE JAMAIS COPIER)** — ces 3 fichiers divergent entre 1.21.11 et 1.21.8 :
   - `hud/HudEditScreen.java` — signature de `mouseClicked`
   - `MinepieceEssentialsClient.java` — `KeyBinding.Category` n'existe pas en 1.21.8 (catégorie = String), et la lambda `ScreenMouseEvents.allowMouseClick` y prend 4 paramètres `(s, mouseX, mouseY, button)` au lieu de `(s, click)`
@@ -1104,8 +1104,8 @@ Couper le réseau (ou bloquer `eu.i.posthog.com` dans le fichier hosts), lancer 
 - [ ] **Step 1: Copier les fichiers partagés**
 
 ```bash
-S=/home/aurelien/claude_project/Public_QoL_Minepiece
-D=/home/aurelien/claude_project/Public_QoL_Minepiece-1.21.8
+S=/home/aurelien/Projets/jeux/Public_QoL_Minepiece
+D=/home/aurelien/Projets/jeux/Public_QoL_Minepiece-1.21.8
 cp -r "$S/src/client/java/com/minepiece/essentials/telemetry" \
       "$D/src/client/java/com/minepiece/essentials/"
 cp -r "$S/src/test/java/com/minepiece/essentials/telemetry" \
@@ -1121,8 +1121,8 @@ Même changement qu'en Task 6 Step 4 (le `drawToggle` d'index 6, la boucle `i < 
 - [ ] **Step 3: Construire et tester les deux dossiers**
 
 ```bash
-cd /home/aurelien/claude_project/Public_QoL_Minepiece && ./gradlew build
-cd /home/aurelien/claude_project/Public_QoL_Minepiece-1.21.8 && ./gradlew build
+cd /home/aurelien/Projets/jeux/Public_QoL_Minepiece && ./gradlew build
+cd /home/aurelien/Projets/jeux/Public_QoL_Minepiece-1.21.8 && ./gradlew build
 ```
 
 Expected: les deux BUILD SUCCESSFUL, tests verts des deux côtés.
