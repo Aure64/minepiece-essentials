@@ -33,13 +33,13 @@ public class BackgroundGuiRefresh {
      * Send a command and collect GUI items passively from slot updates.
      * The screen is blocked from opening via mixin cancel on onOpenScreen.
      */
-    public static void sendCommand(String command, Consumer<Map<Integer, ItemStack>> onItems) {
+    public static boolean sendCommand(String command, Consumer<Map<Integer, ItemStack>> onItems) {
         Minecraft client = Minecraft.getInstance();
-        if (client.player == null || busy) return;
+        if (client.player == null || busy) return false;
 
         long now = System.currentTimeMillis();
         long cooldown = 5000;
-        if (now - lastRefreshTime < cooldown) return;
+        if (now - lastRefreshTime < cooldown) return false;
 
         busy = true;
         busySince = now;
@@ -52,6 +52,7 @@ public class BackgroundGuiRefresh {
 
         String cmd = command.startsWith("/") ? command.substring(1) : command;
         client.player.connection.sendCommand(cmd);
+        return true;
     }
 
     /**
