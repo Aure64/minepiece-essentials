@@ -100,7 +100,9 @@ public class HudEditScreen extends Screen {
                 bossHud.setMousePos(-1, -1);
             }
         }
-        MinepieceEssentialsClient.getInstance().getConfigManager().save();
+        var mgr = MinepieceEssentialsClient.getInstance().getConfigManager();
+        mgr.save();
+        mgr.flush();
     }
 
     // --- rendering -----------------------------------------------------------

@@ -52,6 +52,8 @@ public class MinepieceEssentialsClient implements ClientModInitializer {
 
         configManager = new ConfigManager();
         configManager.load();
+        net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents.CLIENT_STOPPING
+            .register(client -> configManager.flush());
 
         ModSounds.register();
 
@@ -126,6 +128,7 @@ public class MinepieceEssentialsClient implements ClientModInitializer {
 
             // Toujours, même hors MinePiece : un relevé en cours doit pouvoir se terminer.
             com.minepiece.essentials.network.BackgroundGuiRefresh.tick();
+            configManager.tick();
 
             if (!ServerDetector.isOnMinePiece()) return;
 

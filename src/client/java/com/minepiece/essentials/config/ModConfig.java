@@ -4,17 +4,9 @@ import java.util.HashSet;
 import java.util.Set;
 
 public class ModConfig {
-    public boolean islandDetectorEnabled = true;
-    public boolean bossTrackerEnabled = true;
-    public boolean questTrackerEnabled = true;
 
-    public String detectionMethod = "both";
-
-    public int bossRefreshIntervalSeconds = 180;
     public boolean bossAlertEnabled = true;
     public int bossAlertThresholdSeconds = 30;
-
-    public int globalRefreshCooldownMs = 5000;
 
     public boolean notificationSoundsEnabled = true;
 
