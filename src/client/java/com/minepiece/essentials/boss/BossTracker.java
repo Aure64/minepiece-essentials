@@ -90,8 +90,8 @@ public class BossTracker {
             refreshPending = true;
         }
 
-        // Reste en attente tant que l'envoi est refusé (occupé, cooldown, écran joueur
-        // ouvert — typiquement le clic sur ⟳ se fait dans l'éditeur K).
+        // Reste en attente tant que l'envoi est refusé (occupé, cooldown, écran
+        // conteneur ouvert).
         if (refreshPending && !BackgroundGuiRefresh.isBusy() && BackgroundGuiRefresh.isReady()) {
             if (doRefresh()) refreshPending = false;
         }

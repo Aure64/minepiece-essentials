@@ -4,6 +4,7 @@ import com.minepiece.essentials.MinepieceEssentialsClient;
 import java.util.Map;
 import java.util.function.Consumer;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.protocol.game.ServerboundContainerClosePacket;
 import net.minecraft.world.item.ItemStack;
@@ -21,6 +22,11 @@ public final class BackgroundGuiRefresh {
     private static long lastRefreshTime = 0;
     private static boolean busy = false;
     private static long busySince = 0;
+    /** Écran du mod ouvert au moment de l'envoi (éditeur K…), remis en place à la fin. */
+    private static Screen screenToRestore = null;
+
+    /** L'écran à remettre après fermeture de l'écran intercepté (null = aucun). */
+    public static Screen screenToRestore() { return screenToRestore; }
 
     private BackgroundGuiRefresh() {}
 
@@ -45,8 +51,12 @@ public final class BackgroundGuiRefresh {
         Minecraft client = Minecraft.getInstance();
         if (client.player == null || client.getConnection() == null || busy) return false;
         if (!isReady()) return false;
-        // Ne jamais voler un écran au joueur : on repassera au tick suivant.
-        if (client.gui.screen() != null) return false;
+        // Ne jamais voler un écran conteneur au joueur (coffre, inventaire, GUI serveur) :
+        // on repassera au tick suivant. Un écran du mod (éditeur K) est mémorisé et
+        // restauré une fois l'écran serveur lu.
+        Screen current = client.gui.screen();
+        if (current instanceof AbstractContainerScreen<?>) return false;
+        screenToRestore = current;
 
         long now = System.currentTimeMillis();
         busy = true;
@@ -83,12 +93,14 @@ public final class BackgroundGuiRefresh {
         closeInterceptedScreen();
         ServerGuiInterceptor.stop();
         busy = false;
+        screenToRestore = null;
     }
 
     /** Oubli sans paquet : changement de serveur / déconnexion. */
     public static void reset() {
         ServerGuiInterceptor.stop();
         busy = false;
+        screenToRestore = null;
     }
 
     private static void closeInterceptedScreen() {
@@ -98,8 +110,8 @@ public final class BackgroundGuiRefresh {
 
         if (client.gui.screen() instanceof AbstractContainerScreen<?> cs
                 && cs.getMenu().containerId == syncId) {
-            // setScreen(null) sur un écran conteneur envoie lui-même le paquet de fermeture.
-            client.setScreenAndShow(null);
+            // Remplacer un écran conteneur envoie lui-même le paquet de fermeture.
+            client.setScreenAndShow(screenToRestore);
         } else if (!ServerGuiInterceptor.wasScreenClosedClientSide()) {
             // L'écran n'est plus affiché mais personne n'a prévenu le serveur.
             client.getConnection().send(new ServerboundContainerClosePacket(syncId));

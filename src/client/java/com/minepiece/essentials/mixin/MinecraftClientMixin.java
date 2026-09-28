@@ -1,5 +1,6 @@
 package com.minepiece.essentials.mixin;
 
+import com.minepiece.essentials.network.BackgroundGuiRefresh;
 import com.minepiece.essentials.network.ServerGuiInterceptor;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
@@ -11,7 +12,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 /**
  * Masque l'écran intercepté par {@link ServerGuiInterceptor} dès le tick suivant
  * son ouverture — uniquement celui-là (même id de conteneur), jamais un écran
- * ouvert par le joueur. La fermeture côté client envoie le paquet de fermeture.
+ * ouvert par le joueur. La fermeture côté client envoie le paquet de fermeture ;
+ * l'écran du mod ouvert avant le relevé (éditeur K) est remis en place.
  */
 @Mixin(Minecraft.class)
 public class MinecraftClientMixin {
@@ -25,7 +27,8 @@ public class MinecraftClientMixin {
         if (mc.gui.screen() instanceof AbstractContainerScreen<?> cs
                 && cs.getMenu().containerId == syncId) {
             ServerGuiInterceptor.markScreenClosedClientSide();
-            mc.setScreenAndShow(null);
+            // Remet l'écran du mod (éditeur K) s'il y en avait un, sinon retour au jeu.
+            mc.setScreenAndShow(BackgroundGuiRefresh.screenToRestore());
         }
     }
 }
