@@ -3,30 +3,30 @@ package com.minepiece.essentials.pet;
 import com.minepiece.essentials.MinepieceEssentialsClient;
 import com.minepiece.essentials.ServerDetector;
 import com.minepiece.essentials.i18n.ServerText;
+import com.minepiece.essentials.island.Island;
+import com.minepiece.essentials.island.IslandDetector;
+import com.minepiece.essentials.network.BackgroundGuiRefresh;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import net.minecraft.client.Minecraft;
 import com.minepiece.essentials.util.ItemText;
 import com.minepiece.essentials.util.StackFingerprint;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
-import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.Style;
 import net.minecraft.network.chat.TextColor;
 import net.minecraft.world.inventory.Slot;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraft.world.item.TooltipFlag;
-import net.minecraft.world.item.component.CustomData;
 
 /**
  * Scans the open /pets screen and publishes the combat-stat total of the
  * <em>currently active</em> pets (those whose tooltip offers "Désactiver") to
- * {@link ActivePetsState}.
+ * {@link ActivePetsState}. The screen is also fetched silently through
+ * {@link BackgroundGuiRefresh} ({@link #PETS_COMMAND}, first page only) once per
+ * connection, so the panel fills without the player opening anything.
  *
  * <p>The active set is <b>replaced</b> on every scan that finds active pets, so
  * deactivating or swapping pets is reflected immediately and stale pets are
@@ -40,36 +40,66 @@ public final class ActivePetsScanner {
     private static final int MAX_LEVEL = 20;
     private static final int DEFAULT_COLOR = 0xFFFFE9D5;
 
+    public static final String PETS_COMMAND = "/pets";
+
     private static int ticks;
     private static List<String> lastLoggedNames = List.of();
     private static long lastFingerprint;
     private static AbstractContainerScreen<?> lastScreen;
+    private static boolean refreshPending;
+    private static boolean wasInWorld;
 
     private ActivePetsScanner() {}
 
     public static void tick() {
-        if (ticks++ % SCAN_INTERVAL != 0) return;
-
         Minecraft client = Minecraft.getInstance();
-        if (client.gui.screen() instanceof AbstractContainerScreen<?> screen && ServerDetector.isOnMinePiece()) {
+        boolean onMinePiece = ServerDetector.isOnMinePiece();
+        // Silent fetch once per connection, once the player is really in the world
+        // (island detected — never in the lobby, see PassQuestScanner).
+        boolean inWorld = onMinePiece && client.player != null && client.level != null
+                && IslandDetector.getInstance().getCurrentIsland() != Island.UNKNOWN;
+        if (inWorld && !wasInWorld) refreshPending = true;
+        wasInWorld = inWorld;
+        if (refreshPending && inWorld && !BackgroundGuiRefresh.isBusy() && BackgroundGuiRefresh.isReady()) {
+            boolean sent = BackgroundGuiRefresh.sendCommand(PETS_COMMAND, items -> {
+                List<ItemStack> stacks = new ArrayList<>(items.values());
+                boolean ok = scan(stacks);
+                MinepieceEssentialsClient.LOGGER.info("[ActivePets] {} screen: {} items, pets={}",
+                        PETS_COMMAND, items.size(), ok);
+            });
+            if (sent) {
+                refreshPending = false;
+                MinepieceEssentialsClient.LOGGER.info("[ActivePets] Refresh via {}", PETS_COMMAND);
+            }
+        }
+
+        if (ticks++ % SCAN_INTERVAL != 0) return;
+        if (client.gui.screen() instanceof AbstractContainerScreen<?> screen && onMinePiece) {
             long fp = StackFingerprint.ofSlots(screen.getMenu().slots);
             if (screen == lastScreen && fp == lastFingerprint) return; // rien n'a changé
             lastScreen = screen;
             lastFingerprint = fp;
-            scan(screen);
+            List<ItemStack> stacks = new ArrayList<>();
+            for (Slot slot : screen.getMenu().slots) stacks.add(slot.getItem());
+            scan(stacks);
         } else {
             lastScreen = null;
         }
     }
 
-    private static void scan(AbstractContainerScreen<?> screen) {
+    /** Asks for a silent re-fetch of the pets screen. */
+    public static void refresh() {
+        refreshPending = true;
+    }
+
+    /** @return true if the stacks were the /pets screen with at least one active pet. */
+    private static boolean scan(Iterable<ItemStack> stacks) {
         boolean isPetsScreen = false;
         List<ActivePetsState.ActivePet> activePets = new ArrayList<>();
         List<PetEffect> allStats = new ArrayList<>();
 
-        for (Slot slot : screen.getMenu().slots) {
-            ItemStack stack = slot.getItem();
-            if (!stack.is(Items.RABBIT_FOOT)) continue;
+        for (ItemStack stack : stacks) {
+            if (stack == null || !stack.is(Items.RABBIT_FOOT)) continue;
 
             List<String> tip = ItemText.nameAndLore(stack);
             if (containsAny(tip, ServerText.PET_ACTIVE_ACTION) || containsAny(tip, ServerText.PET_INACTIVE_ACTION)) {
@@ -84,7 +114,7 @@ public final class ActivePetsScanner {
         }
 
         // Not the /pets screen, or a page with no active pets → keep the last total.
-        if (!isPetsScreen || activePets.isEmpty()) return;
+        if (!isPetsScreen || activePets.isEmpty()) return false;
 
         ActivePetsState.set(new ActivePetsState.Snapshot(activePets, PetStatSum.sum(allStats), PetStatSum.labels(allStats)));
 
@@ -93,6 +123,7 @@ public final class ActivePetsScanner {
             lastLoggedNames = names;
             MinepieceEssentialsClient.LOGGER.info("[ActivePets] {} actif(s): {}", names.size(), names);
         }
+        return true;
     }
 
     /** First explicit colour in the pet's name Text, as ARGB; 0 if none. */
