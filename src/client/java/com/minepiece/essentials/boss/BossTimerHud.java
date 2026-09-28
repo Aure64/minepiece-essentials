@@ -19,6 +19,30 @@ public class BossTimerHud extends HudElement {
     private static final int ISLAND_HEADER_HEIGHT = 14;
     private static final int HEADER_HEIGHT = 18;
     private static final int REFRESH_BTN_SIZE = 12;
+    private static final int STATUS_HEIGHT = 11;
+
+    private static void drawRefreshIcon(GuiGraphicsExtractor ctx, int x, int y, int color) {
+        int cx = x + REFRESH_BTN_SIZE / 2;
+        int cy = y + REFRESH_BTN_SIZE / 2;
+        int r = REFRESH_BTN_SIZE / 2 - 1;
+        for (int angle = 0; angle < 300; angle += 10) {
+            double rad = Math.toRadians(angle);
+            int px = cx + (int)(r * Math.cos(rad));
+            int py = cy + (int)(r * Math.sin(rad));
+            ctx.fill(px, py, px + 2, py + 2, color);
+        }
+        ctx.fill(cx + r, cy - 2, cx + r + 2, cy + 1, color);
+        ctx.fill(cx + r - 2, cy - 3, cx + r, cy - 1, color);
+    }
+
+    /** "12s", "3min", "1h05" */
+    private static String formatAgo(long millis) {
+        long s = Math.max(0, millis / 1000);
+        if (s < 60) return s + "s";
+        long m = s / 60;
+        if (m < 60) return m + "min";
+        return String.format("%dh%02d", m / 60, m % 60);
+    }
 
     /** Tracked islands ordered for display: the current island first, then the rest. */
     private static List<Island> orderedIslands(Island current) {
@@ -33,7 +57,6 @@ public class BossTimerHud extends HudElement {
     }
 
     // Track clickable positions for click detection (element-local coords)
-    private final Map<Island, int[]> refreshButtonPositions = new HashMap<>();
     private final Map<Island, int[]> islandHeaderClickAreas = new HashMap<>();
     private final List<BossClickArea> bossClickAreas = new ArrayList<>();
     private int[] refreshAllButtonPos = null;
@@ -66,7 +89,6 @@ public class BossTimerHud extends HudElement {
 
     @Override
     public void render(GuiGraphicsExtractor ctx, float tickDelta) {
-        refreshButtonPositions.clear();
         islandHeaderClickAreas.clear();
         bossClickAreas.clear();
         refreshAllButtonPos = null;
@@ -85,39 +107,48 @@ public class BossTimerHud extends HudElement {
             totalLines += (int) Math.max(bossCount, 1);
         }
 
-        int queueSize = BossTracker.getInstance().getQueueSize();
-        boolean queueActive = queueSize > 0;
+        BossTracker tracker = BossTracker.getInstance();
+        boolean pending = tracker.isRefreshPending();
+        boolean isBusy = BackgroundGuiRefresh.isBusy();
 
-        int h = HEADER_HEIGHT + orderedIslands.size() * ISLAND_HEADER_HEIGHT + totalLines * LINE_HEIGHT + 8;
-        if (queueActive) h += 12;
+        int h = HEADER_HEIGHT + STATUS_HEIGHT + orderedIslands.size() * ISLAND_HEADER_HEIGHT + totalLines * LINE_HEIGHT + 8;
         this.height = h;
 
         ParchmentRenderer.renderPanel(ctx, 0, 0, WIDTH, h, Component.translatable("minepiece.ui.boss.title").getString(), getBackground());
 
-        // Refresh All button — top-right of header
-        int allBtnW = 18;
-        int allBtnH = 10;
-        int allBtnX = WIDTH - allBtnW - 4;
-        int allBtnY = 4;
-        boolean allHovered = isHovered(allBtnX, allBtnY, allBtnW, allBtnH);
-        int allBg = queueActive ? 0xFFAA4444 : (allHovered ? 0xFF88CC88 : 0xFF44AA44);
-        ctx.fill(allBtnX, allBtnY, allBtnX + allBtnW, allBtnY + allBtnH, allBg);
-        String allLabel = queueActive ? "stop" : "all";
-        int labelW = RenderUtils.textWidth(allLabel);
-        RenderUtils.drawText(ctx, allLabel, allBtnX + (allBtnW - labelW) / 2, allBtnY + 1, 0xFFFFFFFF);
-        refreshAllButtonPos = new int[]{allBtnX, allBtnY, allBtnW, allBtnH};
+        // Single refresh button — top-right of header (one /boss read covers every island).
+        int btnX = WIDTH - REFRESH_BTN_SIZE - 8;
+        int btnY = 3;
+        int clickW = REFRESH_BTN_SIZE + 8;
+        int clickH = REFRESH_BTN_SIZE + 4;
+        boolean btnHovered = isHovered(btnX - 3, btnY - 2, clickW, clickH);
+        int btnColor;
+        if (pending || isBusy) btnColor = 0xFFFFAA00;   // yellow — refresh in flight
+        else if (btnHovered) btnColor = 0xFF88FF88;
+        else btnColor = 0xFF44AA44;
+        if (btnHovered) {
+            ctx.fill(btnX - 2, btnY - 1, btnX + REFRESH_BTN_SIZE + 2, btnY + REFRESH_BTN_SIZE + 1, 0x66FFFFFF);
+        }
+        drawRefreshIcon(ctx, btnX, btnY, btnColor);
+        refreshAllButtonPos = new int[]{btnX - 3, btnY - 2, clickW, clickH};
 
         int y = HEADER_HEIGHT;
 
-        // Queue ETA banner
-        if (queueActive) {
-            int eta = BossTracker.getInstance().getEtaSeconds();
-            String etaText = String.format("Refresh /boss - ETA %ds", eta);
-            RenderUtils.drawText(ctx, etaText, 6, y, 0xFFAA6600);
-            y += 12;
+        // Status line: refreshing / updated X ago / no data yet
+        String status;
+        int statusColor;
+        if (pending || isBusy) {
+            status = Component.translatable("minepiece.ui.boss.refreshing").getString();
+            statusColor = 0xFFAA6600;
+        } else if (tracker.getLastRefreshMillis() > 0) {
+            status = Component.translatable("minepiece.ui.boss.updated", formatAgo(System.currentTimeMillis() - tracker.getLastRefreshMillis())).getString();
+            statusColor = 0xFF888888;
+        } else {
+            status = Component.translatable("minepiece.ui.boss.never").getString();
+            statusColor = 0xFF888888;
         }
-
-        boolean isBusy = BackgroundGuiRefresh.isBusy();
+        RenderUtils.drawText(ctx, status, 6, y, statusColor);
+        y += STATUS_HEIGHT;
 
         for (Island island : orderedIslands) {
             boolean isCurrent = island == currentIsland;
@@ -127,44 +158,13 @@ public class BossTimerHud extends HudElement {
                     + (isCurrent ? "> " : "") + island.displayName;
 
             // Header is clickable (in HUD edit mode) to collapse/expand the island.
-            int headerW = WIDTH - 24;
+            int headerW = WIDTH - 4;
             if (isHovered(2, y - 1, headerW, ISLAND_HEADER_HEIGHT)) {
                 ctx.fill(2, y - 1, 2 + headerW, y - 1 + ISLAND_HEADER_HEIGHT, 0x22FFFFFF);
             }
             islandHeaderClickAreas.put(island, new int[]{2, y - 1, headerW, ISLAND_HEADER_HEIGHT});
 
             RenderUtils.drawText(ctx, islandName, 4, y, headerColor);
-
-            // Refresh button — large click area
-            int btnX = WIDTH - 20;
-            int btnY = y - 1;
-            int clickW = REFRESH_BTN_SIZE + 8;
-            int clickH = REFRESH_BTN_SIZE + 4;
-            boolean btnHovered = isHovered(btnX - 3, btnY - 2, clickW, clickH);
-            boolean isQueued = BossTracker.getInstance().isInQueue(island);
-            int btnColor;
-            if (isQueued) btnColor = 0xFFFFAA00;          // yellow — queued
-            else if (isBusy) btnColor = 0xFF666666;        // grey — busy refreshing something else
-            else if (btnHovered) btnColor = 0xFF88FF88;
-            else btnColor = 0xFF44AA44;
-            // Button background on hover
-            if (btnHovered && !isQueued) {
-                ctx.fill(btnX - 2, btnY - 1, btnX + REFRESH_BTN_SIZE + 2, btnY + REFRESH_BTN_SIZE + 1, 0x66FFFFFF);
-            }
-            // Draw refresh circle icon
-            int cx = btnX + REFRESH_BTN_SIZE / 2;
-            int cy = btnY + REFRESH_BTN_SIZE / 2;
-            int r = REFRESH_BTN_SIZE / 2 - 1;
-            for (int angle = 0; angle < 300; angle += 10) {
-                double rad = Math.toRadians(angle);
-                int px = cx + (int)(r * Math.cos(rad));
-                int py = cy + (int)(r * Math.sin(rad));
-                ctx.fill(px, py, px + 2, py + 2, btnColor);
-            }
-            ctx.fill(cx + r, cy - 2, cx + r + 2, cy + 1, btnColor);
-            ctx.fill(cx + r - 2, cy - 3, cx + r, cy - 1, btnColor);
-
-            refreshButtonPositions.put(island, new int[]{btnX - 3, btnY - 2, clickW, clickH});
 
             ctx.fill(4, y + 10, WIDTH - 4, y + 11, headerColor);
             y += ISLAND_HEADER_HEIGHT;
@@ -177,7 +177,7 @@ public class BossTimerHud extends HudElement {
                     .toList();
 
             if (bosses.isEmpty()) {
-                RenderUtils.drawText(ctx, "  (cliquer \u27f3 pour scanner)", 4, y, 0xFF888888);
+                RenderUtils.drawText(ctx, "  " + Component.translatable("minepiece.ui.boss.nodata").getString(), 4, y, 0xFF888888);
                 y += LINE_HEIGHT;
             } else {
                 for (BossData boss : bosses) {
@@ -251,26 +251,11 @@ public class BossTimerHud extends HudElement {
             int btnH = (int)(btn[3] * scale);
             if (mouseX >= btnScreenX && mouseX <= btnScreenX + btnW
                 && mouseY >= btnScreenY && mouseY <= btnScreenY + btnH) {
-                if (BossTracker.getInstance().getQueueSize() > 0) {
+                if (BossTracker.getInstance().isRefreshPending()) {
                     BossTracker.getInstance().cancelRefreshQueue();
                 } else {
-                    BossTracker.getInstance().refreshAllIslands();
+                    BossTracker.getInstance().refresh();
                 }
-                return true;
-            }
-        }
-
-        // Individual refresh buttons — always enqueue, never silently fail
-        for (Map.Entry<Island, int[]> entry : refreshButtonPositions.entrySet()) {
-            int[] btn = entry.getValue();
-            int btnScreenX = hudX + (int)(btn[0] * scale);
-            int btnScreenY = hudY + (int)(btn[1] * scale);
-            int btnW = (int)(btn[2] * scale);
-            int btnH = (int)(btn[3] * scale);
-
-            if (mouseX >= btnScreenX && mouseX <= btnScreenX + btnW
-                && mouseY >= btnScreenY && mouseY <= btnScreenY + btnH) {
-                BossTracker.getInstance().refreshIsland(entry.getKey());
                 return true;
             }
         }

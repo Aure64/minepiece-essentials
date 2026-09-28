@@ -67,6 +67,10 @@ public class BossTracker {
     // Un seul refresh couvre toutes les îles : la file est un simple drapeau.
     private boolean refreshPending = false;
     private static final long REFRESH_SECONDS = 5L;
+    private volatile long lastRefreshMillis = 0L;
+
+    /** Epoch millis of the last successful /boss read, 0 if none this session. */
+    public long getLastRefreshMillis() { return lastRefreshMillis; }
 
     public void tick() {
         BackgroundGuiRefresh.tick();
@@ -155,6 +159,7 @@ public class BossTracker {
             bossMap.put(e.getKey(), e.getValue());
             saveBossData(e.getKey(), e.getValue());
         }
+        lastRefreshMillis = System.currentTimeMillis();
         MinepieceEssentialsClient.LOGGER.info("[BossTracker] {} islands, {} bosses updated",
             parsed.size(), parsed.values().stream().mapToInt(List::size).sum());
     }
