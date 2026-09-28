@@ -6,8 +6,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import com.minepiece.essentials.util.ItemText;
+import com.minepiece.essentials.util.StackFingerprint;
 import net.minecraft.client.Minecraft;
-import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -22,40 +23,37 @@ public class ParcheminScanner {
     private static final DateTimeFormatter EXPIRE_FORMAT =
         DateTimeFormatter.ofPattern("dd/MM/yyyy H'h'mm");
 
-    private long lastLogTime = 0;
+    private long lastFingerprint;
 
     public void tick() {
         Minecraft client = Minecraft.getInstance();
         if (client.player == null) return;
 
-        List<QuestInfo> found = new ArrayList<>();
         var inventory = client.player.getInventory();
+        long fp = StackFingerprint.of(inventory);
+        if (fp == lastFingerprint) return; // inventaire inchangé : rien à reparser
+        lastFingerprint = fp;
 
-        boolean shouldLog = System.currentTimeMillis() - lastLogTime > 30000;
-        if (shouldLog) lastLogTime = System.currentTimeMillis();
-
+        List<QuestInfo> found = new ArrayList<>();
         for (int i = 0; i < inventory.getContainerSize(); i++) {
             ItemStack stack = inventory.getItem(i);
             if (stack.isEmpty()) continue;
 
             String name = stack.getHoverName().getString();
-
             if (!ServerText.matches(name, ServerText.SCROLL_NAME)) continue;
 
-            if (shouldLog) {
-                MinepieceEssentialsClient.LOGGER.info("[ParcheminScan] Found parchemin: '{}' in slot {}", name, i);
-            }
-
-            QuestInfo quest = parseParchemin(stack, shouldLog);
+            QuestInfo quest = parseParchemin(stack);
             if (quest != null) {
                 found.add(quest);
+                MinepieceEssentialsClient.LOGGER.debug("[ParcheminScan] slot {} '{}' rarity={} {}/{}",
+                        i, name, quest.rarity, quest.current, quest.target);
             }
         }
 
         activeQuests = found;
     }
 
-    private QuestInfo parseParchemin(ItemStack stack, boolean shouldLog) {
+    private QuestInfo parseParchemin(ItemStack stack) {
         QuestInfo quest = new QuestInfo();
         quest.name = stack.getHoverName().getString();
 
@@ -77,23 +75,11 @@ public class ParcheminScanner {
             else if (rawName.contains("\u6108")) quest.rarity = "MYTHIQUE";    // 愈
         }
 
-        if (shouldLog) {
-            MinepieceEssentialsClient.LOGGER.info("[ParcheminScan] Parchemin '{}' -> rarity={}", quest.name, quest.rarity);
-        }
-
-        var tooltip = stack.getTooltipLines(net.minecraft.world.item.Item.TooltipContext.EMPTY,
-                null, net.minecraft.world.item.TooltipFlag.NORMAL);
-
-        for (Component text : tooltip) {
-            String line = text.getString();
-
-            if (shouldLog) {
-                MinepieceEssentialsClient.LOGGER.info("[ParcheminScan]   lore: '{}'", line);
-            }
-
+        for (String line : ItemText.nameAndLore(stack)) {
             // Progress: (0/1133)
             Matcher progressMatch = PROGRESS_PATTERN.matcher(line);
-            if (progressMatch.find()) {
+            boolean hasProgress = progressMatch.find();
+            if (hasProgress) {
                 quest.current = Integer.parseInt(progressMatch.group(1));
                 quest.target = Integer.parseInt(progressMatch.group(2));
             }
@@ -122,12 +108,8 @@ public class ParcheminScanner {
             // Objective: any line containing (X/Y) progress pattern is the objective.
             // Strip the trailing "(X/Y)" — the counter is rendered separately, so
             // keeping it here just wastes width and forces the text to be truncated.
-            if (quest.objective == null && PROGRESS_PATTERN.matcher(line).find()) {
-                quest.objective = PROGRESS_PATTERN.matcher(line).replaceAll("").trim();
-            }
-            // Also catch "Objectif:" label line
-            if (ServerText.matches(line, ServerText.OBJECTIVE) && !line.contains("(")) {
-                // Next line with progress will be caught above
+            if (quest.objective == null && hasProgress) {
+                quest.objective = progressMatch.replaceAll("").trim();
             }
         }
 

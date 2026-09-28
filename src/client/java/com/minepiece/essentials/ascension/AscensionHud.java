@@ -7,6 +7,7 @@ import com.minepiece.essentials.util.RenderUtils;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import com.minepiece.essentials.util.StackFingerprint;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.player.LocalPlayer;
@@ -24,6 +25,11 @@ import net.minecraft.world.item.component.CustomData;
  */
 public class AscensionHud extends HudElement {
 
+    @Override
+    public boolean isEnabled() {
+        return MinepieceEssentialsClient.getInstance().getConfigManager().config().ascensionHudEnabled;
+    }
+
     private static final int WIDTH = 188;
     private static final int SCAN_INTERVAL = 10; // ticks
     private static final int HEADER_COLOR = 0xFFFFAA00;
@@ -33,6 +39,7 @@ public class AscensionHud extends HudElement {
 
     private List<AscensionItem> items = List.of();
     private int ticks;
+    private long lastFingerprint;
     private boolean hasFruit;
     private boolean hasWeapon;
 
@@ -44,6 +51,9 @@ public class AscensionHud extends HudElement {
     public void tick() {
         if (ticks++ % SCAN_INTERVAL != 0) return;
         LocalPlayer player = Minecraft.getInstance().player;
+        long fp = player == null ? 0 : StackFingerprint.of(player.getInventory());
+        if (fp == lastFingerprint) return; // inventaire inchangé
+        lastFingerprint = fp;
         items = player == null ? List.of() : scan(player);
 
         // Precompute the section flags once per scan instead of streaming twice

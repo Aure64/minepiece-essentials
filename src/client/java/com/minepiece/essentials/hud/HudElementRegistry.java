@@ -25,7 +25,7 @@ public class HudElementRegistry {
 
             float tickDelta = renderTickCounter.getGameTimeDeltaPartialTick(true);
             for (HudElement element : elements) {
-                if (element.isVisible()) {
+                if (element.isVisible() && element.isEnabled()) {
                     context.pose().pushMatrix();
                     float scale = element.getScale();
                     context.pose().translate(element.getX(), element.getY());
@@ -40,7 +40,8 @@ public class HudElementRegistry {
             if (client.player == null) return;
             if (!ServerDetector.isOnMinePiece()) return;
             for (HudElement element : elements) {
-                element.tick();
+                // Un HUD masqué ou désactivé ne scanne rien (inventaire, écrans, /pass…).
+                if (element.isVisible() && element.isEnabled()) element.tick();
             }
         });
     }

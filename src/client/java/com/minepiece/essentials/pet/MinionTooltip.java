@@ -3,11 +3,9 @@ package com.minepiece.essentials.pet;
 import com.minepiece.essentials.MinepieceEssentialsClient;
 import com.minepiece.essentials.ServerDetector;
 import net.fabricmc.fabric.api.client.item.v1.ItemTooltipCallback;
-import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraft.world.item.component.CustomData;
 import java.util.List;
 import java.util.Optional;
 import java.util.OptionalDouble;
@@ -39,9 +37,7 @@ public final class MinionTooltip {
             return;
         }
 
-        CustomData data = stack.get(DataComponents.CUSTOM_DATA);
-        if (data == null) return;
-        MinionData minion = MinionNbt.parse(data.copyTag().toString()).orElse(null);
+        MinionData minion = PetNbtCache.of(stack).minion().orElse(null);
         if (minion == null) return;
 
         int insertAt = insertIndex(lines);

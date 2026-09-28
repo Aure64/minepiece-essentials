@@ -17,6 +17,8 @@ public final class PetEffectParser {
 
     private static final Pattern VALUE = Pattern.compile("\\+\\s*(-?\\d+(?:[.,]\\d+)?)");
 
+    private static final Pattern WS = Pattern.compile("\\s+");
+
     private PetEffectParser() {}
 
     public static Optional<PetEffect> parse(String line) {
@@ -25,7 +27,7 @@ public final class PetEffectParser {
         int plus = line.indexOf('+');
         if (plus < 0) return Optional.empty();
 
-        String[] tokens = line.trim().split("\\s+");
+        String[] tokens = WS.split(line.trim());
         if (tokens.length == 0) return Optional.empty();
         int tier = digitsOf(tokens[0]);
         if (tier <= 0) return Optional.empty();
@@ -38,7 +40,7 @@ public final class PetEffectParser {
         double value = Double.parseDouble(m.group(1).replace(',', '.'));
 
         String pre = line.substring(0, plus).trim();
-        String[] toks = pre.split("\\s+");
+        String[] toks = WS.split(pre);
         StringBuilder lbl = new StringBuilder();
         for (int i = 1; i < toks.length; i++) {
             String t = toks[i];

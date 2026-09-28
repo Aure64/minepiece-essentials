@@ -6,16 +6,13 @@ import com.minepiece.essentials.i18n.ServerText;
 import com.minepiece.essentials.island.Island;
 import com.minepiece.essentials.island.IslandDetector;
 import com.minepiece.essentials.network.BackgroundGuiRefresh;
+import com.minepiece.essentials.util.ItemText;
+import com.minepiece.essentials.util.StackFingerprint;
 import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
-import net.minecraft.core.component.DataComponents;
-import net.minecraft.network.chat.Component;
 import net.minecraft.world.inventory.Slot;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.TooltipFlag;
-import net.minecraft.world.item.component.ItemLore;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -46,6 +43,8 @@ public final class PassQuestScanner {
     // Silent fetch requested (connection, midnight reset); sent when BGRefresh is free.
     private static boolean refreshPending;
     private static boolean wasOnMinePiece;
+    private static long lastFingerprint;
+    private static AbstractContainerScreen<?> lastScreen;
 
     private PassQuestScanner() {}
 
@@ -81,7 +80,7 @@ public final class PassQuestScanner {
         if (refreshPending && inWorld && !BackgroundGuiRefresh.isBusy() && BackgroundGuiRefresh.isReady()) {
             MinepieceEssentialsClient.LOGGER.info("[PassQuestScanner] Refresh via {}", PASS_COMMAND);
             boolean sent = BackgroundGuiRefresh.sendCommand(PASS_COMMAND, items -> {
-                boolean ok = scan(items.values(), null);
+                boolean ok = scan(items.values());
                 MinepieceEssentialsClient.LOGGER.info("[PassQuestScanner] {} screen: {} items, quests={}",
                         PASS_COMMAND, items.size(), ok);
             });
@@ -89,9 +88,15 @@ public final class PassQuestScanner {
         }
 
         if (client.gui.screen() instanceof AbstractContainerScreen<?> screen && onMinePiece) {
+            long fp = StackFingerprint.ofSlots(screen.getMenu().slots);
+            if (screen == lastScreen && fp == lastFingerprint) return; // écran inchangé
+            lastScreen = screen;
+            lastFingerprint = fp;
             List<ItemStack> stacks = new ArrayList<>();
             for (Slot slot : screen.getMenu().slots) stacks.add(slot.getItem());
-            scan(stacks, client);
+            scan(stacks);
+        } else {
+            lastScreen = null;
         }
     }
 
@@ -101,14 +106,14 @@ public final class PassQuestScanner {
     }
 
     /** @return true if the stacks were the quests screen and the snapshot was updated. */
-    static boolean scan(Iterable<ItemStack> stacks, Minecraft client) {
+    static boolean scan(Iterable<ItemStack> stacks) {
         Map<Integer, PassQuest> byNumber = new LinkedHashMap<>();
 
         for (ItemStack stack : stacks) {
             if (stack == null || stack.isEmpty()) continue;
             String name = stack.getHoverName().getString();
             if (!ServerText.matches(name, ServerText.QUEST_NAME_FRAGMENT)) continue; // "Quête #N" / "Quest #N"
-            PassQuestParser.parse(name, lines(stack, client))
+            PassQuestParser.parse(name, ItemText.nameAndLore(stack))
                     .ifPresent(q -> byNumber.putIfAbsent(q.number(), q));
         }
 
@@ -122,23 +127,4 @@ public final class PassQuestScanner {
         return true;
     }
 
-    /** Name + lore lines, the same shape as the tooltip the parser was written against. */
-    private static List<String> lines(ItemStack stack, Minecraft client) {
-        if (client != null) return tooltipLines(stack, client);
-        List<String> out = new ArrayList<>();
-        out.add(stack.getHoverName().getString());
-        ItemLore lore = stack.get(DataComponents.LORE);
-        if (lore != null) {
-            for (Component line : lore.lines()) out.add(line.getString());
-        }
-        return out;
-    }
-
-    private static List<String> tooltipLines(ItemStack stack, Minecraft client) {
-        List<String> out = new ArrayList<>();
-        for (Component line : stack.getTooltipLines(Item.TooltipContext.EMPTY, client.player, TooltipFlag.NORMAL)) {
-            out.add(line.getString());
-        }
-        return out;
-    }
 }

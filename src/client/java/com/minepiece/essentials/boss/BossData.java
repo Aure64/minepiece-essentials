@@ -38,7 +38,7 @@ public class BossData {
         if (timer == 0) return "READY";
         int min = timer / 60;
         int sec = timer % 60;
-        return String.format("%dm%02ds", min, sec);
+        return min + "m" + (sec < 10 ? "0" : "") + sec + "s";
     }
 
     public double distanceTo(double px, double py, double pz) {

@@ -40,7 +40,10 @@ public abstract class HudElement {
         return Math.max(0, Math.min(getLayout().y, maxY));
     }
     public float getScale() { return getLayout().scale; }
+    /** Visible dans le layout (éditeur K). */
     public boolean isVisible() { return getLayout().visible; }
+    /** Activé dans la config (interrupteur de la feature). Ni tick ni rendu sinon. */
+    public boolean isEnabled() { return true; }
 
     /** The panel background preset chosen for this HUD (never null). */
     public HudBackground getBackground() {

@@ -11,6 +11,11 @@ import net.minecraft.resources.Identifier;
 /** Small always-on HUD: shows the remaining haki cooldown, or "Prêt !" when ready. */
 public class HakiHud extends HudElement {
 
+    @Override
+    public boolean isEnabled() {
+        return MinepieceEssentialsClient.getInstance().getConfigManager().config().hakiTimerEnabled;
+    }
+
     private static final int W = 130;
     private static final int COLOR_TEXT = 0xFFCBC8C7;
     private static final int COLOR_READY = 0xFF00CC00;

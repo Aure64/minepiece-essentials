@@ -16,6 +16,11 @@ import net.minecraft.network.chat.Component;
  */
 public class JobHud extends HudElement {
 
+    @Override
+    public boolean isEnabled() {
+        return MinepieceEssentialsClient.getInstance().getConfigManager().config().jobHudEnabled;
+    }
+
     private static final int WIDTH = 130;
     private static final int TITLE_COLOR = 0xFFFFD27F;
     private static final int TEXT_COLOR = 0xFFE9D5C7;

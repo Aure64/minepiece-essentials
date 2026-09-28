@@ -11,6 +11,11 @@ import net.minecraft.network.chat.Component;
 /** HUD panel listing the active pets and the total combat stats they grant. */
 public class ActivePetsHud extends HudElement {
 
+    @Override
+    public boolean isEnabled() {
+        return MinepieceEssentialsClient.getInstance().getConfigManager().config().petPanelEnabled;
+    }
+
     private static final int WIDTH = 170;
     private static final int LEVEL_COLOR = 0xFFCBC8C7;
 

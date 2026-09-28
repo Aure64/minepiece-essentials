@@ -4,16 +4,12 @@ import com.minepiece.essentials.MinepieceEssentialsClient;
 import com.minepiece.essentials.ServerDetector;
 import com.minepiece.essentials.i18n.ServerText;
 import net.fabricmc.fabric.api.client.item.v1.ItemTooltipCallback;
-import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraft.world.item.component.CustomData;
 import java.util.List;
 import java.util.OptionalDouble;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * Appends a coloured roll-quality percentage to each "Familier Effects" stat
@@ -25,8 +21,6 @@ import java.util.regex.Pattern;
  */
 public final class PetStatTooltip {
 
-    private static final Pattern RARITY_TRACK =
-        Pattern.compile("tracks\\.==(COMMON|RARE|EPIC|LEGENDARY|MYTHIC)");
     private static final String SECTION_END = "Minion Effects";
 
     private PetStatTooltip() {}
@@ -42,7 +36,7 @@ public final class PetStatTooltip {
             return;
         }
 
-        Rarity rarity = readRarity(stack);
+        Rarity rarity = PetNbtCache.of(stack).rarity();
         if (rarity == null) return;
 
         int start = indexOfSection(lines);
@@ -60,13 +54,6 @@ public final class PetStatTooltip {
             lines.set(i, withQuality(lines.get(i), quality.getAsDouble()));
             com.minepiece.essentials.telemetry.Telemetry.feature("pet_tooltip");
         }
-    }
-
-    private static Rarity readRarity(ItemStack stack) {
-        CustomData data = stack.get(DataComponents.CUSTOM_DATA);
-        if (data == null) return null;
-        Matcher m = RARITY_TRACK.matcher(data.copyTag().toString());
-        return m.find() ? Rarity.fromTrack(m.group(1)) : null;
     }
 
     private static MutableComponent withQuality(Component line, double quality) {

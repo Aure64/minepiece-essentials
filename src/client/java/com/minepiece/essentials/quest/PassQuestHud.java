@@ -11,6 +11,11 @@ import net.minecraft.network.chat.Component;
 /** HUD listing the daily pass quests with their objective and progress. */
 public class PassQuestHud extends HudElement {
 
+    @Override
+    public boolean isEnabled() {
+        return MinepieceEssentialsClient.getInstance().getConfigManager().config().passQuestHudEnabled;
+    }
+
     private static final int WIDTH = 178;
     private static final int LINE_HEIGHT = 12;
     private static final int DONE_COLOR = 0xFF7CFC55;

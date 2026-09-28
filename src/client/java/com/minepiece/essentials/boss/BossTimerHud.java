@@ -98,13 +98,11 @@ public class BossTimerHud extends HudElement {
         List<Island> orderedIslands = orderedIslands(currentIsland);
         if (orderedIslands.isEmpty()) return;
 
-        Map<Island, List<BossData>> allData = BossTracker.getInstance().getAllBossData();
+        boolean blinkOn = System.currentTimeMillis() % 1000 < 500;
         int totalLines = 0;
         for (Island island : orderedIslands) {
             if (isCollapsed(island)) continue;
-            List<BossData> bosses = allData.getOrDefault(island, List.of());
-            long bossCount = bosses.stream().filter(b -> b.hasCoords).count();
-            totalLines += (int) Math.max(bossCount, 1);
+            totalLines += Math.max(sortedBosses.getOrDefault(island, List.of()).size(), 1);
         }
 
         BossTracker tracker = BossTracker.getInstance();
@@ -171,24 +169,19 @@ public class BossTimerHud extends HudElement {
 
             if (collapsed) continue;
 
-            List<BossData> bosses = allData.getOrDefault(island, List.of()).stream()
-                    .filter(b -> b.hasCoords)
-                    .sorted(Comparator.comparingInt(BossData::estimateCurrentTimer))
-                    .toList();
+            List<BossData> bosses = sortedBosses.getOrDefault(island, List.of());
 
             if (bosses.isEmpty()) {
                 RenderUtils.drawText(ctx, "  " + Component.translatable("minepiece.ui.boss.nodata").getString(), 4, y, 0xFF888888);
                 y += LINE_HEIGHT;
             } else {
                 for (BossData boss : bosses) {
+                    int remaining = boss.estimateCurrentTimer();
                     String timer = boss.formatTimer();
                     int timerColor;
-                    if (boss.isAvailable()) {
-                        timerColor = 0xFF00CC00;
-                        if (System.currentTimeMillis() % 1000 < 500) {
-                            timerColor = 0xFF00FF44;
-                        }
-                    } else if (boss.estimateCurrentTimer() < 30) {
+                    if (remaining == 0) {
+                        timerColor = blinkOn ? 0xFF00FF44 : 0xFF00CC00;
+                    } else if (remaining < 30) {
                         timerColor = 0xFFFFAA00;
                     } else {
                         timerColor = 0xFFCC0000;
@@ -318,9 +311,20 @@ public class BossTimerHud extends HudElement {
         }
     }
 
+    // Listes filtrées/triées par île, reconstruites 20×/s ici plutôt qu'à chaque frame.
+    private final Map<Island, List<BossData>> sortedBosses = new HashMap<>();
+
     @Override
     public void tick() {
         // BossTracker est tické par MinepieceEssentialsClient (une seule fois par tick).
+        Map<Island, List<BossData>> allData = BossTracker.getInstance().getAllBossData();
+        sortedBosses.clear();
+        for (Map.Entry<Island, List<BossData>> e : allData.entrySet()) {
+            List<BossData> list = new ArrayList<>();
+            for (BossData b : e.getValue()) if (b.hasCoords) list.add(b);
+            list.sort(Comparator.comparingInt(BossData::estimateCurrentTimer));
+            sortedBosses.put(e.getKey(), list);
+        }
     }
 
     private static Set<String> collapsedSet() {

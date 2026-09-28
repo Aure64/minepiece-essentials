@@ -9,6 +9,8 @@ import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import net.minecraft.client.Minecraft;
+import com.minepiece.essentials.util.ItemText;
+import com.minepiece.essentials.util.StackFingerprint;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
@@ -35,13 +37,13 @@ public final class ActivePetsScanner {
     private static final String SECTION_END = "Minion Effects";
     private static final int SCAN_INTERVAL = 4; // ticks
 
-    private static final Pattern RARITY_TRACK =
-        Pattern.compile("tracks\\.==(COMMON|RARE|EPIC|LEGENDARY|MYTHIC)");
     private static final int MAX_LEVEL = 20;
     private static final int DEFAULT_COLOR = 0xFFFFE9D5;
 
     private static int ticks;
     private static List<String> lastLoggedNames = List.of();
+    private static long lastFingerprint;
+    private static AbstractContainerScreen<?> lastScreen;
 
     private ActivePetsScanner() {}
 
@@ -50,11 +52,17 @@ public final class ActivePetsScanner {
 
         Minecraft client = Minecraft.getInstance();
         if (client.gui.screen() instanceof AbstractContainerScreen<?> screen && ServerDetector.isOnMinePiece()) {
-            scan(screen, client);
+            long fp = StackFingerprint.ofSlots(screen.getMenu().slots);
+            if (screen == lastScreen && fp == lastFingerprint) return; // rien n'a changé
+            lastScreen = screen;
+            lastFingerprint = fp;
+            scan(screen);
+        } else {
+            lastScreen = null;
         }
     }
 
-    private static void scan(AbstractContainerScreen<?> screen, Minecraft client) {
+    private static void scan(AbstractContainerScreen<?> screen) {
         boolean isPetsScreen = false;
         List<ActivePetsState.ActivePet> activePets = new ArrayList<>();
         List<PetEffect> allStats = new ArrayList<>();
@@ -63,15 +71,14 @@ public final class ActivePetsScanner {
             ItemStack stack = slot.getItem();
             if (!stack.is(Items.RABBIT_FOOT)) continue;
 
-            List<String> tip = tooltipLines(stack, client);
+            List<String> tip = ItemText.nameAndLore(stack);
             if (containsAny(tip, ServerText.PET_ACTIVE_ACTION) || containsAny(tip, ServerText.PET_INACTIVE_ACTION)) {
                 isPetsScreen = true;
             }
             if (!containsAny(tip, ServerText.PET_ACTIVE_ACTION)) continue;
 
-            String nbt = nbt(stack);
             int color = nameColor(stack.getHoverName());
-            if (color == 0) color = rarityColor(nbt); // fallback when the name has no explicit colour
+            if (color == 0) color = rarityColor(stack); // fallback when the name has no explicit colour
             activePets.add(new ActivePetsState.ActivePet(stack.getHoverName().getString(), color, levelOf(tip)));
             allStats.addAll(combatStats(tip));
         }
@@ -88,11 +95,6 @@ public final class ActivePetsScanner {
         }
     }
 
-    private static String nbt(ItemStack stack) {
-        CustomData data = stack.get(DataComponents.CUSTOM_DATA);
-        return data == null ? "" : data.copyTag().toString();
-    }
-
     /** First explicit colour in the pet's name Text, as ARGB; 0 if none. */
     private static int nameColor(Component name) {
         int[] found = {0};
@@ -104,14 +106,10 @@ public final class ActivePetsScanner {
         return found[0];
     }
 
-    /** Fallback colour derived from the rarity token in NBT. */
-    private static int rarityColor(String nbt) {
-        Matcher m = RARITY_TRACK.matcher(nbt);
-        if (m.find()) {
-            Rarity rarity = Rarity.fromTrack(m.group(1));
-            if (rarity != null) return rarity.color();
-        }
-        return DEFAULT_COLOR;
+    /** Fallback colour derived from the rarity token in NBT (cached per stack). */
+    private static int rarityColor(ItemStack stack) {
+        Rarity rarity = PetNbtCache.of(stack).rarity();
+        return rarity != null ? rarity.color() : DEFAULT_COLOR;
     }
 
     /** Pet level from the tooltip "Niveau:"/"Level:" line; "Max" → {@link #MAX_LEVEL}, 0 if absent. */
@@ -144,14 +142,6 @@ public final class ActivePetsScanner {
         if (start < 0) return out;
         for (int i = start + 1; i < end; i++) {
             PetEffectParser.parse(lines.get(i)).ifPresent(out::add);
-        }
-        return out;
-    }
-
-    private static List<String> tooltipLines(ItemStack stack, Minecraft client) {
-        List<String> out = new ArrayList<>();
-        for (Component line : stack.getTooltipLines(Item.TooltipContext.EMPTY, client.player, TooltipFlag.NORMAL)) {
-            out.add(line.getString());
         }
         return out;
     }
