@@ -34,11 +34,14 @@ public class ClientPlayNetworkHandlerMixin {
             packet.footer() != null ? packet.footer().getString() : null);
     }
 
-    @Inject(method = "handleOpenScreen", at = @At("HEAD"))
+    // L'écran d'un relevé de fond n'est jamais construit ni affiché : on annule
+    // l'ouverture (les paquets de contenu qui suivent sont quand même collectés).
+    @Inject(method = "handleOpenScreen", at = @At("HEAD"), cancellable = true)
     private void onOpenScreen(ClientboundOpenScreenPacket packet, CallbackInfo ci) {
         if (minepiece$offThread()) return;
-        if (ServerGuiInterceptor.isIntercepting()) {
-            ServerGuiInterceptor.onScreenOpen(packet.getContainerId());
+        if (ServerGuiInterceptor.isIntercepting()
+                && ServerGuiInterceptor.claimScreen(packet.getContainerId())) {
+            ci.cancel();
         }
     }
 

@@ -11,14 +11,18 @@ import net.minecraft.world.item.ItemStack;
  * Collecte passivement le contenu du prochain écran conteneur ouvert par le
  * serveur (après une commande envoyée par {@link BackgroundGuiRefresh}).
  *
- * <p>Cycle : {@link #start} → {@link #onScreenOpen} → paquets de slots pendant
- * {@value #COLLECT_DURATION_MS} ms → livraison au callback → {@link #isFinished}.
- * {@link BackgroundGuiRefresh} ferme alors l'écran et appelle {@link #stop}.
+ * <p>Cycle : {@link #start} → {@link #claimScreen} (l'ouverture est annulée côté
+ * client : aucun écran ne s'affiche, aucun clignotement) → paquets de contenu
+ * → livraison au callback dès réception → {@link #isFinished}.
+ * {@link BackgroundGuiRefresh} prévient alors le serveur de la fermeture et appelle {@link #stop}.
  *
  * <p>Tout est confiné au thread client : les mixins réseau filtrent le thread
  * Netty avant d'appeler ici.
  */
 public final class ServerGuiInterceptor {
+    /** Marge après le paquet de contenu complet pour laisser passer d'éventuels set-slot. */
+    private static final long SETTLE_MS = 100;
+    /** Sans paquet de contenu complet, on livre ce qu'on a après ce délai. */
     private static final long COLLECT_DURATION_MS = 600;
     /** Délai max entre l'envoi de la commande et l'ouverture de l'écran. */
     private static final long OPEN_DEADLINE_MS = 3000;
@@ -27,10 +31,10 @@ public final class ServerGuiInterceptor {
 
     private static boolean intercepting = false;
     private static boolean finished = false;
-    private static boolean screenClosedClientSide = false;
     private static int currentSyncId = -1;
     private static long startTime = 0;
     private static long screenOpenTime = 0;
+    private static long contentReceivedAt = 0;
     private static final Map<Integer, ItemStack> collectedItems = new HashMap<>();
     private static Consumer<Map<Integer, ItemStack>> callback;
 
@@ -48,13 +52,17 @@ public final class ServerGuiInterceptor {
         startTime = System.currentTimeMillis();
     }
 
-    /** Appelé (thread client) quand le serveur ouvre un écran pendant l'interception. */
-    public static void onScreenOpen(int syncId) {
-        if (!intercepting || currentSyncId >= 0) return; // un seul écran par cycle
+    /**
+     * Appelé (thread client) quand le serveur ouvre un écran pendant l'interception.
+     * @return true si cet écran est le nôtre : l'appelant annule son ouverture client.
+     */
+    public static boolean claimScreen(int syncId) {
+        if (!intercepting || finished || currentSyncId >= 0) return false; // un seul écran par cycle
         currentSyncId = syncId;
         collectedItems.clear();
         screenOpenTime = System.currentTimeMillis();
-        MinepieceEssentialsClient.LOGGER.info("[Interceptor] Screen opened syncId={}", syncId);
+        MinepieceEssentialsClient.LOGGER.info("[Interceptor] Screen claimed syncId={}", syncId);
+        return true;
     }
 
     public static void onSlotUpdate(int syncId, int slot, ItemStack stack) {
@@ -67,11 +75,8 @@ public final class ServerGuiInterceptor {
         for (int i = 0; i < items.size(); i++) {
             if (!items.get(i).isEmpty()) collectedItems.put(i, items.get(i).copy());
         }
+        if (contentReceivedAt == 0) contentReceivedAt = System.currentTimeMillis();
     }
-
-    /** Le mixin a fermé l'écran intercepté côté client (paquet de fermeture déjà parti). */
-    public static void markScreenClosedClientSide() { screenClosedClientSide = true; }
-    public static boolean wasScreenClosedClientSide() { return screenClosedClientSide; }
 
     /** Thread client, chaque tick. */
     public static void tick() {
@@ -88,7 +93,8 @@ public final class ServerGuiInterceptor {
         }
 
         long elapsed = now - screenOpenTime;
-        if (elapsed >= COLLECT_DURATION_MS && !collectedItems.isEmpty()) {
+        boolean settled = contentReceivedAt > 0 && now - contentReceivedAt >= SETTLE_MS;
+        if ((settled || elapsed >= COLLECT_DURATION_MS) && !collectedItems.isEmpty()) {
             Map<Integer, ItemStack> result = new HashMap<>(collectedItems);
             MinepieceEssentialsClient.LOGGER.info("[Interceptor] Delivering {} items", result.size());
             finished = true;
@@ -102,10 +108,10 @@ public final class ServerGuiInterceptor {
     public static void stop() {
         intercepting = false;
         finished = false;
-        screenClosedClientSide = false;
         currentSyncId = -1;
         startTime = 0;
         screenOpenTime = 0;
+        contentReceivedAt = 0;
         callback = null;
         collectedItems.clear();
     }

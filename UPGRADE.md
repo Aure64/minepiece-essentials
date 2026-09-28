@@ -86,7 +86,7 @@ web equivalents.
 
 ## Verifying the mixins — the part a green build does NOT cover
 
-The six mixins in `mixin/` target Minecraft internals by **name strings**. A wrong target compiles
+The five mixins in `mixin/` target Minecraft internals by **name strings**. A wrong target compiles
 fine and fails at runtime, when the mixin is applied. Check each target exists before shipping:
 
 | Mixin | Target class | Members it depends on |
@@ -95,7 +95,6 @@ fine and fails at runtime, when the mixin is applied. Check each target exists b
 | `ClientPlayNetworkHandlerMixin` | `ClientPacketListener` | `handleTabListCustomisation`, `handleOpenScreen`, `handleContainerContent`, `handleContainerSetSlot` |
 | `HandledScreenAccessor` | `AbstractContainerScreen` | fields `leftPos`, `topPos` |
 | `InGameHudMixin` | `Hud` | `setOverlayMessage(Component, boolean)` |
-| `MinecraftClientMixin` | `Minecraft` | `tick()` (the current screen now lives in `Gui`, reached via `gui.screen()`) |
 | `ScreenRenderMixin` | `Screen` | `extractRenderStateWithTooltipAndSubtitles`, **and** the `@At` descriptor `Lnet/minecraft/client/gui/GuiGraphicsExtractor;extractDeferredElements(IIF)V` |
 
 `ScreenRenderMixin`'s `@At(target = ...)` is a raw descriptor string — the compiler never checks

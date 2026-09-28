@@ -7,7 +7,6 @@
         "ClientPlayNetworkHandlerMixin",
         "HandledScreenAccessor",
         "InGameHudMixin",
-        "MinecraftClientMixin",
         "ScreenRenderMixin"
     ],
     "injectors": {
