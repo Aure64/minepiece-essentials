@@ -3,6 +3,8 @@ package com.minepiece.essentials.quest;
 import com.minepiece.essentials.MinepieceEssentialsClient;
 import com.minepiece.essentials.ServerDetector;
 import com.minepiece.essentials.i18n.ServerText;
+import com.minepiece.essentials.island.Island;
+import com.minepiece.essentials.island.IslandDetector;
 import com.minepiece.essentials.network.BackgroundGuiRefresh;
 import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents;
 import net.minecraft.client.Minecraft;
@@ -67,7 +69,11 @@ public final class PassQuestScanner {
 
         boolean onMinePiece = ServerDetector.isOnMinePiece();
         Minecraft client = Minecraft.getInstance();
-        boolean inWorld = onMinePiece && client.player != null && client.level != null;
+        // "In world" = an island is detected. The address alone is not enough: the
+        // temporary lobby before the real server already matches "minepiece", and a
+        // background fetch there swallows the player's clicks (compass GUI).
+        boolean inWorld = onMinePiece && client.player != null && client.level != null
+                && IslandDetector.getInstance().getCurrentIsland() != Island.UNKNOWN;
         // Fresh connection → one silent fetch once the player is actually in the world.
         if (inWorld && !wasOnMinePiece) refreshPending = true;
         wasOnMinePiece = inWorld;
