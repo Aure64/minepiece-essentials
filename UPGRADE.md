@@ -125,13 +125,16 @@ is the only real proof.
 
 ## Highest-risk area: `network/`
 
-`BackgroundGuiRefresh` + `ServerGuiInterceptor` drive server containers blind: they send a chat
-command, harvest slot updates, send a synthetic `ServerboundContainerClickPacket`, then a
-`ServerboundContainerClosePacket`. They depend on server-side behaviour that no compiler and no
-mapping check can validate.
+`BackgroundGuiRefresh` + `ServerGuiInterceptor` read server containers blind: they send a chat
+command (`/boss`, `/pets`, `/pass quests`), cancel the `OpenScreen` packet client-side, harvest
+the content packets for that container id, then send a single `ServerboundContainerClosePacket`.
+No click is ever sent. They depend on server-side behaviour that no compiler and no mapping check
+can validate, and on the packet mixins in `ClientPlayNetworkHandlerMixin` running on the client
+thread only. Design and invariants: `docs/architecture-background-refresh.md`.
 
-Test this **first** on the live server after any upgrade, and watch for interfaces that stay stuck
-open. Treat it as the most fragile part of the mod, ahead of the mixins.
+Test this **first** on the live server after any upgrade: the three HUDs must fill on join
+within a few seconds, with no screen flashing and no `Hard timeout` / `No screen opened` line
+in `latest.log`, and the player's own GUIs (compass, chests, `/ah`) must stay usable meanwhile.
 
 ## Philosophy
 
@@ -159,4 +162,6 @@ and occasionally drops an import without renaming its usages. Grep for leftovers
 1. Test in-game on the MinePiece server: boss timer detection, parchment reading, HUD edit, and
    the background GUI refresh above all.
 2. Commit `gradle.properties`, `fabric.mod.json`, and any mixin fixes.
-3. Tag the release: `git tag v1.9.0 && git push --tags`.
+3. Tag the release: `git tag vX.Y.Z && git push --tags`, then `gh release create` with the jar
+   (as a **pre-release** if players are still on the previous Minecraft version — the in-mod
+   update notifier reads `releases/latest`).
