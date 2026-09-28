@@ -23,7 +23,7 @@ public class ScreenRenderMixin {
     @Inject(
         method = "extractRenderStateWithTooltipAndSubtitles",
         at = @At(value = "INVOKE",
-                 target = "Lnet/minecraft/client/gui/GuiGraphicsExtractor;extractDeferredElements()V"))
+                 target = "Lnet/minecraft/client/gui/GuiGraphicsExtractor;extractDeferredElements(IIF)V"))
     private void minepiece$renderRarityOverlay(GuiGraphicsExtractor ctx, int mouseX, int mouseY,
                                                float delta, CallbackInfo ci) {
         if (!((Object) this instanceof AbstractContainerScreen<?> hs)) return;

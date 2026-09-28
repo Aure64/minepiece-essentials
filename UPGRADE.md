@@ -96,7 +96,7 @@ fine and fails at runtime, when the mixin is applied. Check each target exists b
 | `HandledScreenAccessor` | `AbstractContainerScreen` | fields `leftPos`, `topPos` |
 | `InGameHudMixin` | `Hud` | `setOverlayMessage(Component, boolean)` |
 | `MinecraftClientMixin` | `Minecraft` | `tick()` (the current screen now lives in `Gui`, reached via `gui.screen()`) |
-| `ScreenRenderMixin` | `Screen` | `extractRenderStateWithTooltipAndSubtitles`, **and** the `@At` descriptor `Lnet/minecraft/client/gui/GuiGraphicsExtractor;extractDeferredElements()V` |
+| `ScreenRenderMixin` | `Screen` | `extractRenderStateWithTooltipAndSubtitles`, **and** the `@At` descriptor `Lnet/minecraft/client/gui/GuiGraphicsExtractor;extractDeferredElements(IIF)V` |
 
 `ScreenRenderMixin`'s `@At(target = ...)` is a raw descriptor string — the compiler never checks
 it. Verify it by hand with `javap` every single time.
