@@ -35,7 +35,7 @@ import java.util.Map;
 public final class PassQuestScanner {
 
     /** Opens the daily quests tab of the pass directly. */
-    public static final String PASS_COMMAND = "/pass quest";
+    public static final String PASS_COMMAND = "/pass quests";
 
     private static final int SCAN_INTERVAL = 4; // ticks
     private static int ticks;
