@@ -15,14 +15,18 @@ import java.util.OptionalDouble;
  */
 public final class AhPriceBand {
 
-    /** Bande de prix, avec sa couleur ARGB (réutilisée pour le liseré et le texte). */
+    /**
+     * Bande de prix. La couleur effective (configurable) vient de
+     * {@link AhPriceColors#of(Band)} ; ici seulement le défaut.
+     */
     public enum Band {
-        CHEAP(0xFFFFD24B),     // jaune — moins cher que la moyenne
-        FAIR(0xFF7CFC55),      // vert — au prix
-        EXPENSIVE(0xFFFF5555); // rouge — trop cher
+        CHEAP(AhPriceColors.DEFAULT_CHEAP),         // jaune — moins cher que la moyenne
+        FAIR(AhPriceColors.DEFAULT_FAIR),           // vert — au prix
+        EXPENSIVE(AhPriceColors.DEFAULT_EXPENSIVE); // rouge — trop cher
 
-        public final int color;
-        Band(int color) { this.color = color; }
+        /** Couleur par défaut, "#RRGGBB". */
+        public final String defaultHex;
+        Band(String defaultHex) { this.defaultHex = defaultHex; }
     }
 
     /** Bande retenue + écart relatif (prix vente vs prix moyen). */

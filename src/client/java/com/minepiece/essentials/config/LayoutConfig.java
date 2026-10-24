@@ -27,6 +27,8 @@ public class LayoutConfig {
         public HudBackground background = HudBackground.PARCHMENT;
         // Miroir : icônes à droite, texte aligné à droite (panneau posé au bord droit de l'écran).
         public boolean mirrored = false;
+        // Options propres au panneau (onglet Personnaliser), clé -> valeur ; absente = défaut.
+        public Map<String, Boolean> options = new HashMap<>();
 
         public ElementLayout() {}
 

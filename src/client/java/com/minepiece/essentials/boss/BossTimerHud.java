@@ -3,6 +3,7 @@ package com.minepiece.essentials.boss;
 import com.minepiece.essentials.MinepieceEssentialsClient;
 import com.minepiece.essentials.hud.HudElement;
 import com.minepiece.essentials.hud.HudElementRegistry;
+import com.minepiece.essentials.hud.HudOption;
 import com.minepiece.essentials.hud.ParchmentRenderer;
 import com.minepiece.essentials.island.Island;
 import com.minepiece.essentials.island.IslandDetector;
@@ -70,6 +71,16 @@ public class BossTimerHud extends HudElement {
 
     public BossTimerHud() {
         super("boss_timer", 5, 200, WIDTH, 100);
+    }
+
+    @Override
+    public List<HudOption> options() {
+        var cfg = MinepieceEssentialsClient.getInstance().getConfigManager().config();
+        return List.of(
+                HudOption.config("compact", "minepiece.ui.option.boss.compact", () -> cfg.bossCompactMode, v -> cfg.bossCompactMode = v),
+                HudOption.config("auto_refresh", "minepiece.ui.option.boss.auto_refresh", () -> cfg.bossAutoRefreshEnabled, v -> cfg.bossAutoRefreshEnabled = v),
+                HudOption.config("alerts", "minepiece.ui.option.boss.alerts", () -> cfg.bossAlertEnabled, v -> cfg.bossAlertEnabled = v),
+                HudOption.config("sounds", "minepiece.ui.option.boss.sounds", () -> cfg.notificationSoundsEnabled, v -> cfg.notificationSoundsEnabled = v));
     }
 
     public void setMousePos(double mx, double my) {

@@ -2,8 +2,8 @@ package com.minepiece.essentials.hud;
 
 import com.minepiece.essentials.MinepieceEssentialsClient;
 import com.minepiece.essentials.ServerDetector;
+import com.minepiece.essentials.ah.AhColorScreen;
 import com.minepiece.essentials.boss.BossTimerHud;
-import com.minepiece.essentials.config.HudBackground;
 import com.minepiece.essentials.donate.DonateScreen;
 import com.minepiece.essentials.util.RenderUtils;
 import net.minecraft.client.Minecraft;
@@ -28,6 +28,11 @@ public class HudEditScreen extends Screen {
     private HudElement dragging = null;
     private int dragOffsetX, dragOffsetY;
 
+    // Onglet Personnaliser : panneau sélectionné et colonne d'options (aperçu en direct sur le HUD).
+    private HudElement selected = null;
+    private int optionsX, optionsY;
+    private static final int OPTION_STEP = BTN_H + 4;
+
     private int tabsX, tabsY;
     private int resetBtnX, resetBtnY;
     private long resetMsgUntil = 0;
@@ -35,7 +40,7 @@ public class HudEditScreen extends Screen {
     // Interrupteurs (onglet Placement) : une colonne si la hauteur le permet, sinon deux.
     private int rarityTogglesX, rarityTogglesY;
     private static final int TOGGLE_STEP = BTN_H + 4;
-    private static final int TOGGLE_COUNT = 10;
+    private static final int TOGGLE_COUNT = 11;
     private static final int TOGGLE_COL_GAP = 6;
     private int toggleColumns = 1;
     private int toggleRows = TOGGLE_COUNT;
@@ -68,6 +73,8 @@ public class HudEditScreen extends Screen {
         resetBtnX = (width - BTN_W) / 2;
         resetBtnY = tabsY + TAB_H + 6;
         rarityTogglesY = resetBtnY + BTN_H + 28;
+        optionsX = (width - BTN_W) / 2;
+        optionsY = tabsY + TAB_H + 20;
         // Hauteur nécessaire en une colonne (interrupteurs + bouton de don) ; sinon deux colonnes.
         int oneColumnBottom = rarityTogglesY + TOGGLE_COUNT * TOGGLE_STEP + 12 + BTN_H + 4;
         toggleColumns = oneColumnBottom <= height ? 1 : 2;
@@ -131,11 +138,10 @@ public class HudEditScreen extends Screen {
         String tabName = tab == Tab.PLACEMENT
                 ? Component.translatable("minepiece.ui.editor.tab_placement").getString()
                 : Component.translatable("minepiece.ui.editor.tab_customize").getString();
-        String hint = tab == Tab.PLACEMENT
-                ? tabName + " - Clic gauche: deplacer | Clic droit: ON/OFF | Scroll: taille"
-                : tabName + " - Clic: fond (Parchemin -> Sombre -> Transparent) | Maj+clic: miroir (icones a droite)";
+        String hint = tabName + " - " + Component.translatable(tab == Tab.PLACEMENT
+                ? "minepiece.ui.editor.hint_placement" : "minepiece.ui.editor.hint_customize").getString();
         RenderUtils.drawCenteredText(ctx, hint, width / 2, 5, 0xFFFFFFFF);
-        RenderUtils.drawCenteredText(ctx, "Echap pour sauvegarder et quitter", width / 2, 16, 0xFFAAAAAA);
+        RenderUtils.drawCenteredText(ctx, Component.translatable("minepiece.ui.editor.hint_escape").getString(), width / 2, 16, 0xFFAAAAAA);
 
         drawTabs(ctx, mouseX, mouseY);
 
@@ -207,10 +213,11 @@ public class HudEditScreen extends Screen {
         drawToggle(ctx, mouseX, mouseY, 3, Component.translatable("minepiece.ui.editor.filter_bar").getString(), cfg.rarityFilterEnabled);
         drawToggle(ctx, mouseX, mouseY, 4, Component.translatable("minepiece.ui.editor.sort_buttons").getString(), cfg.raritySorterEnabled);
         drawToggle(ctx, mouseX, mouseY, 5, Component.translatable("minepiece.ui.editor.ah_price_color").getString(), cfg.ahPriceColorEnabled);
-        drawToggle(ctx, mouseX, mouseY, 6, Component.translatable("minepiece.ui.editor.background_refresh").getString(), cfg.backgroundRefreshEnabled);
-        drawToggle(ctx, mouseX, mouseY, 7, Component.translatable("minepiece.ui.editor.boss_auto_refresh").getString(), cfg.bossAutoRefreshEnabled);
-        drawToggle(ctx, mouseX, mouseY, 8, Component.translatable("minepiece.ui.editor.boss_compact").getString(), cfg.bossCompactMode);
-        drawToggle(ctx, mouseX, mouseY, 9, Component.translatable("minepiece.ui.editor.telemetry").getString(),
+        drawButton(ctx, mouseX, mouseY, toggleX(6), toggleY(6), Component.translatable("minepiece.ui.editor.ah_colors").getString(), 0xFFFFE9D5);
+        drawToggle(ctx, mouseX, mouseY, 7, Component.translatable("minepiece.ui.editor.background_refresh").getString(), cfg.backgroundRefreshEnabled);
+        drawToggle(ctx, mouseX, mouseY, 8, Component.translatable("minepiece.ui.editor.boss_auto_refresh").getString(), cfg.bossAutoRefreshEnabled);
+        drawToggle(ctx, mouseX, mouseY, 9, Component.translatable("minepiece.ui.editor.boss_compact").getString(), cfg.bossCompactMode);
+        drawToggle(ctx, mouseX, mouseY, 10, Component.translatable("minepiece.ui.editor.telemetry").getString(),
                 cfg.telemetryEnabled);
 
         // Bouton de don, seulement visible tant qu'on est connecté à MinePiece.
@@ -239,36 +246,68 @@ public class HudEditScreen extends Screen {
     }
 
     private void drawToggle(GuiGraphicsExtractor ctx, int mouseX, int mouseY, int index, String label, boolean on) {
-        int x = toggleX(index);
-        int y = toggleY(index);
+        drawToggleAt(ctx, mouseX, mouseY, toggleX(index), toggleY(index), label, on);
+    }
+
+    private void drawToggleAt(GuiGraphicsExtractor ctx, int mouseX, int mouseY, int x, int y, String label, boolean on) {
+        drawButton(ctx, mouseX, mouseY, x, y, label + (on ? "  [ON]" : "  [OFF]"), on ? 0xFF7CFC55 : 0xFFFF6666);
+    }
+
+    /** Bouton de colonne (même cadre que les interrupteurs), texte dans {@code textColor}. */
+    private void drawButton(GuiGraphicsExtractor ctx, int mouseX, int mouseY, int x, int y, String text, int textColor) {
         boolean hover = inBox(mouseX, mouseY, x, y, BTN_W, BTN_H);
         ctx.fill(x, y, x + BTN_W, y + BTN_H, hover ? 0xFF6A4A2C : 0xFF3A2A1C);
         ctx.fill(x, y, x + BTN_W, y + 1, 0xFF8A6A44);
         ctx.fill(x, y + BTN_H - 1, x + BTN_W, y + BTN_H, 0xFF8A6A44);
-        String text = label + (on ? "  [ON]" : "  [OFF]");
         int tw = Math.min(RenderUtils.textWidth(text), BTN_W - 8);
-        RenderUtils.drawTextFit(ctx, text, x + (BTN_W - tw) / 2, y + 4, BTN_W - 8, on ? 0xFF7CFC55 : 0xFFFF6666);
+        RenderUtils.drawTextFit(ctx, text, x + (BTN_W - tw) / 2, y + 4, BTN_W - 8, textColor);
+    }
+
+    /** Lignes de la colonne d'options du panneau sélectionné : fond, miroir, puis ses options propres. */
+    private int optionRowCount(HudElement element) {
+        return 2 + element.options().size();
+    }
+
+    private int optionRowY(int index) {
+        return optionsY + index * OPTION_STEP;
     }
 
     private void renderCustomize(GuiGraphicsExtractor ctx, int mouseX, int mouseY, float delta) {
+        if (selected != null && !HudElementRegistry.getElements().contains(selected)) selected = null;
         for (HudElement element : HudElementRegistry.getElements()) {
             int x = element.getX(), y = element.getY();
             int w = element.getWidth(), h = element.getHeight();
 
-            // Faint clickable outline so even an empty HUD can be targeted.
+            // Liseré cliquable, même sur un HUD vide ; le panneau sélectionné est surligné.
             boolean hover = element.isMouseOver(mouseX, mouseY);
-            int border = hover ? 0xFFFFFF66 : 0x66FFFFFF;
+            boolean sel = element == selected;
+            int border = sel ? 0xFFFFD24B : hover ? 0xFFFFFF66 : 0x66FFFFFF;
             ctx.fill(x - 1, y - 1, x + w + 1, y, border);
             ctx.fill(x - 1, y + h, x + w + 1, y + h + 1, border);
             ctx.fill(x - 1, y, x, y + h, border);
             ctx.fill(x + w, y, x + w + 1, y + h, border);
 
-            RenderUtils.drawText(ctx, element.getId() + " : " + element.getBackground().label()
-                            + (element.isMirrored() ? " | miroir" : ""),
-                    x + 2, y - 10, hover ? 0xFFFFFF66 : 0xFFFFFFFF);
+            RenderUtils.drawText(ctx, element.getId(), x + 2, y - 10, sel ? 0xFFFFD24B : hover ? 0xFFFFFF66 : 0xFFFFFFFF);
 
             drawElement(ctx, element, delta);
         }
+
+        if (selected == null) {
+            RenderUtils.drawCenteredText(ctx, Component.translatable("minepiece.ui.editor.customize_pick").getString(),
+                    width / 2, optionsY, 0xFFFFE9D5);
+            return;
+        }
+        RenderUtils.drawCenteredText(ctx, selected.getId(), width / 2, optionsY - 12, 0xFFFFD24B);
+        drawButton(ctx, mouseX, mouseY, optionsX, optionRowY(0),
+                Component.translatable("minepiece.ui.editor.customize_background", selected.getBackground().label()).getString(), 0xFFFFE9D5);
+        drawToggleAt(ctx, mouseX, mouseY, optionsX, optionRowY(1),
+                Component.translatable("minepiece.ui.editor.customize_mirror").getString(), selected.isMirrored());
+        int i = 2;
+        for (HudOption opt : selected.options()) {
+            drawToggleAt(ctx, mouseX, mouseY, optionsX, optionRowY(i++), Component.translatable(opt.labelKey()).getString(), opt.isOn());
+        }
+        RenderUtils.drawCenteredText(ctx, Component.translatable("minepiece.ui.editor.customize_preview").getString(),
+                width / 2, optionRowY(i) + 2, 0xFFAAAAAA);
     }
 
     /** Renders a HUD at its position with its scale applied. */
@@ -305,18 +344,30 @@ public class HudEditScreen extends Screen {
     }
 
     private boolean clickCustomize(double mouseX, double mouseY, int button, boolean shift) {
+        var mgr = MinepieceEssentialsClient.getInstance().getConfigManager();
+        // Colonne d'options du panneau sélectionné (au-dessus des HUD : testée en premier).
+        if (selected != null && button == 0 && inBox(mouseX, mouseY, optionsX, optionsY, BTN_W, optionRowCount(selected) * OPTION_STEP)) {
+            int row = (int) ((mouseY - optionsY) / OPTION_STEP);
+            if (row == 0) {
+                selected.setBackground(selected.getBackground().next());
+            } else if (row == 1) {
+                selected.setMirrored(!selected.isMirrored());
+            } else if (row - 2 < selected.options().size()) {
+                selected.options().get(row - 2).toggle();
+            }
+            mgr.save();
+            return true;
+        }
         for (HudElement element : HudElementRegistry.getElements()) {
             if (element.isMouseOver(mouseX, mouseY)) {
+                selected = element;
                 if (shift) {
                     element.setMirrored(!element.isMirrored());
-                    MinepieceEssentialsClient.getInstance().getConfigManager().save();
-                    return true;
+                    mgr.save();
+                } else if (button == 1) {
+                    element.setBackground(element.getBackground().next());
+                    mgr.save();
                 }
-                // Left cycles forward, right cycles backward (= forward ×2 of 3).
-                HudBackground bg = element.getBackground().next();
-                if (button == 1) bg = bg.next();
-                element.setBackground(bg);
-                MinepieceEssentialsClient.getInstance().getConfigManager().save();
                 return true;
             }
         }
@@ -341,9 +392,13 @@ public class HudEditScreen extends Screen {
                         case 3 -> cfg.rarityFilterEnabled = !cfg.rarityFilterEnabled;
                         case 4 -> cfg.raritySorterEnabled = !cfg.raritySorterEnabled;
                         case 5 -> cfg.ahPriceColorEnabled = !cfg.ahPriceColorEnabled;
-                        case 6 -> cfg.backgroundRefreshEnabled = !cfg.backgroundRefreshEnabled;
-                        case 7 -> cfg.bossAutoRefreshEnabled = !cfg.bossAutoRefreshEnabled;
-                        case 8 -> cfg.bossCompactMode = !cfg.bossCompactMode;
+                        case 6 -> {
+                            Minecraft.getInstance().setScreenAndShow(new AhColorScreen(this));
+                            return true;
+                        }
+                        case 7 -> cfg.backgroundRefreshEnabled = !cfg.backgroundRefreshEnabled;
+                        case 8 -> cfg.bossAutoRefreshEnabled = !cfg.bossAutoRefreshEnabled;
+                        case 9 -> cfg.bossCompactMode = !cfg.bossCompactMode;
                         default -> com.minepiece.essentials.telemetry.Telemetry.setEnabled(
                                 !cfg.telemetryEnabled);
                     }

@@ -71,7 +71,7 @@ public final class AhTooltip {
     private static Component bandLine(AhPriceBand.Result res) {
         int pct = res.percent();
         String head = pct > 0 ? "▲ +" : pct < 0 ? "▼ " : "● ";
-        return Component.literal(" ▪ " + head + pct + " % vs moyenne").withColor(res.band().color);
+        return Component.literal(" ▪ " + head + pct + " % vs moyenne").withColor(AhPriceColors.of(res.band()));
     }
 
     private static Component perUnitLine(String label, String value) {

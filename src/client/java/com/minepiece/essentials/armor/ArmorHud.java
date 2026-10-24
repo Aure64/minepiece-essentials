@@ -2,6 +2,8 @@ package com.minepiece.essentials.armor;
 
 import com.minepiece.essentials.MinepieceEssentialsClient;
 import com.minepiece.essentials.hud.HudElement;
+import com.minepiece.essentials.hud.HudOption;
+import com.minepiece.essentials.pet.PetStat;
 import com.minepiece.essentials.hud.ParchmentRenderer;
 import com.minepiece.essentials.util.RenderUtils;
 import java.util.ArrayList;
@@ -19,6 +21,15 @@ public class ArmorHud extends HudElement {
     private static final int SET_COLOR = 0xFF9CE07A;
     private static final int SET_PARTIAL_COLOR = 0xFFCBC8C7;
     private static final int EFFECT_COLOR = 0xFFB8D8C0;
+
+    static final String OPT_SET_LINE = "set_line", OPT_TOTALS = "totals";
+
+    @Override
+    public java.util.List<HudOption> options() {
+        return java.util.List.of(
+                HudOption.layout(this, OPT_SET_LINE, "minepiece.ui.option.armor.set_line", true),
+                HudOption.layout(this, OPT_TOTALS, "minepiece.ui.option.armor.totals", false));
+    }
 
     public ArmorHud() {
         super("active_armor", 5, 240, WIDTH, 60);
@@ -46,11 +57,18 @@ public class ArmorHud extends HudElement {
         }
 
         int count = snap.pieces().size();
-        boolean setLine = snap.setName() != null;
+        boolean setLine = snap.setName() != null && option(OPT_SET_LINE, true);
+        List<PetStat> totalStats = new ArrayList<>();
+        if (option(OPT_TOTALS, false)) {
+            for (PetStat stat : PetStat.values()) {
+                Double v = snap.totals().get(stat);
+                if (v != null && v != 0.0) totalStats.add(stat);
+            }
+        }
         String effect = snap.fullSet() ? ArmorSetEffect.summarize(snap.setEffect(),
                 Component.translatable("minepiece.ui.armor.effect_xp").getString(),
                 Component.translatable("minepiece.ui.armor.effect_xp_profile").getString()) : "";
-        int h = 20 + count * ROW + (setLine ? 10 : 0) + 4;
+        int h = 20 + count * ROW + (setLine ? 10 : 0) + (totalStats.isEmpty() ? 0 : 6 + totalStats.size() * 10) + 4;
         this.height = h;
         ParchmentRenderer.renderPanel(ctx, 0, 0, WIDTH, h, title + " (" + count + "/4)", getBackground());
 
@@ -82,6 +100,30 @@ public class ArmorHud extends HudElement {
             y += 10;
         }
 
+        // Totaux des stats de l'armure (option « Totaux des stats »).
+        if (!totalStats.isEmpty()) {
+            y += 4;
+            ctx.fill(6, y, WIDTH - 6, y + 1, 0x40000000);
+            y += 2;
+            for (PetStat stat : totalStats) {
+                String name = snap.labels().get(stat);
+                if (name == null || name.isBlank()) name = stat.fr();
+                String v = "+" + fmt(snap.totals().get(stat));
+                if (mirror) {
+                    RenderUtils.drawText(ctx, v, 6, y, stat.color());
+                    RenderUtils.drawText(ctx, name, WIDTH - 6 - RenderUtils.textWidth(name), y, stat.color());
+                } else {
+                    RenderUtils.drawText(ctx, name, 6, y, stat.color());
+                    RenderUtils.drawText(ctx, v, WIDTH - 6 - RenderUtils.textWidth(v), y, stat.color());
+                }
+                y += 10;
+            }
+        }
+    }
+
+    private static String fmt(double v) {
+        if (Math.abs(v - Math.round(v)) < 0.05) return Long.toString(Math.round(v));
+        return String.format(java.util.Locale.US, "%.1f", v);
     }
 
 }

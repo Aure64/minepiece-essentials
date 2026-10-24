@@ -69,7 +69,7 @@ public final class RarityScreenOverlay {
                 // d'annonce (lore avec Prix de vente + Prix moyen), donc dans le /ah.
                 if (priceColor) {
                     AhPriceBandCache.get(st)
-                            .ifPresent(res -> drawPriceBorder(ctx, sx, sy, res.band().color));
+                            .ifPresent(res -> drawPriceBorder(ctx, sx, sy, com.minepiece.essentials.ah.AhPriceColors.of(res.band())));
                 }
                 if (filterOn && FILTER.isDimmed(r)) {
                     ctx.fill(sx, sy, sx + 16, sy + 16, 0xB0101010); // voile sombre

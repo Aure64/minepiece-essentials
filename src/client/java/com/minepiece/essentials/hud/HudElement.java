@@ -43,6 +43,23 @@ public abstract class HudElement {
     /** Miroir (éditeur K, Personnaliser, Maj+clic) : icônes à droite, texte aligné à droite. */
     public boolean isMirrored() { return getLayout().mirrored; }
     public void setMirrored(boolean mirrored) { getLayout().mirrored = mirrored; }
+    /** Option du panneau (onglet Personnaliser) ; {@code def} si jamais réglée. */
+    public boolean option(String key, boolean def) {
+        var opts = getLayout().options;
+        if (opts == null) return def;
+        Boolean v = opts.get(key);
+        return v == null ? def : v;
+    }
+
+    public void setOption(String key, boolean value) {
+        var layout = getLayout();
+        if (layout.options == null) layout.options = new java.util.HashMap<>();
+        layout.options.put(key, value);
+    }
+
+    /** Interrupteurs propres au panneau, affichés dans l'onglet Personnaliser (vide par défaut). */
+    public java.util.List<HudOption> options() { return java.util.List.of(); }
+
     /** Visible dans le layout (éditeur K). */
     public boolean isVisible() { return getLayout().visible; }
     /** Activé dans la config (interrupteur de la feature). Ni tick ni rendu sinon. */

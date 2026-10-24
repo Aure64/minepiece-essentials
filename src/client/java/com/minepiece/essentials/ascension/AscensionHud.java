@@ -2,6 +2,7 @@ package com.minepiece.essentials.ascension;
 
 import com.minepiece.essentials.MinepieceEssentialsClient;
 import com.minepiece.essentials.hud.HudElement;
+import com.minepiece.essentials.hud.HudOption;
 import com.minepiece.essentials.hud.ParchmentRenderer;
 import com.minepiece.essentials.util.ItemText;
 import com.minepiece.essentials.util.RenderUtils;
@@ -43,6 +44,25 @@ public class AscensionHud extends HudElement {
 
     private static final int ROW = 12;
     private static final int ICON = 12;
+
+    static final String OPT_ICONS = "icons", OPT_FRUITS = "fruits", OPT_WEAPONS = "weapons", OPT_TOOLS = "tools";
+
+    @Override
+    public List<HudOption> options() {
+        return List.of(
+                HudOption.layout(this, OPT_ICONS, "minepiece.ui.option.ascension.icons", true),
+                HudOption.layout(this, OPT_FRUITS, "minepiece.ui.option.ascension.fruits", true),
+                HudOption.layout(this, OPT_WEAPONS, "minepiece.ui.option.ascension.weapons", true),
+                HudOption.layout(this, OPT_TOOLS, "minepiece.ui.option.ascension.tools", true));
+    }
+
+    private static boolean shown(AscensionItem.Type type, boolean fruits, boolean weapons, boolean tools) {
+        return switch (type) {
+            case FRUIT -> fruits;
+            case WEAPON -> weapons;
+            case TOOL -> tools;
+        };
+    }
 
     private List<Row> items = List.of();
     private int ticks;
@@ -113,22 +133,37 @@ public class AscensionHud extends HudElement {
         if (!MinepieceEssentialsClient.getInstance().getConfigManager().config().ascensionHudEnabled) {
             return;
         }
-        List<Row> snapshot = items;
+        List<Row> all = items;
+        if (all.isEmpty()) return;
+        boolean icons = option(OPT_ICONS, true);
+        boolean fruits = option(OPT_FRUITS, true), weapons = option(OPT_WEAPONS, true), tools = option(OPT_TOOLS, true);
+        List<Row> snapshot = new ArrayList<>(all.size());
+        boolean anyFruit = false, anyWeapon = false, anyTool = false;
+        for (Row r : all) {
+            if (!shown(r.item().type(), fruits, weapons, tools)) continue;
+            snapshot.add(r);
+            switch (r.item().type()) {
+                case FRUIT -> anyFruit = true;
+                case WEAPON -> anyWeapon = true;
+                case TOOL -> anyTool = true;
+            }
+        }
         if (snapshot.isEmpty()) return;
 
         boolean mirror = isMirrored();
+        int row = icons ? ROW : 10;
         boolean fruitHeaderDrawn = false;
         boolean weaponHeaderDrawn = false;
         boolean toolHeaderDrawn = false;
-        int headers = (hasFruit ? 1 : 0) + (hasWeapon ? 1 : 0) + (hasTool ? 1 : 0);
-        int h = 20 + snapshot.size() * ROW + headers * 10 + 4;
+        int headers = (anyFruit ? 1 : 0) + (anyWeapon ? 1 : 0) + (anyTool ? 1 : 0);
+        int h = 20 + snapshot.size() * row + headers * 10 + 4;
         this.height = h;
 
         ParchmentRenderer.renderPanel(ctx, 0, 0, WIDTH, h, Component.translatable("minepiece.ui.ascensions.title").getString(), getBackground());
 
         int y = 20;
-        for (Row row : snapshot) {
-            AscensionItem item = row.item();
+        for (Row r : snapshot) {
+            AscensionItem item = r.item();
             String header = null;
             if (item.type() == AscensionItem.Type.FRUIT && !fruitHeaderDrawn) {
                 header = Component.translatable("minepiece.ui.ascensions.fruits").getString();
@@ -155,21 +190,22 @@ public class AscensionHud extends HudElement {
                     : "Lv" + item.level() + "  " + item.xpToNextLevel() + "xp";
             }
             int rightColor = item.available() ? READY_COLOR : LEVEL_COLOR;
-            int ty = y + 1;
+            int ty = icons ? y + 1 : y;
+            int iconW = icons ? ICON + 4 : 0;
             if (mirror) {
                 RenderUtils.drawText(ctx, right, 6, ty, rightColor);
-                int textEnd = WIDTH - 6 - ICON - 4;
-                RenderUtils.drawItemIcon(ctx, row.stack(), WIDTH - 6 - ICON, y - 2, ICON);
+                int textEnd = WIDTH - 6 - iconW;
+                if (icons) RenderUtils.drawItemIcon(ctx, r.stack(), WIDTH - 6 - ICON, y - 2, ICON);
                 int budget = textEnd - (6 + RenderUtils.textWidth(right)) - 6;
                 RenderUtils.drawTextFitRight(ctx, truncate(item.name(), budget), textEnd, ty, budget, item.color());
             } else {
                 int rightX = WIDTH - 6 - RenderUtils.textWidth(right);
                 RenderUtils.drawText(ctx, right, rightX, ty, rightColor);
-                RenderUtils.drawItemIcon(ctx, row.stack(), 6, y - 2, ICON);
-                int x = 6 + ICON + 4;
+                if (icons) RenderUtils.drawItemIcon(ctx, r.stack(), 6, y - 2, ICON);
+                int x = 6 + iconW;
                 RenderUtils.drawText(ctx, truncate(item.name(), rightX - 6 - x), x, ty, item.color());
             }
-            y += ROW;
+            y += row;
         }
     }
 

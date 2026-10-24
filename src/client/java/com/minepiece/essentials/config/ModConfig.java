@@ -47,6 +47,10 @@ public class ModConfig {
 
     public boolean ahPricePerUnitEnabled = true;
     public boolean ahPriceColorEnabled = true;     // liseré couleur + écart % vs moyenne (AH)
+    // Couleurs des bandes de prix AH, "#RRGGBB" (voir AhPriceColors). Illisible → défaut.
+    public String ahColorCheap = com.minepiece.essentials.ah.AhPriceColors.DEFAULT_CHEAP;         // moins cher que la moyenne
+    public String ahColorFair = com.minepiece.essentials.ah.AhPriceColors.DEFAULT_FAIR;           // au prix (±10 %)
+    public String ahColorExpensive = com.minepiece.essentials.ah.AhPriceColors.DEFAULT_EXPENSIVE; // trop cher
 
     public boolean rarityIconsEnabled = true;      // emblèmes dans les coffres/conteneurs
     public boolean rarityInventoryEnabled = true;  // emblèmes dans l'inventaire joueur (E)
