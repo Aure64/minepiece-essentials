@@ -32,9 +32,13 @@ public class HudEditScreen extends Screen {
     private int resetBtnX, resetBtnY;
     private long resetMsgUntil = 0;
 
-    // Toggles de la fonctionnalité Raretés (onglet Placement).
+    // Interrupteurs (onglet Placement) : une colonne si la hauteur le permet, sinon deux.
     private int rarityTogglesX, rarityTogglesY;
     private static final int TOGGLE_STEP = BTN_H + 4;
+    private static final int TOGGLE_COUNT = 10;
+    private static final int TOGGLE_COL_GAP = 6;
+    private int toggleColumns = 1;
+    private int toggleRows = TOGGLE_COUNT;
 
     // Bouton de don, tout en bas de l'onglet Placement (visible seulement sur MinePiece).
     private int donateBtnX, donateBtnY;
@@ -63,10 +67,23 @@ public class HudEditScreen extends Screen {
         tabsX = (width - (TAB_W * 2 + TAB_GAP)) / 2;
         resetBtnX = (width - BTN_W) / 2;
         resetBtnY = tabsY + TAB_H + 6;
-        rarityTogglesX = (width - BTN_W) / 2;
         rarityTogglesY = resetBtnY + BTN_H + 28;
+        // Hauteur nécessaire en une colonne (interrupteurs + bouton de don) ; sinon deux colonnes.
+        int oneColumnBottom = rarityTogglesY + TOGGLE_COUNT * TOGGLE_STEP + 12 + BTN_H + 4;
+        toggleColumns = oneColumnBottom <= height ? 1 : 2;
+        toggleRows = (TOGGLE_COUNT + toggleColumns - 1) / toggleColumns;
+        int totalW = toggleColumns * BTN_W + (toggleColumns - 1) * TOGGLE_COL_GAP;
+        rarityTogglesX = (width - totalW) / 2;
         donateBtnX = (width - BTN_W) / 2;
-        donateBtnY = rarityTogglesY + 10 * TOGGLE_STEP + 12;
+        donateBtnY = rarityTogglesY + toggleRows * TOGGLE_STEP + 12;
+    }
+
+    private int toggleX(int index) {
+        return rarityTogglesX + (index / toggleRows) * (BTN_W + TOGGLE_COL_GAP);
+    }
+
+    private int toggleY(int index) {
+        return rarityTogglesY + (index % toggleRows) * TOGGLE_STEP;
     }
 
     // --- geometry helpers ----------------------------------------------------
@@ -222,13 +239,15 @@ public class HudEditScreen extends Screen {
     }
 
     private void drawToggle(GuiGraphicsExtractor ctx, int mouseX, int mouseY, int index, String label, boolean on) {
-        int y = rarityTogglesY + index * TOGGLE_STEP;
-        boolean hover = inBox(mouseX, mouseY, rarityTogglesX, y, BTN_W, BTN_H);
-        ctx.fill(rarityTogglesX, y, rarityTogglesX + BTN_W, y + BTN_H, hover ? 0xFF6A4A2C : 0xFF3A2A1C);
-        ctx.fill(rarityTogglesX, y, rarityTogglesX + BTN_W, y + 1, 0xFF8A6A44);
-        ctx.fill(rarityTogglesX, y + BTN_H - 1, rarityTogglesX + BTN_W, y + BTN_H, 0xFF8A6A44);
-        RenderUtils.drawCenteredText(ctx, label + (on ? "  [ON]" : "  [OFF]"),
-                width / 2, y + 4, on ? 0xFF7CFC55 : 0xFFFF6666);
+        int x = toggleX(index);
+        int y = toggleY(index);
+        boolean hover = inBox(mouseX, mouseY, x, y, BTN_W, BTN_H);
+        ctx.fill(x, y, x + BTN_W, y + BTN_H, hover ? 0xFF6A4A2C : 0xFF3A2A1C);
+        ctx.fill(x, y, x + BTN_W, y + 1, 0xFF8A6A44);
+        ctx.fill(x, y + BTN_H - 1, x + BTN_W, y + BTN_H, 0xFF8A6A44);
+        String text = label + (on ? "  [ON]" : "  [OFF]");
+        int tw = Math.min(RenderUtils.textWidth(text), BTN_W - 8);
+        RenderUtils.drawTextFit(ctx, text, x + (BTN_W - tw) / 2, y + 4, BTN_W - 8, on ? 0xFF7CFC55 : 0xFFFF6666);
     }
 
     private void renderCustomize(GuiGraphicsExtractor ctx, int mouseX, int mouseY, float delta) {
@@ -305,9 +324,8 @@ public class HudEditScreen extends Screen {
         }
 
         if (button == 0) {
-            for (int i = 0; i < 10; i++) {
-                int ty = rarityTogglesY + i * TOGGLE_STEP;
-                if (inBox(mouseX, mouseY, rarityTogglesX, ty, BTN_W, BTN_H)) {
+            for (int i = 0; i < TOGGLE_COUNT; i++) {
+                if (inBox(mouseX, mouseY, toggleX(i), toggleY(i), BTN_W, BTN_H)) {
                     var mgr = MinepieceEssentialsClient.getInstance().getConfigManager();
                     var cfg = mgr.config();
                     switch (i) {
