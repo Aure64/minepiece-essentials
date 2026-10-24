@@ -2,6 +2,7 @@ package com.minepiece.essentials.boss;
 
 import com.minepiece.essentials.MinepieceEssentialsClient;
 import com.minepiece.essentials.hud.HudElement;
+import com.minepiece.essentials.hud.HudElementRegistry;
 import com.minepiece.essentials.hud.ParchmentRenderer;
 import com.minepiece.essentials.island.Island;
 import com.minepiece.essentials.island.IslandDetector;
@@ -94,22 +95,33 @@ public class BossTimerHud extends HudElement {
         refreshAllButtonPos = null;
 
         Island currentIsland = IslandDetector.getInstance().getCurrentIsland();
-
         List<Island> orderedIslands = orderedIslands(currentIsland);
         if (orderedIslands.isEmpty()) return;
 
+        var config = MinepieceEssentialsClient.getInstance().getConfigManager().config();
+        boolean editMode = HudElementRegistry.isEditMode();
+        boolean compact = config.bossCompactMode;
         boolean blinkOn = System.currentTimeMillis() % 1000 < 500;
+
+        // Lignes réellement affichées : les boss masqués ne comptent qu'en mode édition
+        // (affichés grisés pour pouvoir les réafficher d'un Shift+clic).
         int totalLines = 0;
-        for (Island island : orderedIslands) {
-            if (isCollapsed(island)) continue;
-            totalLines += Math.max(sortedBosses.getOrDefault(island, List.of()).size(), 1);
+        int headers = 0;
+        if (compact) {
+            totalLines = Math.max(compactList(orderedIslands, editMode).size(), 1);
+        } else {
+            for (Island island : orderedIslands) {
+                headers++;
+                if (isCollapsed(island)) continue;
+                totalLines += Math.max(visibleBosses(island, editMode).size(), 1);
+            }
         }
 
         BossTracker tracker = BossTracker.getInstance();
         boolean pending = tracker.isRefreshPending();
         boolean isBusy = BackgroundGuiRefresh.isBusy();
 
-        int h = HEADER_HEIGHT + STATUS_HEIGHT + orderedIslands.size() * ISLAND_HEADER_HEIGHT + totalLines * LINE_HEIGHT + 8;
+        int h = HEADER_HEIGHT + STATUS_HEIGHT + headers * ISLAND_HEADER_HEIGHT + totalLines * LINE_HEIGHT + 8;
         this.height = h;
 
         ParchmentRenderer.renderPanel(ctx, 0, 0, WIDTH, h, Component.translatable("minepiece.ui.boss.title").getString(), getBackground());
@@ -148,6 +160,19 @@ public class BossTimerHud extends HudElement {
         RenderUtils.drawText(ctx, status, 6, y, statusColor);
         y += STATUS_HEIGHT;
 
+        if (compact) {
+            List<IslandBoss> list = compactList(orderedIslands, editMode);
+            if (list.isEmpty()) {
+                RenderUtils.drawText(ctx, "  " + Component.translatable("minepiece.ui.boss.nodata").getString(), 4, y, 0xFF888888);
+                y += LINE_HEIGHT;
+            }
+            for (IslandBoss ib : list) {
+                drawBossLine(ctx, ib.island(), ib.boss(), y, blinkOn, editMode);
+                y += LINE_HEIGHT;
+            }
+            return;
+        }
+
         for (Island island : orderedIslands) {
             boolean isCurrent = island == currentIsland;
             boolean collapsed = isCollapsed(island);
@@ -169,68 +194,92 @@ public class BossTimerHud extends HudElement {
 
             if (collapsed) continue;
 
-            List<BossData> bosses = sortedBosses.getOrDefault(island, List.of());
-
+            List<BossData> bosses = visibleBosses(island, editMode);
             if (bosses.isEmpty()) {
                 RenderUtils.drawText(ctx, "  " + Component.translatable("minepiece.ui.boss.nodata").getString(), 4, y, 0xFF888888);
                 y += LINE_HEIGHT;
             } else {
                 for (BossData boss : bosses) {
-                    int remaining = boss.estimateCurrentTimer();
-                    String timer = boss.formatTimer();
-                    int timerColor;
-                    if (remaining == 0) {
-                        timerColor = blinkOn ? 0xFF00FF44 : 0xFF00CC00;
-                    } else if (remaining < 30) {
-                        timerColor = 0xFFFFAA00;
-                    } else {
-                        timerColor = 0xFFCC0000;
-                    }
-
-                    // Boss name — underlined if waypoint is active
-                    String bossKey = island.id + ":" + boss.name;
-                    boolean hasWaypoint = activeWaypoints.contains(bossKey);
-
-                    String name = boss.name;
-                    if (RenderUtils.textWidth(name) > WIDTH - 65) {
-                        while (RenderUtils.textWidth(name + "..") > WIDTH - 65 && name.length() > 3) {
-                            name = name.substring(0, name.length() - 1);
-                        }
-                        name += "..";
-                    }
-
-                    boolean bossHovered = isHovered(4, y, WIDTH - 20, LINE_HEIGHT);
-                    int nameColor = hasWaypoint ? 0xFF44CCFF : getBackground().textColor();
-                    String prefix = hasWaypoint ? "  \u25C6 " : "  ";
-
-                    // Hover highlight
-                    if (bossHovered) {
-                        ctx.fill(4, y, WIDTH - 20, y + LINE_HEIGHT, 0x33FFFFFF);
-                        nameColor = hasWaypoint ? 0xFF88DDFF : 0xFF6B5300;
-                    }
-
-                    RenderUtils.drawText(ctx, prefix + name, 4, y, nameColor);
-
-                    // Underline if waypoint active
-                    if (hasWaypoint) {
-                        int textW = RenderUtils.textWidth(prefix + name);
-                        ctx.fill(4, y + 9, 4 + textW, y + 10, 0xFF44CCFF);
-                    }
-
-                    // Timer
-                    int timerWidth = RenderUtils.textWidth(timer);
-                    RenderUtils.drawText(ctx, timer, WIDTH - timerWidth - 6, y, timerColor);
-
-                    // Store click area for this boss line
-                    bossClickAreas.add(new BossClickArea(4, y, WIDTH - 20, LINE_HEIGHT, boss, island));
-
+                    drawBossLine(ctx, island, boss, y, blinkOn, editMode);
                     y += LINE_HEIGHT;
                 }
             }
         }
     }
 
-    public boolean handleClick(double mouseX, double mouseY) {
+    private record IslandBoss(Island island, BossData boss) {}
+
+    /** Bosses of one island minus the hidden ones (kept, dimmed, in edit mode). */
+    private List<BossData> visibleBosses(Island island, boolean editMode) {
+        List<BossData> all = sortedBosses.getOrDefault(island, List.of());
+        if (editMode) return all;
+        List<BossData> out = new ArrayList<>(all.size());
+        for (BossData b : all) if (!BossVisibility.isHidden(island, b)) out.add(b);
+        return out;
+    }
+
+    /** Compact mode: every island's bosses in one list sorted by timer. */
+    private List<IslandBoss> compactList(List<Island> islands, boolean editMode) {
+        List<IslandBoss> out = new ArrayList<>();
+        for (Island island : islands) {
+            for (BossData b : visibleBosses(island, editMode)) out.add(new IslandBoss(island, b));
+        }
+        out.sort(Comparator.comparingInt(ib -> ib.boss().estimateCurrentTimer()));
+        return out;
+    }
+
+    private void drawBossLine(GuiGraphicsExtractor ctx, Island island, BossData boss, int y, boolean blinkOn, boolean editMode) {
+        boolean hidden = BossVisibility.isHidden(island, boss);
+        int remaining = boss.estimateCurrentTimer();
+        String timer = boss.formatTimer();
+        int timerColor;
+        if (hidden) {
+            timerColor = 0xFF777777;
+        } else if (remaining == 0) {
+            timerColor = blinkOn ? 0xFF00FF44 : 0xFF00CC00;
+        } else if (remaining < 30) {
+            timerColor = 0xFFFFAA00;
+        } else {
+            timerColor = 0xFFCC0000;
+        }
+
+        String bossKey = BossVisibility.key(island, boss);
+        boolean hasWaypoint = activeWaypoints.contains(bossKey);
+
+        String name = boss.name;
+        if (RenderUtils.textWidth(name) > WIDTH - 65) {
+            while (RenderUtils.textWidth(name + "..") > WIDTH - 65 && name.length() > 3) {
+                name = name.substring(0, name.length() - 1);
+            }
+            name += "..";
+        }
+
+        boolean bossHovered = isHovered(4, y, WIDTH - 20, LINE_HEIGHT);
+        int nameColor = hidden ? 0xFF777777 : hasWaypoint ? 0xFF44CCFF : getBackground().textColor();
+        String prefix = hidden ? "  ✕ " : hasWaypoint ? "  \u25C6 " : "  ";
+
+        if (bossHovered) {
+            ctx.fill(4, y, WIDTH - 20, y + LINE_HEIGHT, 0x33FFFFFF);
+            if (!hidden) nameColor = hasWaypoint ? 0xFF88DDFF : 0xFF6B5300;
+        }
+
+        RenderUtils.drawText(ctx, prefix + name, 4, y, nameColor);
+
+        if (hasWaypoint && !hidden) {
+            int textW = RenderUtils.textWidth(prefix + name);
+            ctx.fill(4, y + 9, 4 + textW, y + 10, 0xFF44CCFF);
+        }
+
+        int timerWidth = RenderUtils.textWidth(timer);
+        RenderUtils.drawText(ctx, timer, WIDTH - timerWidth - 6, y, timerColor);
+
+        bossClickAreas.add(new BossClickArea(4, y, WIDTH - 20, LINE_HEIGHT, boss, island));
+    }
+
+    public boolean handleClick(double mouseX, double mouseY) { return handleClick(mouseX, mouseY, false); }
+
+    /** @param shift Shift held: on a boss line, hide/show it instead of the waypoint toggle. */
+    public boolean handleClick(double mouseX, double mouseY, boolean shift) {
         int hudX = getX();
         int hudY = getY();
         float scale = getScale();
@@ -276,7 +325,11 @@ public class BossTimerHud extends HudElement {
 
             if (mouseX >= areaScreenX && mouseX <= areaScreenX + areaW
                 && mouseY >= areaScreenY && mouseY <= areaScreenY + areaH) {
-                toggleBossWaypoint(area.boss, area.island);
+                if (shift) {
+                    BossVisibility.toggle(area.island, area.boss);
+                } else {
+                    toggleBossWaypoint(area.boss, area.island);
+                }
                 return true;
             }
         }

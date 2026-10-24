@@ -6,6 +6,8 @@ import com.minepiece.essentials.i18n.ServerText;
 import com.minepiece.essentials.island.Island;
 import com.minepiece.essentials.island.IslandDetector;
 import com.minepiece.essentials.network.BackgroundGuiRefresh;
+import com.minepiece.essentials.rarity.ItemRarity;
+import com.minepiece.essentials.rarity.RarityDetector;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -109,8 +111,14 @@ public final class ActivePetsScanner {
 
             int color = nameColor(stack.getHoverName());
             if (color == 0) color = rarityColor(stack); // fallback when the name has no explicit colour
-            activePets.add(new ActivePetsState.ActivePet(stack.getHoverName().getString(), color, levelOf(tip)));
-            allStats.addAll(combatStats(tip));
+            List<PetEffect> effects = combatStats(tip);
+            List<String> glyphs = new ArrayList<>(effects.size());
+            for (PetEffect e : effects) if (!e.glyph().isEmpty()) glyphs.add(e.glyph());
+            ItemRarity rarity = RarityDetector.detect(stack);
+            String rarityGlyph = rarity == null ? "" : new String(Character.toChars(rarity.glyph));
+            activePets.add(new ActivePetsState.ActivePet(stack.getHoverName().getString(), color, levelOf(tip),
+                    stack.copy(), rarityGlyph, List.copyOf(glyphs)));
+            allStats.addAll(effects);
         }
 
         // Not the /pets screen, or a page with no active pets → keep the last total.

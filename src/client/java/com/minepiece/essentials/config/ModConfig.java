@@ -27,6 +27,10 @@ public class ModConfig {
 
     // Island ids collapsed in the Boss Timers HUD (header shown, bosses hidden).
     public Set<String> collapsedBossIslands = new HashSet<>();
+    // Bosses hidden from the Boss Timers HUD and its alerts ("islandId:bossName", Shift+clic in K).
+    public Set<String> hiddenBosses = new HashSet<>();
+    // Compact Boss Timers HUD: no island headers, one flat list sorted by timer.
+    public boolean bossCompactMode = false;
 
     public boolean ascensionHudEnabled = true;
 

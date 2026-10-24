@@ -17,6 +17,8 @@ public class ActivePetsHud extends HudElement {
     }
 
     private static final int WIDTH = 170;
+    private static final int ROW = 12;   // 12 px rows: room for the 12 px head
+    private static final int ICON = 12;
     private static final int LEVEL_COLOR = 0xFFCBC8C7;
 
     public ActivePetsHud() {
@@ -38,18 +40,37 @@ public class ActivePetsHud extends HudElement {
 
         int count = snap.pets().size();
         int stats = snap.totals().size();
-        int h = 20 + count * 10 + 6 + stats * 10 + 4;
+        int h = 20 + count * ROW + 6 + stats * 10 + 4;
         this.height = h;
 
         ParchmentRenderer.renderPanel(ctx, 0, 0, WIDTH, h, Component.translatable("minepiece.ui.pets.title").getString() + " (" + count + ")", getBackground());
 
         int y = 20;
         for (ActivePetsState.ActivePet pet : snap.pets()) {
+            int ty = y + 1;
             String lvl = pet.level() >= 20 ? "Max" : (pet.level() > 0 ? "Lv" + pet.level() : "");
             int lvlX = WIDTH - 6 - RenderUtils.textWidth(lvl);
-            RenderUtils.drawText(ctx, lvl, lvlX, y, LEVEL_COLOR);
-            RenderUtils.drawText(ctx, truncate(pet.name(), lvlX - 8), 6, y, pet.color());
-            y += 10;
+            RenderUtils.drawText(ctx, lvl, lvlX, ty, LEVEL_COLOR);
+
+            // Glyphes de stats (icônes du pack serveur) juste à gauche du niveau.
+            String glyphs = String.join(" ", pet.statGlyphs());
+            int glyphsX = lvlX;
+            if (!glyphs.isEmpty()) {
+                glyphsX = lvlX - 6 - RenderUtils.textWidth(glyphs);
+                RenderUtils.drawText(ctx, glyphs, glyphsX, ty, 0xFFFFFFFF);
+            }
+
+            int x = 6;
+            if (!pet.icon().isEmpty()) {
+                drawIcon(ctx, pet.icon(), x, y - 2);
+                x += ICON + 4;
+            }
+            if (!pet.rarityGlyph().isEmpty()) {
+                RenderUtils.drawText(ctx, pet.rarityGlyph(), x, ty, 0xFFFFFFFF);
+                x += RenderUtils.textWidth(pet.rarityGlyph()) + 3;
+            }
+            RenderUtils.drawText(ctx, truncate(pet.name(), glyphsX - 6 - x), x, ty, pet.color());
+            y += ROW;
         }
 
         y += 6;
@@ -68,6 +89,15 @@ public class ActivePetsHud extends HudElement {
     @Override
     public void tick() {
         ActivePetsScanner.tick();
+    }
+
+    /** Draws the pet item at 12 px (16 px item scaled by 0.75). */
+    private static void drawIcon(GuiGraphicsExtractor ctx, net.minecraft.world.item.ItemStack stack, int x, int y) {
+        ctx.pose().pushMatrix();
+        ctx.pose().translate(x, y);
+        ctx.pose().scale(0.75f, 0.75f);
+        ctx.item(stack, 0, 0);
+        ctx.pose().popMatrix();
     }
 
     private static String truncate(String name, int budget) {

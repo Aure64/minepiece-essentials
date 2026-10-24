@@ -9,5 +9,11 @@ package com.minepiece.essentials.pet;
  * @param value the displayed (level-scaled) value
  * @param label the server's display name for the stat as it appeared in the tooltip
  *              (e.g. {@code "Health"} or {@code "Vie"}); may be empty but never null
+ * @param glyph the resource-pack glyph drawn before the label in the tooltip (e.g. {@code "犹"});
+ *              renders as the stat icon with the server pack loaded; may be empty
  */
-public record PetEffect(int tier, PetStat stat, double value, String label) {}
+public record PetEffect(int tier, PetStat stat, double value, String label, String glyph) {
+    public PetEffect(int tier, PetStat stat, double value, String label) {
+        this(tier, stat, value, label, "");
+    }
+}
