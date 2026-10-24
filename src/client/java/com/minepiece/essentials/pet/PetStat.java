@@ -44,8 +44,10 @@ public enum PetStat {
     private static final List<Alias> ALIASES = List.of(
         new Alias("energy regen", ENERGY_REGEN),
         new Alias("régénération énergie", ENERGY_REGEN),
+        new Alias("critical hit chance", CRIT_CHANCE),
         new Alias("critical chance", CRIT_CHANCE),
         new Alias("chance critique", CRIT_CHANCE),
+        new Alias("critical hit damage", CRIT_DAMAGE),
         new Alias("critical damage", CRIT_DAMAGE),
         new Alias("dégâts critiques", CRIT_DAMAGE),
         new Alias("dégât critique", CRIT_DAMAGE),

@@ -15,6 +15,7 @@ import com.minepiece.essentials.island.IslandDetector;
 import com.minepiece.essentials.job.JobHud;
 import com.minepiece.essentials.job.JobTracker;
 import com.minepiece.essentials.pet.ActivePetsHud;
+import com.minepiece.essentials.armor.ArmorHud;
 import com.minepiece.essentials.pet.MinionFeedLearner;
 import com.minepiece.essentials.pet.MinionTooltip;
 import com.minepiece.essentials.pet.PetStatTooltip;
@@ -66,6 +67,7 @@ public class MinepieceEssentialsClient implements ClientModInitializer {
         HudElementRegistry.register(new BossTimerHud());
         HudElementRegistry.register(new ParcheminHud());
         HudElementRegistry.register(new ActivePetsHud());
+        HudElementRegistry.register(new ArmorHud());
         HudElementRegistry.register(new AscensionHud());
         HudElementRegistry.register(new HakiHud());
         HudElementRegistry.register(new JobHud());

@@ -16,6 +16,8 @@ public class ModConfig {
 
     public boolean petPanelEnabled = true;
 
+    public boolean armorHudEnabled = true;
+
     public boolean helpDismissed = false;
 
     // Escape hatch: force the mod active even if server auto-detection fails
