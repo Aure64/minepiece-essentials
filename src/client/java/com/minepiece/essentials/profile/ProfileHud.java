@@ -25,6 +25,9 @@ public class ProfileHud extends HudElement {
     private static final int ARMOR_COLOR = 0xFF9CE07A;
     private static final int DAMAGE_COLOR = 0xFFE0584C;
 
+    @Override
+    public boolean supportsMirror() { return true; }
+
     static final String OPT_LEVEL = "level", OPT_PARTS = "parts", OPT_NONZERO = "nonzero";
 
     @Override

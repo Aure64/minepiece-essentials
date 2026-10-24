@@ -25,6 +25,9 @@ public class ActivePetsHud extends HudElement {
     private static final int GLYPH_GAP = 3;
     private static final int LEVEL_COLOR = 0xFFCBC8C7;
 
+    @Override
+    public boolean supportsMirror() { return true; }
+
     static final String OPT_HEAD = "head", OPT_GLYPHS = "glyphs", OPT_TOTALS = "totals";
 
     @Override

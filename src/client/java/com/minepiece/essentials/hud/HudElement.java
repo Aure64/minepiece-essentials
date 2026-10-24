@@ -43,6 +43,8 @@ public abstract class HudElement {
     /** Miroir (éditeur K, Personnaliser, Maj+clic) : icônes à droite, texte aligné à droite. */
     public boolean isMirrored() { return getLayout().mirrored; }
     public void setMirrored(boolean mirrored) { getLayout().mirrored = mirrored; }
+    /** Vrai si le rendu du panneau sait se mettre en miroir (sinon la ligne n'est pas proposée). */
+    public boolean supportsMirror() { return false; }
     /** Option du panneau (onglet Personnaliser) ; {@code def} si jamais réglée. */
     public boolean option(String key, boolean def) {
         var opts = getLayout().options;

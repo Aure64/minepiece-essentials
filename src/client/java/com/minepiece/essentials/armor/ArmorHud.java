@@ -22,6 +22,9 @@ public class ArmorHud extends HudElement {
     private static final int SET_PARTIAL_COLOR = 0xFFCBC8C7;
     private static final int EFFECT_COLOR = 0xFFB8D8C0;
 
+    @Override
+    public boolean supportsMirror() { return true; }
+
     static final String OPT_SET_LINE = "set_line", OPT_TOTALS = "totals";
 
     @Override

@@ -45,6 +45,9 @@ public class AscensionHud extends HudElement {
     private static final int ROW = 12;
     private static final int ICON = 12;
 
+    @Override
+    public boolean supportsMirror() { return true; }
+
     static final String OPT_ICONS = "icons", OPT_FRUITS = "fruits", OPT_WEAPONS = "weapons", OPT_TOOLS = "tools";
 
     @Override

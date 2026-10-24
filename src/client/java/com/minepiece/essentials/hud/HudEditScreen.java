@@ -265,7 +265,7 @@ public class HudEditScreen extends Screen {
 
     /** Lignes de la colonne d'options du panneau sélectionné : fond, miroir, puis ses options propres. */
     private int optionRowCount(HudElement element) {
-        return 2 + element.options().size();
+        return 1 + (element.supportsMirror() ? 1 : 0) + element.options().size();
     }
 
     private int optionRowY(int index) {
@@ -300,9 +300,11 @@ public class HudEditScreen extends Screen {
         RenderUtils.drawCenteredText(ctx, selected.getId(), width / 2, optionsY - 12, 0xFFFFD24B);
         drawButton(ctx, mouseX, mouseY, optionsX, optionRowY(0),
                 Component.translatable("minepiece.ui.editor.customize_background", selected.getBackground().label()).getString(), 0xFFFFE9D5);
-        drawToggleAt(ctx, mouseX, mouseY, optionsX, optionRowY(1),
-                Component.translatable("minepiece.ui.editor.customize_mirror").getString(), selected.isMirrored());
-        int i = 2;
+        int i = 1;
+        if (selected.supportsMirror()) {
+            drawToggleAt(ctx, mouseX, mouseY, optionsX, optionRowY(i++),
+                    Component.translatable("minepiece.ui.editor.customize_mirror").getString(), selected.isMirrored());
+        }
         for (HudOption opt : selected.options()) {
             drawToggleAt(ctx, mouseX, mouseY, optionsX, optionRowY(i++), Component.translatable(opt.labelKey()).getString(), opt.isOn());
         }
@@ -348,12 +350,13 @@ public class HudEditScreen extends Screen {
         // Colonne d'options du panneau sélectionné (au-dessus des HUD : testée en premier).
         if (selected != null && button == 0 && inBox(mouseX, mouseY, optionsX, optionsY, BTN_W, optionRowCount(selected) * OPTION_STEP)) {
             int row = (int) ((mouseY - optionsY) / OPTION_STEP);
+            int first = selected.supportsMirror() ? 2 : 1;
             if (row == 0) {
                 selected.setBackground(selected.getBackground().next());
-            } else if (row == 1) {
+            } else if (row == 1 && selected.supportsMirror()) {
                 selected.setMirrored(!selected.isMirrored());
-            } else if (row - 2 < selected.options().size()) {
-                selected.options().get(row - 2).toggle();
+            } else if (row - first < selected.options().size()) {
+                selected.options().get(row - first).toggle();
             }
             mgr.save();
             return true;
@@ -361,7 +364,7 @@ public class HudEditScreen extends Screen {
         for (HudElement element : HudElementRegistry.getElements()) {
             if (element.isMouseOver(mouseX, mouseY)) {
                 selected = element;
-                if (shift) {
+                if (shift && element.supportsMirror()) {
                     element.setMirrored(!element.isMirrored());
                     mgr.save();
                 } else if (button == 1) {
