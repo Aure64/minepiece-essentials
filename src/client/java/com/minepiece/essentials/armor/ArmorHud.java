@@ -49,7 +49,9 @@ public class ArmorHud extends HudElement {
         int count = snap.pieces().size();
         int stats = (int) snap.totals().values().stream().filter(v -> v != 0.0).count();
         boolean setLine = snap.setName() != null;
-        String effect = snap.fullSet() ? ArmorSetEffect.summarize(snap.setEffect()) : "";
+        String effect = snap.fullSet() ? ArmorSetEffect.summarize(snap.setEffect(),
+                Component.translatable("minepiece.ui.armor.effect_xp").getString(),
+                Component.translatable("minepiece.ui.armor.effect_xp_profile").getString()) : "";
         int h = 20 + count * ROW + (setLine ? 10 : 0) + 6 + stats * 10 + 4;
         this.height = h;
         ParchmentRenderer.renderPanel(ctx, 0, 0, WIDTH, h, title + " (" + count + "/4)", getBackground());

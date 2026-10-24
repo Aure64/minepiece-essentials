@@ -7,7 +7,7 @@ import java.util.regex.Pattern;
 
 /**
  * Squeezes a full-set effect paragraph into one HUD line, e.g.
- * "Get a bonus of xp of 10% on your profile by wearing the full Tamago armor." → "XP profil +10%".
+ * "Get a bonus of xp of 10% on your profile by wearing the full Tamago armor." → "Profile XP +10%".
  * Keeps the first number (with its % if any) and the first stat keyword found.
  */
 public final class ArmorSetEffect {
@@ -18,7 +18,11 @@ public final class ArmorSetEffect {
 
     private ArmorSetEffect() {}
 
-    public static String summarize(List<String> effect) {
+    /**
+     * @param xpLabel        localized "XP"
+     * @param xpProfileLabel localized "profile XP"
+     */
+    public static String summarize(List<String> effect, String xpLabel, String xpProfileLabel) {
         if (effect == null || effect.isEmpty()) return "";
         String text = String.join(" ", effect).trim();
         Matcher n = NUMBER.matcher(text);
@@ -27,11 +31,15 @@ public final class ArmorSetEffect {
         if (!value.startsWith("+") && !value.startsWith("-")) value = "+" + value;
 
         String what;
-        PetStat stat = PetStat.fromLabel(text);
-        if (stat != null) what = stat.fr();
-        else if (XP.matcher(text).find()) what = PROFILE.matcher(text).find() ? "XP profil" : "XP";
+        String statLabel = PetStat.matchedLabel(text);
+        if (statLabel != null) what = capitalize(statLabel);
+        else if (XP.matcher(text).find()) what = PROFILE.matcher(text).find() ? xpProfileLabel : xpLabel;
         else what = firstWord(text);
         return what + " " + value;
+    }
+
+    private static String capitalize(String s) {
+        return s.isEmpty() ? s : Character.toUpperCase(s.charAt(0)) + s.substring(1);
     }
 
     private static String firstWord(String text) {

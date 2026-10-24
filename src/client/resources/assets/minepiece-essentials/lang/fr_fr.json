@@ -16,6 +16,8 @@
     "minepiece.ui.armor.hint": "Aucune armure MinePiece portée",
     "minepiece.ui.armor.full_set": "Set complet : %s",
     "minepiece.ui.armor.partial_set": "Set %s (%s/4)",
+    "minepiece.ui.armor.effect_xp": "XP",
+    "minepiece.ui.armor.effect_xp_profile": "XP profil",
     "minepiece.ui.boss.title": "Boss Timers",
     "minepiece.ui.ascensions.title": "Ascensions",
     "minepiece.ui.ascensions.fruits": "Fruits",

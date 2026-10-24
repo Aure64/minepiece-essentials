@@ -70,6 +70,20 @@ public enum PetStat {
         new Alias("vie", VITALITY)
     );
 
+    /**
+     * The alias that matched in {@code text}, with the original casing of the text
+     * (e.g. "strength" in "Gain +25 strength" → "strength"); null if none.
+     */
+    public static String matchedLabel(String text) {
+        if (text == null) return null;
+        String lower = text.toLowerCase();
+        for (Alias a : ALIASES) {
+            int i = lower.indexOf(a.text());
+            if (i >= 0) return text.substring(i, i + a.text().length());
+        }
+        return null;
+    }
+
     /** Finds the stat whose label (FR or EN) appears in {@code text}; null if none. */
     public static PetStat fromLabel(String text) {
         if (text == null) return null;
