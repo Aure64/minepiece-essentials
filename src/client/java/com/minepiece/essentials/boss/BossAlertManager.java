@@ -37,6 +37,7 @@ public class BossAlertManager {
             Island island = entry.getKey();
             for (BossData boss : entry.getValue()) {
                 if (!boss.hasCoords) continue;
+                if (BossVisibility.isHidden(island, boss)) continue; // masqué = pas d'alerte non plus
 
                 String key = island.id + ":" + boss.name;
                 int timer = boss.estimateCurrentTimer();

@@ -20,6 +20,8 @@ import net.minecraft.network.chat.TextColor;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.world.item.component.ItemLore;
 
 /**
  * Scans the open /pets screen and publishes the combat-stat total of the
@@ -109,8 +111,10 @@ public final class ActivePetsScanner {
 
             int color = nameColor(stack.getHoverName());
             if (color == 0) color = rarityColor(stack); // fallback when the name has no explicit colour
-            activePets.add(new ActivePetsState.ActivePet(stack.getHoverName().getString(), color, levelOf(tip)));
-            allStats.addAll(combatStats(tip));
+            List<PetEffect> effects = combatStats(tip);
+            activePets.add(new ActivePetsState.ActivePet(stack.getHoverName().getString(), color, levelOf(tip),
+                    stack.copy(), glyphComponents(stack, effects)));
+            allStats.addAll(effects);
         }
 
         // Not the /pets screen, or a page with no active pets → keep the last total.
@@ -156,6 +160,29 @@ public final class ActivePetsScanner {
             }
         }
         return 0;
+    }
+
+    /**
+     * Rebuilds each effect's glyph as a Component carrying the font the lore uses for it
+     * (the pack maps those codepoints in a dedicated font; the default font shows CJK).
+     */
+    private static List<Component> glyphComponents(ItemStack stack, List<PetEffect> effects) {
+        ItemLore lore = stack.get(DataComponents.LORE);
+        if (lore == null || effects.isEmpty()) return List.of();
+        List<Component> out = new ArrayList<>(effects.size());
+        for (PetEffect e : effects) {
+            if (e.glyph().isEmpty()) continue;
+            Style found = null;
+            for (Component line : lore.lines()) {
+                if (found != null) break;
+                found = line.visit((style, str) -> str.contains(e.glyph()) ? Optional.of(style) : Optional.empty(), Style.EMPTY)
+                        .orElse(null);
+            }
+            Style style = Style.EMPTY;
+            if (found != null && found.getFont() != null) style = style.withFont(found.getFont());
+            out.add(Component.literal(e.glyph()).withStyle(style));
+        }
+        return List.copyOf(out);
     }
 
     private static List<PetEffect> combatStats(List<String> lines) {

@@ -69,6 +69,20 @@ public class BossTracker {
     private static final long REFRESH_SECONDS = 5L;
     private volatile long lastRefreshMillis = 0L;
 
+    // Relevé automatique : toutes les AUTO_REFRESH_MS, plus un relevé EXPIRY_DELAY_MS après
+    // qu'un timer tombe à zéro (le serveur relance le compteur à la mort du boss). Jamais
+    // plus d'un envoi automatique par MIN_AUTO_GAP_MS. Le mécanisme est invisible pour le
+    // joueur (voir docs/architecture-background-refresh.md) ; sendCommand refuse de lui-même
+    // tant qu'un écran conteneur est ouvert.
+    static final long AUTO_REFRESH_MS = 5 * 60_000L;
+    static final long EXPIRY_DELAY_MS = 20_000L;
+    static final long MIN_AUTO_GAP_MS = 60_000L;
+    private static final int EXPIRY_CHECK_TICKS = 20;
+    private long lastAutoAttemptMillis = 0L;
+    private long expiryRefreshAt = 0L;
+    private final Set<String> previouslyAvailable = new HashSet<>();
+    private int autoTicks;
+
     /** Epoch millis of the last successful /boss read, 0 if none this session. */
     public long getLastRefreshMillis() { return lastRefreshMillis; }
 
@@ -90,10 +104,47 @@ public class BossTracker {
             refreshPending = true;
         }
 
+        if (connected && initialScanDone && !refreshPending) tickAutoRefresh();
+
         // Reste en attente tant que l'envoi est refusé (occupé, cooldown, écran
         // conteneur ouvert).
         if (refreshPending && !BackgroundGuiRefresh.isBusy() && BackgroundGuiRefresh.isReady()) {
-            if (doRefresh()) refreshPending = false;
+            if (doRefresh()) {
+                refreshPending = false;
+                lastAutoAttemptMillis = System.currentTimeMillis();
+            }
+        }
+    }
+
+    /** Relevé périodique + relevé après expiration d'un timer, si activé dans la config. */
+    private void tickAutoRefresh() {
+        if (!MinepieceEssentialsClient.getInstance().getConfigManager().config().bossAutoRefreshEnabled) return;
+        long now = System.currentTimeMillis();
+        long since = now - Math.max(lastRefreshMillis, lastAutoAttemptMillis);
+
+        if (autoTicks++ % EXPIRY_CHECK_TICKS == 0 && expiryRefreshAt == 0L) {
+            boolean expired = false;
+            for (List<BossData> bosses : bossMap.values()) {
+                for (BossData b : bosses) {
+                    String key = b.islandId + "/" + b.name;
+                    boolean available = b.isAvailable();
+                    if (available && b.lastKnownRespawnTimestamp > 0 && previouslyAvailable.add(key)) {
+                        // Déjà disponible au chargement : pas une expiration vue en direct.
+                        if (b.lastKnownTimerSeconds > 0) expired = true;
+                    } else if (!available) {
+                        previouslyAvailable.remove(key);
+                    }
+                }
+            }
+            if (expired) expiryRefreshAt = now + EXPIRY_DELAY_MS;
+        }
+
+        boolean periodic = since >= AUTO_REFRESH_MS;
+        boolean afterExpiry = expiryRefreshAt > 0L && now >= expiryRefreshAt && since >= MIN_AUTO_GAP_MS;
+        if (periodic || afterExpiry) {
+            refreshPending = true;
+            expiryRefreshAt = 0L;
+            MinepieceEssentialsClient.LOGGER.info("[BossTracker] Auto refresh ({})", periodic ? "periodic" : "boss spawned");
         }
     }
 
@@ -114,6 +165,9 @@ public class BossTracker {
         refreshPending = false;
         initialScanDone = false;
         wasConnected = false;
+        lastAutoAttemptMillis = 0L;
+        expiryRefreshAt = 0L;
+        previouslyAvailable.clear();
         BossAlertManager.getInstance().reset();
     }
 

@@ -3,6 +3,7 @@ package com.minepiece.essentials.ascension;
 import com.minepiece.essentials.MinepieceEssentialsClient;
 import com.minepiece.essentials.hud.HudElement;
 import com.minepiece.essentials.hud.ParchmentRenderer;
+import com.minepiece.essentials.util.ItemText;
 import com.minepiece.essentials.util.RenderUtils;
 import java.util.ArrayList;
 import java.util.List;
@@ -42,6 +43,7 @@ public class AscensionHud extends HudElement {
     private long lastFingerprint;
     private boolean hasFruit;
     private boolean hasWeapon;
+    private boolean hasTool;
 
     public AscensionHud() {
         super("ascensions", 5, 360, WIDTH, 60);
@@ -58,34 +60,44 @@ public class AscensionHud extends HudElement {
 
         // Precompute the section flags once per scan instead of streaming twice
         // every render frame.
-        boolean f = false, w = false;
+        boolean f = false, w = false, t = false;
         for (AscensionItem it : items) {
-            if (it.type() == AscensionItem.Type.FRUIT) f = true;
-            else w = true;
-            if (f && w) break;
+            switch (it.type()) {
+                case FRUIT -> f = true;
+                case WEAPON -> w = true;
+                case TOOL -> t = true;
+            }
         }
         hasFruit = f;
         hasWeapon = w;
+        hasTool = t;
     }
 
     private static List<AscensionItem> scan(LocalPlayer player) {
         List<AscensionItem> fruits = new ArrayList<>();
         List<AscensionItem> weapons = new ArrayList<>();
+        List<AscensionItem> tools = new ArrayList<>();
         var inventory = player.getInventory();
         for (int i = 0; i < inventory.getContainerSize(); i++) {
             ItemStack stack = inventory.getItem(i);
             if (stack.isEmpty()) continue;
             CustomData data = stack.get(DataComponents.CUSTOM_DATA);
             if (data == null) continue;
-            AscensionParser.parse(stack.getHoverName().getString(), data.copyTag().toString())
-                .ifPresent(item -> {
-                    int detected = colorOf(stack.getHoverName());
-                    AscensionItem coloured = detected != 0 ? item.withColor(detected) : item;
-                    (coloured.type() == AscensionItem.Type.FRUIT ? fruits : weapons).add(coloured);
-                });
+            Optional<AscensionItem> parsed = AscensionParser.parse(stack.getHoverName().getString(), data.copyTag().toString());
+            if (parsed.isEmpty()) parsed = EvoToolParser.parse(ItemText.nameAndLore(stack));
+            parsed.ifPresent(item -> {
+                int detected = colorOf(stack.getHoverName());
+                AscensionItem coloured = detected != 0 ? item.withColor(detected) : item;
+                switch (coloured.type()) {
+                    case FRUIT -> fruits.add(coloured);
+                    case WEAPON -> weapons.add(coloured);
+                    case TOOL -> tools.add(coloured);
+                }
+            });
         }
         List<AscensionItem> all = new ArrayList<>(fruits);
         all.addAll(weapons);
+        all.addAll(tools);
         return all;
     }
 
@@ -99,7 +111,8 @@ public class AscensionHud extends HudElement {
 
         boolean fruitHeaderDrawn = false;
         boolean weaponHeaderDrawn = false;
-        int headers = (hasFruit ? 1 : 0) + (hasWeapon ? 1 : 0);
+        boolean toolHeaderDrawn = false;
+        int headers = (hasFruit ? 1 : 0) + (hasWeapon ? 1 : 0) + (hasTool ? 1 : 0);
         int h = 20 + (snapshot.size() + headers) * 10 + 4;
         this.height = h;
 
@@ -115,11 +128,20 @@ public class AscensionHud extends HudElement {
                 RenderUtils.drawText(ctx, Component.translatable("minepiece.ui.ascensions.weapons").getString(), 6, y, HEADER_COLOR);
                 weaponHeaderDrawn = true;
                 y += 10;
+            } else if (item.type() == AscensionItem.Type.TOOL && !toolHeaderDrawn) {
+                RenderUtils.drawText(ctx, Component.translatable("minepiece.ui.ascensions.tools").getString(), 6, y, HEADER_COLOR);
+                toolHeaderDrawn = true;
+                y += 10;
             }
 
-            String right = item.available()
-                ? "Lv" + item.level() + " ▲"
-                : "Lv" + item.level() + "  " + item.xpToNextLevel() + "xp";
+            String right;
+            if (item.type() == AscensionItem.Type.TOOL) {
+                right = item.available() ? item.maxXp() + " ▲" : item.xp() + "/" + item.maxXp();
+            } else {
+                right = item.available()
+                    ? "Lv" + item.level() + " ▲"
+                    : "Lv" + item.level() + "  " + item.xpToNextLevel() + "xp";
+            }
             int rightX = WIDTH - 6 - RenderUtils.textWidth(right);
             RenderUtils.drawText(ctx, right, rightX, y, item.available() ? READY_COLOR : LEVEL_COLOR);
 

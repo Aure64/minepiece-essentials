@@ -44,6 +44,12 @@ class PetEffectParserTest {
     }
 
     @Test
+    void keepsThePackGlyphOfTheStat() {
+        assertEquals("犹", PetEffectParser.parse("S.1.5.E 犹 Vie + 105.65").orElseThrow().glyph());
+        assertEquals("Vie", PetEffectParser.parse("S.1.5.E 犹 Vie + 105.65").orElseThrow().label());
+    }
+
+    @Test
     void rejectsMoneyLine() {
         assertTrue(PetEffectParser.parse("S.1.E 5.500 实/h").isEmpty());
     }

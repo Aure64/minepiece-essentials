@@ -42,15 +42,17 @@ public final class PetEffectParser {
         String pre = line.substring(0, plus).trim();
         String[] toks = WS.split(pre);
         StringBuilder lbl = new StringBuilder();
+        String glyph = "";
         for (int i = 1; i < toks.length; i++) {
             String t = toks[i];
             boolean hasLatin = t.chars().anyMatch(c ->
                 (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || (c >= 0x00C0 && c <= 0x024F));
             if (hasLatin) { if (lbl.length() > 0) lbl.append(' '); lbl.append(t); }
+            else if (glyph.isEmpty() && lbl.length() == 0 && t.chars().noneMatch(Character::isDigit)) glyph = t;
         }
         String label = lbl.toString();
 
-        return Optional.of(new PetEffect(tier, stat, value, label));
+        return Optional.of(new PetEffect(tier, stat, value, label, glyph));
     }
 
     /** Concatenates the digits in a token: {@code "S.1.5.E"} → 15, {@code "S.1.E"} → 1. */

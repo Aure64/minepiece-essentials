@@ -7,6 +7,7 @@ public class ModConfig {
 
     public boolean bossAlertEnabled = true;
     public int bossAlertThresholdSeconds = 30;
+    public boolean bossAutoRefreshEnabled = true;   // relevé /boss silencieux toutes les 5 min + après un respawn
 
     public boolean notificationSoundsEnabled = true;
 
@@ -16,6 +17,10 @@ public class ModConfig {
 
     public boolean petPanelEnabled = true;
 
+    public boolean armorHudEnabled = true;
+
+    public boolean profileHudEnabled = true;
+
     public boolean helpDismissed = false;
 
     // Escape hatch: force the mod active even if server auto-detection fails
@@ -24,6 +29,10 @@ public class ModConfig {
 
     // Island ids collapsed in the Boss Timers HUD (header shown, bosses hidden).
     public Set<String> collapsedBossIslands = new HashSet<>();
+    // Bosses hidden from the Boss Timers HUD and its alerts ("islandId:bossName", Shift+clic in K).
+    public Set<String> hiddenBosses = new HashSet<>();
+    // Compact Boss Timers HUD: no island headers, one flat list sorted by timer.
+    public boolean bossCompactMode = false;
 
     public boolean ascensionHudEnabled = true;
 

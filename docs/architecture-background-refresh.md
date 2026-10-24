@@ -52,12 +52,14 @@ lobby, permission) → abandon ; 5 s sans contenu → abandon ; 8 s tout compris
 
 | Relevé | Quand | Fichier |
 |---|---|---|
-| `/boss` | 1× à la détection d'île, puis bouton ⟳ du HUD | `boss/BossTracker` |
+| `/boss` | 1× à la détection d'île, bouton ⟳ du HUD, puis **toutes les 5 min** et **20 s après qu'un timer tombe à zéro** (≥ 60 s entre deux envois auto, désactivable dans l'éditeur K) | `boss/BossTracker` |
 | `/pets` | 1× à la détection d'île | `pet/ActivePetsScanner` |
 | `/pass quests` | 1× à la détection d'île, puis après le reset de minuit | `quest/PassQuestScanner` |
+| `/profil` | 1× à la détection d'île, puis (≥ 4 s après, ≥ 30 s entre deux) à chaque changement d'armure portée, de pets actifs ou de niveau (boss bar), et toutes les 10 min | `profile/ProfileScanner` |
 
-Les trois s'enchaînent en ~3 s (cooldown 1,5 s entre deux). Aucun polling périodique :
-c'est un choix, pas un oubli.
+Les trois s'enchaînent en ~3 s (cooldown 1,5 s entre deux). Seul `/boss` est relevé
+périodiquement (ajouté le 2026-10-24 à la demande des joueurs) : `/pets` et `/pass quests`
+ne bougent pas assez pour justifier un polling.
 
 ## Historique du bug « interfaces qui se ferment / clics avalés » (corrigé en 1.9.0)
 

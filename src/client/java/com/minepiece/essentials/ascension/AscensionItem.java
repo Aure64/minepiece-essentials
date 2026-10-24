@@ -1,7 +1,8 @@
 package com.minepiece.essentials.ascension;
 
 /**
- * An ascendable item (fruit or weapon) read from the player's inventory.
+ * An ascendable item (fruit, weapon or evolving tool) read from the player's inventory.
+ * Tools carry no level: {@code xp}/{@code maxXp} is their "Progression" bar.
  *
  * @param type      fruit or weapon
  * @param name      display name (without the trailing "(Niveau N)")
@@ -15,7 +16,7 @@ package com.minepiece.essentials.ascension;
  */
 public record AscensionItem(Type type, String name, String rarity, int level, int ascension,
                             int xp, int maxXp, boolean available, int color) {
-    public enum Type { FRUIT, WEAPON }
+    public enum Type { FRUIT, WEAPON, TOOL }
 
     /** XP left before the next level (0 when an ascension is available). */
     public int xpToNextLevel() {
