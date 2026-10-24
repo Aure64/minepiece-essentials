@@ -3,8 +3,6 @@ package com.minepiece.essentials.armor;
 import com.minepiece.essentials.MinepieceEssentialsClient;
 import com.minepiece.essentials.hud.HudElement;
 import com.minepiece.essentials.hud.ParchmentRenderer;
-import com.minepiece.essentials.pet.PetStat;
-import com.minepiece.essentials.profile.StatLine;
 import com.minepiece.essentials.util.RenderUtils;
 import java.util.ArrayList;
 import java.util.List;
@@ -47,12 +45,11 @@ public class ArmorHud extends HudElement {
         }
 
         int count = snap.pieces().size();
-        int stats = (int) snap.totals().values().stream().filter(v -> v != 0.0).count();
         boolean setLine = snap.setName() != null;
         String effect = snap.fullSet() ? ArmorSetEffect.summarize(snap.setEffect(),
                 Component.translatable("minepiece.ui.armor.effect_xp").getString(),
                 Component.translatable("minepiece.ui.armor.effect_xp_profile").getString()) : "";
-        int h = 20 + count * ROW + (setLine ? 10 : 0) + 6 + stats * 10 + 4;
+        int h = 20 + count * ROW + (setLine ? 10 : 0) + 4;
         this.height = h;
         ParchmentRenderer.renderPanel(ctx, 0, 0, WIDTH, h, title + " (" + count + "/4)", getBackground());
 
@@ -75,18 +72,6 @@ public class ArmorHud extends HudElement {
             y += 10;
         }
 
-        y += 6;
-        for (PetStat stat : PetStat.values()) {
-            Double value = snap.totals().get(stat);
-            if (value == null || value == 0.0) continue;
-            String name = snap.labels().get(stat);
-            if (name == null || name.isBlank()) name = stat.fr();
-            String v = StatLine.right(stat, value);
-            int vx = WIDTH - 6 - RenderUtils.textWidth(v);
-            RenderUtils.drawText(ctx, v, vx, y, stat.color());
-            RenderUtils.drawTextFit(ctx, name, 6, y, vx - 10, stat.color());
-            y += 10;
-        }
     }
 
     /** Draws the piece's item at 12 px (16 px item scaled by 0.75). */
@@ -96,10 +81,5 @@ public class ArmorHud extends HudElement {
         ctx.pose().scale(0.75f, 0.75f);
         ctx.item(worn.stack(), 0, 0);
         ctx.pose().popMatrix();
-    }
-
-    private static String fmt(double v) {
-        if (Math.abs(v - Math.round(v)) < 0.05) return Long.toString(Math.round(v));
-        return String.format(java.util.Locale.US, "%.1f", v);
     }
 }

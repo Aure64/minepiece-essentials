@@ -68,6 +68,7 @@ public class MinepieceEssentialsClient implements ClientModInitializer {
         HudElementRegistry.register(new ParcheminHud());
         HudElementRegistry.register(new ActivePetsHud());
         HudElementRegistry.register(new ArmorHud());
+        HudElementRegistry.register(new com.minepiece.essentials.profile.ProfileHud());
         HudElementRegistry.register(new AscensionHud());
         HudElementRegistry.register(new HakiHud());
         HudElementRegistry.register(new JobHud());

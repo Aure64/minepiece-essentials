@@ -3,7 +3,6 @@ package com.minepiece.essentials.pet;
 import com.minepiece.essentials.MinepieceEssentialsClient;
 import com.minepiece.essentials.hud.HudElement;
 import com.minepiece.essentials.hud.ParchmentRenderer;
-import com.minepiece.essentials.profile.StatLine;
 import com.minepiece.essentials.util.RenderUtils;
 import java.util.Map;
 import net.minecraft.client.Minecraft;
@@ -43,8 +42,7 @@ public class ActivePetsHud extends HudElement {
         }
 
         int count = snap.pets().size();
-        int stats = snap.totals().size();
-        int h = 20 + count * ROW + 6 + stats * 10 + 4;
+        int h = 20 + count * ROW + 4;
         this.height = h;
 
         ParchmentRenderer.renderPanel(ctx, 0, 0, WIDTH, h, Component.translatable("minepiece.ui.pets.title").getString() + " (" + count + ")", getBackground());
@@ -75,18 +73,6 @@ public class ActivePetsHud extends HudElement {
             y += ROW;
         }
 
-        y += 6;
-        for (PetStat stat : PetStat.values()) {
-            Double value = snap.totals().get(stat);
-            if (value == null || value == 0.0) continue;
-            String name = snap.labels().get(stat);
-            if (name == null || name.isBlank()) name = stat.fr();
-            String v = StatLine.right(stat, value);
-            int vx = WIDTH - 6 - RenderUtils.textWidth(v);
-            RenderUtils.drawText(ctx, v, vx, y, stat.color());
-            RenderUtils.drawTextFit(ctx, name, 6, y, vx - 10, stat.color());
-            y += 10;
-        }
     }
 
     @Override

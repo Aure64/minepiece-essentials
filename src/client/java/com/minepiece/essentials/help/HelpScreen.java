@@ -103,6 +103,10 @@ public class HelpScreen extends Screen {
                 info(tr("minepiece.ui.help.active_armor.line1")),
                 info(tr("minepiece.ui.help.active_armor.line2")),
             }),
+            new Feature(tr("minepiece.ui.help.profile.title"), new Line[]{
+                info(tr("minepiece.ui.help.profile.line1")),
+                important(tr("minepiece.ui.help.profile.line2")),
+            }),
             new Feature(tr("minepiece.ui.help.job.title"), new Line[]{
                 info(tr("minepiece.ui.help.job.line1")),
             }),
