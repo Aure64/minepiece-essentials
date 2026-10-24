@@ -34,6 +34,13 @@ public final class ServerGuiInterceptor {
     /** Délai max entre l'ouverture et la livraison (sécurité). */
     private static final long SCREEN_TIMEOUT_MS = 5000;
 
+    /** Après un abandon sans écran : fenêtre pendant laquelle un écran qui arrive est encore le nôtre. */
+    private static final long LATE_CLAIM_MS = 15_000;
+
+    private static long lastPlayerInteractionAt = 0;
+    private static long commandSentAt = 0;
+    private static long lateClaimUntil = 0;
+
     private static boolean intercepting = false;
     private static boolean finished = false;
     private static int currentSyncId = -1;
@@ -55,6 +62,30 @@ public final class ServerGuiInterceptor {
         intercepting = true;
         callback = onItems;
         startTime = System.currentTimeMillis();
+        commandSentAt = startTime;
+        lateClaimUntil = 0;
+    }
+
+    /**
+     * Écran ouvert par le serveur alors qu'aucune interception n'est en cours : s'il arrive
+     * dans la fenêtre qui suit un abandon et que le joueur n'a rien fait depuis notre commande,
+     * c'est notre écran en retard (serveur lent, changement de serveur) : l'appelant annule
+     * l'ouverture et prévient le serveur de la fermeture.
+     */
+    public static boolean claimLateScreen(int syncId) {
+        long now = System.currentTimeMillis();
+        if (intercepting || lateClaimUntil == 0 || now > lateClaimUntil) return false;
+        if (lastPlayerInteractionAt >= commandSentAt) return false; // le joueur a pu ouvrir quelque chose
+        lateClaimUntil = 0; // un seul écran
+        MinepieceEssentialsClient.LOGGER.info("[Interceptor] Late screen syncId={} claimed and closed", syncId);
+        return true;
+    }
+
+    /** Changement de serveur / déconnexion : plus rien à attendre. */
+    public static void forget() {
+        stop();
+        lateClaimUntil = 0;
+        commandSentAt = 0;
     }
 
     /**
@@ -76,6 +107,7 @@ public final class ServerGuiInterceptor {
      * abandonne l'interception pour ne pas capturer le sien. Thread client.
      */
     public static void onPlayerInteraction() {
+        lastPlayerInteractionAt = System.currentTimeMillis();
         if (!intercepting || finished || currentSyncId >= 0) return;
         MinepieceEssentialsClient.LOGGER.info("[Interceptor] Player interaction while waiting — giving up this read");
         finished = true;
@@ -103,6 +135,7 @@ public final class ServerGuiInterceptor {
             // Pas d'écran : le serveur a répondu en chat (cooldown, lobby…) ou ne répond pas.
             if (now - startTime > OPEN_DEADLINE_MS) {
                 MinepieceEssentialsClient.LOGGER.warn("[Interceptor] No screen opened within {} ms", OPEN_DEADLINE_MS);
+                lateClaimUntil = now + LATE_CLAIM_MS;
                 finished = true;
             }
             return;

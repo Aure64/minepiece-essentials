@@ -42,6 +42,10 @@ public class ClientPlayNetworkHandlerMixin {
         if (ServerGuiInterceptor.isIntercepting()
                 && ServerGuiInterceptor.claimScreen(packet.getContainerId())) {
             ci.cancel();
+        } else if (ServerGuiInterceptor.claimLateScreen(packet.getContainerId())) {
+            // Notre écran arrivé après l'abandon (serveur lent) : jamais affiché, fermé aussitôt.
+            ci.cancel();
+            com.minepiece.essentials.network.BackgroundGuiRefresh.closeLateScreen(packet.getContainerId());
         }
     }
 

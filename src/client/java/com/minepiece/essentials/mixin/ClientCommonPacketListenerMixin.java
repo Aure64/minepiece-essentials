@@ -25,7 +25,6 @@ public class ClientCommonPacketListenerMixin {
 
     @Inject(method = "send(Lnet/minecraft/network/protocol/Packet;)V", at = @At("HEAD"))
     private void minepiece$onSend(Packet<?> packet, CallbackInfo ci) {
-        if (!ServerGuiInterceptor.isIntercepting()) return;
         boolean mayOpenScreen = packet instanceof ServerboundUseItemOnPacket
                 || packet instanceof ServerboundUseItemPacket
                 || packet instanceof ServerboundInteractPacket

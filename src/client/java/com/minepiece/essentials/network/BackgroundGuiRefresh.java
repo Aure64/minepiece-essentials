@@ -28,9 +28,21 @@ public final class BackgroundGuiRefresh {
 
     public static boolean isBusy() { return busy; }
 
-    /** True when the global cooldown has elapsed since the last refresh start. */
+    /** Après un (re)join, délai avant le premier envoi : le serveur finit de charger le joueur. */
+    private static final long JOIN_GRACE_MS = 5_000;
+    private static long joinedAt = 0;
+
+    /** True when the global cooldown has elapsed since the last refresh start (and the join grace too). */
     public static boolean isReady() {
-        return System.currentTimeMillis() - lastRefreshTime >= COOLDOWN_MS;
+        long now = System.currentTimeMillis();
+        return now - lastRefreshTime >= COOLDOWN_MS && now - joinedAt >= JOIN_GRACE_MS;
+    }
+
+    /** Écran en retard revendiqué par l'intercepteur : on prévient le serveur, rien n'est affiché. */
+    public static void closeLateScreen(int syncId) {
+        Minecraft client = Minecraft.getInstance();
+        if (client.getConnection() == null) return;
+        client.getConnection().send(new ServerboundContainerClosePacket(syncId));
     }
 
     /** Milliseconds remaining before another refresh can fire. 0 if ready. */
@@ -107,8 +119,9 @@ public final class BackgroundGuiRefresh {
 
     /** Oubli sans paquet : changement de serveur / déconnexion. */
     public static void reset() {
-        ServerGuiInterceptor.stop();
+        ServerGuiInterceptor.forget();
         busy = false;
+        joinedAt = System.currentTimeMillis();
     }
 
     private static void closeInterceptedScreen() {

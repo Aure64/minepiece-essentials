@@ -35,6 +35,15 @@ peut ouvrir un écran** (clic sur un bloc ou une entité, usage d'objet, command
 abandonner l'interception (`ClientCommonPacketListenerMixin`, paquets sortants) : on ne
 capture jamais l'écran du joueur.
 
+Deux filets supplémentaires (2026-10-24, retour « ça ouvre le menu dès que je change de serv ») :
+- **Délai de grâce de 5 s après un (re)join** (`JOIN_GRACE_MS`) avant le premier envoi : un
+  changement de serveur via le proxy déclenche JOIN, et le nouveau serveur est lent le temps
+  de charger le joueur.
+- **Écran en retard** : après un abandon sans écran, pendant 15 s, un `OpenScreen` qui arrive
+  alors que le joueur n'a envoyé aucune action depuis notre commande est considéré comme le
+  nôtre : ouverture annulée et paquet de fermeture envoyé immédiatement (`claimLateScreen`).
+  Si le joueur a interagi entre-temps, on ne touche à rien (ce pourrait être son coffre).
+
 ## Interrupteur global
 
 `backgroundRefreshEnabled` (éditeur K, « Relevés en arrière-plan ») : coupé, `sendCommand`
