@@ -17,7 +17,8 @@ import net.minecraft.world.item.ItemStack;
  */
 public final class BackgroundGuiRefresh {
     public static final long COOLDOWN_MS = 1500;
-    private static final long HARD_TIMEOUT_MS = 8000;
+    private static final long HARD_TIMEOUT_MS = 16_000; // > OPEN_DEADLINE + SCREEN_TIMEOUT de l'intercepteur
+    private static boolean sendingOwnCommand;
 
     private static long lastRefreshTime = 0;
     private static boolean busy = false;
@@ -61,9 +62,17 @@ public final class BackgroundGuiRefresh {
         });
 
         String cmd = command.startsWith("/") ? command.substring(1) : command;
-        client.player.connection.sendCommand(cmd);
+        sendingOwnCommand = true;
+        try {
+            client.player.connection.sendCommand(cmd);
+        } finally {
+            sendingOwnCommand = false;
+        }
         return true;
     }
+
+    /** Vrai pendant l'envoi de notre propre commande (le mixin sortant ne doit pas l'interpréter comme une action du joueur). */
+    public static boolean isSendingOwnCommand() { return sendingOwnCommand; }
 
     /** Thread client, chaque tick — toujours appelé, même hors MinePiece. */
     public static void tick() {

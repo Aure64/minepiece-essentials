@@ -1,15 +1,16 @@
 {
-    "required": true,
-    "package": "com.minepiece.essentials.mixin",
-    "compatibilityLevel": "JAVA_25",
-    "client": [
-        "BossBarHudMixin",
-        "ClientPlayNetworkHandlerMixin",
-        "HandledScreenAccessor",
-        "InGameHudMixin",
-        "ScreenRenderMixin"
-    ],
-    "injectors": {
-        "defaultRequire": 1
-    }
+  "required": true,
+  "package": "com.minepiece.essentials.mixin",
+  "compatibilityLevel": "JAVA_25",
+  "client": [
+    "BossBarHudMixin",
+    "ClientPlayNetworkHandlerMixin",
+    "HandledScreenAccessor",
+    "InGameHudMixin",
+    "ScreenRenderMixin",
+    "ClientCommonPacketListenerMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
 }

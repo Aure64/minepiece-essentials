@@ -26,8 +26,14 @@ commun et volontairement minimal : **une commande, une lecture, une fermeture. J
 7. `BackgroundGuiRefresh.tick()` voit `finished`, envoie **un seul**
    `ServerboundContainerClosePacket(id)` pour prévenir le serveur, puis `stop()`.
 
-Délais de sécurité : 3 s sans écran ouvert (le serveur a répondu en chat : cooldown,
-lobby, permission) → abandon ; 5 s sans contenu → abandon ; 8 s tout compris → reset forcé.
+Délais de sécurité : 10 s sans écran ouvert (le serveur a répondu en chat : cooldown,
+lobby, permission) → abandon ; 5 s sans contenu → abandon ; 16 s tout compris → reset forcé.
+Le délai d'ouverture est volontairement long : un serveur chargé répond parfois en plusieurs
+secondes, et un écran arrivé **après** l'abandon s'afficherait au joueur (bug remonté le
+2026-10-24 : « mon menu /boss s'ouvre »). Pendant cette attente, **toute action du joueur qui
+peut ouvrir un écran** (clic sur un bloc ou une entité, usage d'objet, commande tapée) fait
+abandonner l'interception (`ClientCommonPacketListenerMixin`, paquets sortants) : on ne
+capture jamais l'écran du joueur.
 
 ## Règles à ne pas casser
 

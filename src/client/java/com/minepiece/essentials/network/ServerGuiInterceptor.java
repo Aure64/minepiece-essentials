@@ -24,8 +24,13 @@ public final class ServerGuiInterceptor {
     private static final long SETTLE_MS = 100;
     /** Sans paquet de contenu complet, on livre ce qu'on a après ce délai. */
     private static final long COLLECT_DURATION_MS = 600;
-    /** Délai max entre l'envoi de la commande et l'ouverture de l'écran. */
-    private static final long OPEN_DEADLINE_MS = 3000;
+    /**
+     * Délai max entre l'envoi de la commande et l'ouverture de l'écran. Large : un serveur
+     * chargé peut répondre en plusieurs secondes, et un écran arrivé après l'abandon
+     * s'afficherait au joueur. Le vol d'un écran ouvert par le joueur pendant l'attente
+     * est évité par {@link #onPlayerInteraction()}.
+     */
+    private static final long OPEN_DEADLINE_MS = 10_000;
     /** Délai max entre l'ouverture et la livraison (sécurité). */
     private static final long SCREEN_TIMEOUT_MS = 5000;
 
@@ -63,6 +68,17 @@ public final class ServerGuiInterceptor {
         screenOpenTime = System.currentTimeMillis();
         MinepieceEssentialsClient.LOGGER.info("[Interceptor] Screen claimed syncId={}", syncId);
         return true;
+    }
+
+    /**
+     * Le joueur vient d'envoyer une action qui peut ouvrir un écran (clic sur un bloc ou une
+     * entité, usage d'objet, commande tapée) : si notre écran n'est pas encore arrivé, on
+     * abandonne l'interception pour ne pas capturer le sien. Thread client.
+     */
+    public static void onPlayerInteraction() {
+        if (!intercepting || finished || currentSyncId >= 0) return;
+        MinepieceEssentialsClient.LOGGER.info("[Interceptor] Player interaction while waiting — giving up this read");
+        finished = true;
     }
 
     public static void onSlotUpdate(int syncId, int slot, ItemStack stack) {
