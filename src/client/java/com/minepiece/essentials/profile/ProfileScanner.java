@@ -27,7 +27,7 @@ public final class ProfileScanner {
     public static final String PROFILE_COMMAND = "/profil";
     private static final int SCAN_INTERVAL = 4; // ticks
     private static final long ARMOR_DEBOUNCE_MS = 4_000L;
-    private static final long MIN_GAP_MS = 30_000L; // garde-fou : jamais deux relevés auto à moins de 30 s
+    private static final long MIN_GAP_MS = 10_000L; // garde-fou : jamais deux relevés auto à moins de 10 s
     private static final long PERIODIC_MS = 10 * 60_000L; // filet de sécurité
     private static long lastSentMillis;
 
@@ -91,7 +91,11 @@ public final class ProfileScanner {
             if (stack == null || stack.isEmpty()) continue;
             Optional<ProfileData> data = ProfileParser.parse(ItemText.nameAndLore(stack));
             if (data.isPresent()) {
-                ProfileState.set(data.get());
+                ProfileData d = data.get();
+                ProfileState.set(d);
+                MinepieceEssentialsClient.LOGGER.info("[Profile] level={} ({}%) asc={} stats={}",
+                        d.level(), d.levelPercent(), d.ascension(),
+                        d.entries().stream().map(e -> e.label() + "=" + e.value()).toList());
                 return true;
             }
         }
