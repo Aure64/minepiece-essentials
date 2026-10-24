@@ -57,30 +57,26 @@ public class ProfileHud extends HudElement {
         this.height = h;
         ParchmentRenderer.renderPanel(ctx, 0, 0, WIDTH, h, title, getBackground());
 
+        boolean mirror = isMirrored();
         int y = 20;
         int lvl = PlayerLevel.level() > 0 ? PlayerLevel.level() : p.level();
         double pct = PlayerLevel.level() > 0 ? PlayerLevel.percent() : p.levelPercent();
         String level = Component.translatable("minepiece.ui.profile.level", lvl,
                 String.format(java.util.Locale.US, "%.1f", pct), p.ascension()).getString();
-        RenderUtils.drawTextFit(ctx, level, 6, y, WIDTH - 12, GRAY);
+        if (mirror) RenderUtils.drawTextFitRight(ctx, level, WIDTH - 6, y, WIDTH - 12, GRAY);
+        else RenderUtils.drawTextFit(ctx, level, 6, y, WIDTH - 12, GRAY);
         y += 10;
 
-        // Légende des parenthèses : (pets | armure)
-        String legend = "(" + Component.translatable("minepiece.ui.profile.pets").getString()
-                + " | " + Component.translatable("minepiece.ui.profile.armor").getString() + ")";
-        int lw = RenderUtils.textWidth(legend);
-        int lx = WIDTH - 6 - lw;
-        RenderUtils.drawText(ctx, "(", lx, y, GRAY);
-        int cx = lx + RenderUtils.textWidth("(");
+        // Légende des parenthèses : (pets | armure), du côté des valeurs.
         String petsLabel = Component.translatable("minepiece.ui.profile.pets").getString();
-        RenderUtils.drawText(ctx, petsLabel, cx, y, PETS_COLOR);
-        cx += RenderUtils.textWidth(petsLabel);
-        RenderUtils.drawText(ctx, " | ", cx, y, GRAY);
-        cx += RenderUtils.textWidth(" | ");
         String armorLabel = Component.translatable("minepiece.ui.profile.armor").getString();
-        RenderUtils.drawText(ctx, armorLabel, cx, y, ARMOR_COLOR);
-        cx += RenderUtils.textWidth(armorLabel);
-        RenderUtils.drawText(ctx, ")", cx, y, GRAY);
+        String legend = "(" + petsLabel + " | " + armorLabel + ")";
+        int cx = mirror ? 6 : WIDTH - 6 - RenderUtils.textWidth(legend);
+        cx = draw(ctx, "(", cx, y, GRAY);
+        cx = draw(ctx, petsLabel, cx, y, PETS_COLOR);
+        cx = draw(ctx, " | ", cx, y, GRAY);
+        cx = draw(ctx, armorLabel, cx, y, ARMOR_COLOR);
+        draw(ctx, ")", cx, y, GRAY);
         y += 10;
 
         for (ProfileData.Entry e : p.entries()) {
@@ -88,23 +84,30 @@ public class ProfileHud extends HudElement {
             int color = stat != null ? stat.color() : DAMAGE_COLOR;
             double value = stat != null ? ProfileState.total(stat) : e.value();
             String total = StatLine.fmt(value) + (e.percent() ? "%" : "");
+            String a = stat != null ? "+" + StatLine.fmt(armor.getOrDefault(stat, 0.0)) : "";
+            String pt = stat != null ? "+" + StatLine.fmt(pets.getOrDefault(stat, 0.0)) : "";
+            int valuesW = RenderUtils.textWidth(total)
+                + (stat != null ? 4 + RenderUtils.textWidth("(" + pt + " | " + a + ")") : 0);
 
-            // Right part, drawn right-to-left: ")" armor " | " pets "(" then the total.
-            int x = WIDTH - 6;
+            int x = mirror ? 6 : WIDTH - 6 - valuesW;
+            x = draw(ctx, total, x, y, color);
             if (stat != null) {
-                String a = "+" + StatLine.fmt(armor.getOrDefault(stat, 0.0));
-                String pt = "+" + StatLine.fmt(pets.getOrDefault(stat, 0.0));
-                x -= RenderUtils.textWidth(")"); RenderUtils.drawText(ctx, ")", x, y, GRAY);
-                x -= RenderUtils.textWidth(a); RenderUtils.drawText(ctx, a, x, y, ARMOR_COLOR);
-                x -= RenderUtils.textWidth(" | "); RenderUtils.drawText(ctx, " | ", x, y, GRAY);
-                x -= RenderUtils.textWidth(pt); RenderUtils.drawText(ctx, pt, x, y, PETS_COLOR);
-                x -= RenderUtils.textWidth("("); RenderUtils.drawText(ctx, "(", x, y, GRAY);
-                x -= 4;
+                x += 4;
+                x = draw(ctx, "(", x, y, GRAY);
+                x = draw(ctx, pt, x, y, PETS_COLOR);
+                x = draw(ctx, " | ", x, y, GRAY);
+                x = draw(ctx, a, x, y, ARMOR_COLOR);
+                draw(ctx, ")", x, y, GRAY);
             }
-            x -= RenderUtils.textWidth(total);
-            RenderUtils.drawText(ctx, total, x, y, color);
-            RenderUtils.drawTextFit(ctx, e.label(), 6, y, x - 10, color);
+            if (mirror) RenderUtils.drawTextFitRight(ctx, e.label(), WIDTH - 6, y, WIDTH - 12 - valuesW - 10, color);
+            else RenderUtils.drawTextFit(ctx, e.label(), 6, y, WIDTH - 12 - valuesW - 10, color);
             y += 10;
         }
+    }
+
+    /** Draws {@code text} at x and returns the x just after it. */
+    private static int draw(GuiGraphicsExtractor ctx, String text, int x, int y, int color) {
+        RenderUtils.drawText(ctx, text, x, y, color);
+        return x + RenderUtils.textWidth(text);
     }
 }

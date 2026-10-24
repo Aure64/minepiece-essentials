@@ -25,6 +25,8 @@ public class LayoutConfig {
         public float scale = 1.0f;
         public boolean visible = true;
         public HudBackground background = HudBackground.PARCHMENT;
+        // Miroir : icônes à droite, texte aligné à droite (panneau posé au bord droit de l'écran).
+        public boolean mirrored = false;
 
         public ElementLayout() {}
 

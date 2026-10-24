@@ -88,7 +88,7 @@
     "minepiece.ui.help.hud_editor.title": "HUD Editor",
     "minepiece.ui.help.hud_editor.line1": "Key K",
     "minepiece.ui.help.hud_editor.line2": "Placement tab: move / resize / hide.",
-    "minepiece.ui.help.hud_editor.line3": "Customize tab: panel backgrounds.",
+    "minepiece.ui.help.hud_editor.line3": "Customize tab: panel backgrounds; Shift+click = mirror (icons on the right).",
     "minepiece.ui.help.hud_editor.line4": "Editor (K): \"Background reads\" turns every automatic read off; the ⟳ button still works.",
     "minepiece.ui.help.this_help.title": "This help",
     "minepiece.ui.help.this_help.line1": "Press H to reopen this guide at any time.",

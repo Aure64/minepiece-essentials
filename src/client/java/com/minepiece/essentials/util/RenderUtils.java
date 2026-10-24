@@ -91,6 +91,23 @@ public final class RenderUtils {
         ctx.pose().popMatrix();
     }
 
+    /** Like {@link #drawTextFit} but anchored on its right edge ({@code rightX}). */
+    public static void drawTextFitRight(GuiGraphicsExtractor ctx, String text, int rightX, int y, int maxWidth, int color) {
+        int w = Math.min(textWidth(text), maxWidth);
+        drawTextFit(ctx, text, rightX - w, y, maxWidth, color);
+    }
+
+    /** Draws an item at {@code size} px (the 16 px item model scaled). */
+    public static void drawItemIcon(GuiGraphicsExtractor ctx, net.minecraft.world.item.ItemStack stack, int x, int y, int size) {
+        if (stack == null || stack.isEmpty()) return;
+        float scale = size / 16f;
+        ctx.pose().pushMatrix();
+        ctx.pose().translate(x, y);
+        ctx.pose().scale(scale, scale);
+        ctx.item(stack, 0, 0);
+        ctx.pose().popMatrix();
+    }
+
     public static void drawCenteredText(GuiGraphicsExtractor ctx, String text, int centerX, int y, int color) {
         int w = Minecraft.getInstance().font.width(text);
         drawText(ctx, text, centerX - w / 2, y, color);

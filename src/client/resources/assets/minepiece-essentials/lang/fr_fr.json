@@ -88,7 +88,7 @@
     "minepiece.ui.help.hud_editor.title": "Éditeur de HUD",
     "minepiece.ui.help.hud_editor.line1": "Touche K",
     "minepiece.ui.help.hud_editor.line2": "Onglet Placement : déplacer / redimensionner / cacher.",
-    "minepiece.ui.help.hud_editor.line3": "Onglet Personnaliser : fond des panneaux.",
+    "minepiece.ui.help.hud_editor.line3": "Onglet Personnaliser : fond des panneaux ; Maj+clic = miroir (icônes à droite).",
     "minepiece.ui.help.hud_editor.line4": "Éditeur (K) : « Relevés en arrière-plan » coupe tous les relevés automatiques ; le bouton ⟳ reste actif.",
     "minepiece.ui.help.this_help.title": "Cette aide",
     "minepiece.ui.help.this_help.line1": "Touche H pour rouvrir ce guide à tout moment.",

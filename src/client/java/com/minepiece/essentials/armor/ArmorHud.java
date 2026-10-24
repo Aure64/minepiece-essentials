@@ -14,6 +14,7 @@ public class ArmorHud extends HudElement {
 
     private static final int WIDTH = 170;
     private static final int ROW = 12;          // icon rows are 16 px scaled to 12
+    private static final int ICON = 12;
     private static final int NAME_COLOR = 0xFFFFE9D5;
     private static final int SET_COLOR = 0xFF9CE07A;
     private static final int SET_PARTIAL_COLOR = 0xFFCBC8C7;
@@ -53,33 +54,34 @@ public class ArmorHud extends HudElement {
         this.height = h;
         ParchmentRenderer.renderPanel(ctx, 0, 0, WIDTH, h, title + " (" + count + "/4)", getBackground());
 
+        boolean mirror = isMirrored();
         int y = 20;
         for (ArmorState.WornPiece worn : snap.pieces()) {
-            drawIcon(ctx, worn, 6, y - 2);
-            RenderUtils.drawTextFit(ctx, worn.piece().name(), 22, y + 1, WIDTH - 28, NAME_COLOR);
+            if (mirror) {
+                RenderUtils.drawItemIcon(ctx, worn.stack(), WIDTH - 6 - ICON, y - 2, ICON);
+                RenderUtils.drawTextFitRight(ctx, worn.piece().name(), WIDTH - 6 - ICON - 4, y + 1, WIDTH - 28, NAME_COLOR);
+            } else {
+                RenderUtils.drawItemIcon(ctx, worn.stack(), 6, y - 2, ICON);
+                RenderUtils.drawTextFit(ctx, worn.piece().name(), 6 + ICON + 4, y + 1, WIDTH - 28, NAME_COLOR);
+            }
             y += ROW;
         }
 
         if (setLine) {
             String key = snap.fullSet() ? "minepiece.ui.armor.full_set" : "minepiece.ui.armor.partial_set";
             String line = Component.translatable(key, snap.setName(), count).getString();
-            int ex = WIDTH - 6;
-            if (!effect.isEmpty()) {
-                ex = WIDTH - 6 - RenderUtils.textWidth(effect);
-                RenderUtils.drawText(ctx, effect, ex, y, EFFECT_COLOR);
+            int lineColor = snap.fullSet() ? SET_COLOR : SET_PARTIAL_COLOR;
+            int ew = effect.isEmpty() ? 0 : RenderUtils.textWidth(effect) + 10;
+            if (mirror) {
+                if (!effect.isEmpty()) RenderUtils.drawText(ctx, effect, 6, y, EFFECT_COLOR);
+                RenderUtils.drawTextFitRight(ctx, line, WIDTH - 6, y, WIDTH - 12 - ew, lineColor);
+            } else {
+                if (!effect.isEmpty()) RenderUtils.drawText(ctx, effect, WIDTH - 6 - RenderUtils.textWidth(effect), y, EFFECT_COLOR);
+                RenderUtils.drawTextFit(ctx, line, 6, y, WIDTH - 12 - ew, lineColor);
             }
-            RenderUtils.drawTextFit(ctx, line, 6, y, ex - 10, snap.fullSet() ? SET_COLOR : SET_PARTIAL_COLOR);
             y += 10;
         }
 
     }
 
-    /** Draws the piece's item at 12 px (16 px item scaled by 0.75). */
-    private static void drawIcon(GuiGraphicsExtractor ctx, ArmorState.WornPiece worn, int x, int y) {
-        ctx.pose().pushMatrix();
-        ctx.pose().translate(x, y);
-        ctx.pose().scale(0.75f, 0.75f);
-        ctx.item(worn.stack(), 0, 0);
-        ctx.pose().popMatrix();
-    }
 }

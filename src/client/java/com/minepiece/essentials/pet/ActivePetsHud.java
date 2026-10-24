@@ -47,46 +47,63 @@ public class ActivePetsHud extends HudElement {
 
         ParchmentRenderer.renderPanel(ctx, 0, 0, WIDTH, h, Component.translatable("minepiece.ui.pets.title").getString() + " (" + count + ")", getBackground());
 
+        boolean mirror = isMirrored();
+        Font font = Minecraft.getInstance().font;
         int y = 20;
         for (ActivePetsState.ActivePet pet : snap.pets()) {
             int ty = y + 1;
             String lvl = pet.level() >= 20 ? "Max" : (pet.level() > 0 ? "Lv" + pet.level() : "");
-            int lvlX = WIDTH - 6 - RenderUtils.textWidth(lvl);
-            RenderUtils.drawText(ctx, lvl, lvlX, ty, LEVEL_COLOR);
-
-            // Glyphes de stats (icônes du pack serveur, police portée par le composant)
-            // alignés à droite, juste à gauche du niveau.
-            Font font = Minecraft.getInstance().font;
-            int glyphsX = lvlX;
-            for (int i = pet.statGlyphs().size() - 1; i >= 0; i--) {
-                Component g = pet.statGlyphs().get(i);
-                glyphsX -= font.width(g) + GLYPH_GAP;
-                ctx.text(font, g, glyphsX, ty, 0xFFFFFFFF, false);
+            if (mirror) {
+                // Niveau puis glyphes de gauche à droite ; tête à droite, nom aligné à droite.
+                int x = 6;
+                RenderUtils.drawText(ctx, lvl, x, ty, LEVEL_COLOR);
+                x += RenderUtils.textWidth(lvl);
+                for (Component g : pet.statGlyphs()) {
+                    x += GLYPH_GAP;
+                    ctx.text(font, g, x, ty, 0xFFFFFFFF, false);
+                    x += font.width(g);
+                }
+                int right = WIDTH - 6;
+                if (!pet.icon().isEmpty()) {
+                    RenderUtils.drawItemIcon(ctx, pet.icon(), right - ICON, y - 2, ICON);
+                    right -= ICON + 4;
+                }
+                RenderUtils.drawText(ctx, truncateRight(pet.name(), right - x - 6, right), 0, ty, pet.color());
+            } else {
+                int lvlX = WIDTH - 6 - RenderUtils.textWidth(lvl);
+                RenderUtils.drawText(ctx, lvl, lvlX, ty, LEVEL_COLOR);
+                // Glyphes de stats (icônes du pack serveur, police portée par le composant)
+                // alignés à droite, juste à gauche du niveau.
+                int glyphsX = lvlX;
+                for (int i = pet.statGlyphs().size() - 1; i >= 0; i--) {
+                    Component g = pet.statGlyphs().get(i);
+                    glyphsX -= font.width(g) + GLYPH_GAP;
+                    ctx.text(font, g, glyphsX, ty, 0xFFFFFFFF, false);
+                }
+                int x = 6;
+                if (!pet.icon().isEmpty()) {
+                    RenderUtils.drawItemIcon(ctx, pet.icon(), x, y - 2, ICON);
+                    x += ICON + 4;
+                }
+                RenderUtils.drawText(ctx, truncate(pet.name(), glyphsX - 6 - x), x, ty, pet.color());
             }
-
-            int x = 6;
-            if (!pet.icon().isEmpty()) {
-                drawIcon(ctx, pet.icon(), x, y - 2);
-                x += ICON + 4;
-            }
-            RenderUtils.drawText(ctx, truncate(pet.name(), glyphsX - 6 - x), x, ty, pet.color());
             y += ROW;
         }
+    }
 
+    /** Truncates to {@code budget} px and left-pads so the text ends at {@code rightX} (drawn at x=0). */
+    private static String truncateRight(String name, int budget, int rightX) {
+        String t = truncate(name, budget);
+        int pad = rightX - RenderUtils.textWidth(t);
+        StringBuilder sb = new StringBuilder();
+        int spaceW = Math.max(1, RenderUtils.textWidth(" "));
+        for (int i = 0; i < pad / spaceW; i++) sb.append(' ');
+        return sb + t;
     }
 
     @Override
     public void tick() {
         ActivePetsScanner.tick();
-    }
-
-    /** Draws the pet item at 12 px (16 px item scaled by 0.75). */
-    private static void drawIcon(GuiGraphicsExtractor ctx, net.minecraft.world.item.ItemStack stack, int x, int y) {
-        ctx.pose().pushMatrix();
-        ctx.pose().translate(x, y);
-        ctx.pose().scale(0.75f, 0.75f);
-        ctx.item(stack, 0, 0);
-        ctx.pose().popMatrix();
     }
 
     private static String truncate(String name, int budget) {

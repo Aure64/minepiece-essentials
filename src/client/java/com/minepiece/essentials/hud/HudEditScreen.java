@@ -133,7 +133,7 @@ public class HudEditScreen extends Screen {
                 : Component.translatable("minepiece.ui.editor.tab_customize").getString();
         String hint = tab == Tab.PLACEMENT
                 ? tabName + " - Clic gauche: deplacer | Clic droit: ON/OFF | Scroll: taille"
-                : tabName + " - Clic sur un HUD: change son fond (Parchemin -> Sombre -> Transparent)";
+                : tabName + " - Clic: fond (Parchemin -> Sombre -> Transparent) | Maj+clic: miroir (icones a droite)";
         RenderUtils.drawCenteredText(ctx, hint, width / 2, 5, 0xFFFFFFFF);
         RenderUtils.drawCenteredText(ctx, "Echap pour sauvegarder et quitter", width / 2, 16, 0xFFAAAAAA);
 
@@ -263,7 +263,8 @@ public class HudEditScreen extends Screen {
             ctx.fill(x - 1, y, x, y + h, border);
             ctx.fill(x + w, y, x + w + 1, y + h, border);
 
-            RenderUtils.drawText(ctx, element.getId() + " : " + element.getBackground().label(),
+            RenderUtils.drawText(ctx, element.getId() + " : " + element.getBackground().label()
+                            + (element.isMirrored() ? " | miroir" : ""),
                     x + 2, y - 10, hover ? 0xFFFFFF66 : 0xFFFFFFFF);
 
             drawElement(ctx, element, delta);
@@ -298,14 +299,19 @@ public class HudEditScreen extends Screen {
         }
 
         if (tab == Tab.CUSTOMIZE) {
-            return clickCustomize(mouseX, mouseY, button);
+            return clickCustomize(mouseX, mouseY, button, click.hasShiftDown());
         }
         return clickPlacement(mouseX, mouseY, button, click, doubled);
     }
 
-    private boolean clickCustomize(double mouseX, double mouseY, int button) {
+    private boolean clickCustomize(double mouseX, double mouseY, int button, boolean shift) {
         for (HudElement element : HudElementRegistry.getElements()) {
             if (element.isMouseOver(mouseX, mouseY)) {
+                if (shift) {
+                    element.setMirrored(!element.isMirrored());
+                    MinepieceEssentialsClient.getInstance().getConfigManager().save();
+                    return true;
+                }
                 // Left cycles forward, right cycles backward (= forward ×2 of 3).
                 HudBackground bg = element.getBackground().next();
                 if (button == 1) bg = bg.next();

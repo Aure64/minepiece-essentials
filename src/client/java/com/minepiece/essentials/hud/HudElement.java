@@ -40,6 +40,9 @@ public abstract class HudElement {
         return Math.max(0, Math.min(getLayout().y, maxY));
     }
     public float getScale() { return getLayout().scale; }
+    /** Miroir (éditeur K, Personnaliser, Maj+clic) : icônes à droite, texte aligné à droite. */
+    public boolean isMirrored() { return getLayout().mirrored; }
+    public void setMirrored(boolean mirrored) { getLayout().mirrored = mirrored; }
     /** Visible dans le layout (éditeur K). */
     public boolean isVisible() { return getLayout().visible; }
     /** Activé dans la config (interrupteur de la feature). Ni tick ni rendu sinon. */
