@@ -66,7 +66,7 @@ public class HudEditScreen extends Screen {
         rarityTogglesX = (width - BTN_W) / 2;
         rarityTogglesY = resetBtnY + BTN_H + 28;
         donateBtnX = (width - BTN_W) / 2;
-        donateBtnY = rarityTogglesY + 9 * TOGGLE_STEP + 12;
+        donateBtnY = rarityTogglesY + 10 * TOGGLE_STEP + 12;
     }
 
     // --- geometry helpers ----------------------------------------------------
@@ -190,9 +190,10 @@ public class HudEditScreen extends Screen {
         drawToggle(ctx, mouseX, mouseY, 3, Component.translatable("minepiece.ui.editor.filter_bar").getString(), cfg.rarityFilterEnabled);
         drawToggle(ctx, mouseX, mouseY, 4, Component.translatable("minepiece.ui.editor.sort_buttons").getString(), cfg.raritySorterEnabled);
         drawToggle(ctx, mouseX, mouseY, 5, Component.translatable("minepiece.ui.editor.ah_price_color").getString(), cfg.ahPriceColorEnabled);
-        drawToggle(ctx, mouseX, mouseY, 6, Component.translatable("minepiece.ui.editor.boss_auto_refresh").getString(), cfg.bossAutoRefreshEnabled);
-        drawToggle(ctx, mouseX, mouseY, 7, Component.translatable("minepiece.ui.editor.boss_compact").getString(), cfg.bossCompactMode);
-        drawToggle(ctx, mouseX, mouseY, 8, Component.translatable("minepiece.ui.editor.telemetry").getString(),
+        drawToggle(ctx, mouseX, mouseY, 6, Component.translatable("minepiece.ui.editor.background_refresh").getString(), cfg.backgroundRefreshEnabled);
+        drawToggle(ctx, mouseX, mouseY, 7, Component.translatable("minepiece.ui.editor.boss_auto_refresh").getString(), cfg.bossAutoRefreshEnabled);
+        drawToggle(ctx, mouseX, mouseY, 8, Component.translatable("minepiece.ui.editor.boss_compact").getString(), cfg.bossCompactMode);
+        drawToggle(ctx, mouseX, mouseY, 9, Component.translatable("minepiece.ui.editor.telemetry").getString(),
                 cfg.telemetryEnabled);
 
         // Bouton de don, seulement visible tant qu'on est connecté à MinePiece.
@@ -304,7 +305,7 @@ public class HudEditScreen extends Screen {
         }
 
         if (button == 0) {
-            for (int i = 0; i < 9; i++) {
+            for (int i = 0; i < 10; i++) {
                 int ty = rarityTogglesY + i * TOGGLE_STEP;
                 if (inBox(mouseX, mouseY, rarityTogglesX, ty, BTN_W, BTN_H)) {
                     var mgr = MinepieceEssentialsClient.getInstance().getConfigManager();
@@ -316,8 +317,9 @@ public class HudEditScreen extends Screen {
                         case 3 -> cfg.rarityFilterEnabled = !cfg.rarityFilterEnabled;
                         case 4 -> cfg.raritySorterEnabled = !cfg.raritySorterEnabled;
                         case 5 -> cfg.ahPriceColorEnabled = !cfg.ahPriceColorEnabled;
-                        case 6 -> cfg.bossAutoRefreshEnabled = !cfg.bossAutoRefreshEnabled;
-                        case 7 -> cfg.bossCompactMode = !cfg.bossCompactMode;
+                        case 6 -> cfg.backgroundRefreshEnabled = !cfg.backgroundRefreshEnabled;
+                        case 7 -> cfg.bossAutoRefreshEnabled = !cfg.bossAutoRefreshEnabled;
+                        case 8 -> cfg.bossCompactMode = !cfg.bossCompactMode;
                         default -> com.minepiece.essentials.telemetry.Telemetry.setEnabled(
                                 !cfg.telemetryEnabled);
                     }

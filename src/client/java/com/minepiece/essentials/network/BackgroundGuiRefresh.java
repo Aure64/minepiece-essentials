@@ -44,8 +44,17 @@ public final class BackgroundGuiRefresh {
      *         l'appelant garde sa demande en attente.
      */
     public static boolean sendCommand(String command, Consumer<Map<Integer, ItemStack>> onItems) {
+        return sendCommand(command, onItems, false);
+    }
+
+    /**
+     * @param manual demandé explicitement par le joueur (bouton ⟳) : passe outre l'interrupteur
+     *               « relevés en arrière-plan » de l'éditeur K.
+     */
+    public static boolean sendCommand(String command, Consumer<Map<Integer, ItemStack>> onItems, boolean manual) {
         Minecraft client = Minecraft.getInstance();
         if (client.player == null || client.getConnection() == null || busy) return false;
+        if (!manual && !MinepieceEssentialsClient.getInstance().getConfigManager().config().backgroundRefreshEnabled) return false;
         if (!isReady()) return false;
         // Ne jamais voler un écran conteneur au joueur (coffre, inventaire, GUI serveur) :
         // on repassera au tick suivant. Les autres écrans (éditeur K…) ne gênent pas.

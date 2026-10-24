@@ -8,6 +8,9 @@ public class ModConfig {
     public boolean bossAlertEnabled = true;
     public int bossAlertThresholdSeconds = 30;
     public boolean bossAutoRefreshEnabled = true;   // relevé /boss silencieux toutes les 5 min + après un respawn
+    // Interrupteur global des relevés en arrière-plan (/boss, /pets, /pass quests, /profil).
+    // Coupé : plus aucune commande envoyée automatiquement ; le bouton ⟳ manuel reste actif.
+    public boolean backgroundRefreshEnabled = true;
 
     public boolean notificationSoundsEnabled = true;
 

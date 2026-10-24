@@ -35,6 +35,12 @@ peut ouvrir un écran** (clic sur un bloc ou une entité, usage d'objet, command
 abandonner l'interception (`ClientCommonPacketListenerMixin`, paquets sortants) : on ne
 capture jamais l'écran du joueur.
 
+## Interrupteur global
+
+`backgroundRefreshEnabled` (éditeur K, « Relevés en arrière-plan ») : coupé, `sendCommand`
+refuse tout envoi automatique ; les demandes restent en attente et partent si le joueur
+réactive. Seul le bouton ⟳ du HUD boss passe outre (`manual = true`).
+
 ## Règles à ne pas casser
 
 - **`BackgroundGuiRefresh.tick()` est appelé à chaque tick client, hors de toute condition

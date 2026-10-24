@@ -152,14 +152,18 @@ public class BossTracker {
     public void refresh() {
         com.minepiece.essentials.telemetry.Telemetry.feature("boss_refresh");
         refreshPending = true;
+        manualRequested = true;
     }
+
+    // Vrai quand le relevé en attente vient du bouton ⟳ : il passe outre l'interrupteur global.
+    private boolean manualRequested = false;
 
     /** Conservé pour le HUD : /boss renvoie toutes les îles, un refresh suffit. */
     public void refreshIsland(Island island) { refresh(); }
 
     public void refreshAllIslands() { refresh(); }
 
-    public void cancelRefreshQueue() { refreshPending = false; }
+    public void cancelRefreshQueue() { refreshPending = false; manualRequested = false; }
 
     public void onConnectionChange() {
         refreshPending = false;
@@ -187,8 +191,11 @@ public class BossTracker {
         boolean sent = BackgroundGuiRefresh.sendCommand(BOSS_COMMAND, items -> {
             MinepieceEssentialsClient.LOGGER.info("[BossTracker] /boss screen: {} items", items.size());
             applyScreen(items);
-        });
-        if (sent) MinepieceEssentialsClient.LOGGER.info("[BossTracker] Refresh via {}", BOSS_COMMAND);
+        }, manualRequested);
+        if (sent) {
+            manualRequested = false;
+            MinepieceEssentialsClient.LOGGER.info("[BossTracker] Refresh via {}", BOSS_COMMAND);
+        }
         return sent;
     }
 
