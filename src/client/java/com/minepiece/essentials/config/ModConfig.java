@@ -7,6 +7,7 @@ public class ModConfig {
 
     public boolean bossAlertEnabled = true;
     public int bossAlertThresholdSeconds = 30;
+    public boolean bossAutoRefreshEnabled = true;   // relevé /boss silencieux toutes les 5 min + après un respawn
 
     public boolean notificationSoundsEnabled = true;
 
