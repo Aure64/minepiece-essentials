@@ -30,7 +30,7 @@ public class ArmorHud extends HudElement {
 
     @Override
     public void tick() {
-        ArmorScanner.tick();
+        // ArmorScanner est tické par MinepieceEssentialsClient : le profil en dépend même HUD masqué.
     }
 
     @Override

@@ -86,7 +86,8 @@ public class ProfileHud extends HudElement {
         for (ProfileData.Entry e : p.entries()) {
             PetStat stat = e.stat();
             int color = stat != null ? stat.color() : DAMAGE_COLOR;
-            String total = StatLine.fmt(e.value()) + (e.percent() ? "%" : "");
+            double value = stat != null ? ProfileState.total(stat) : e.value();
+            String total = StatLine.fmt(value) + (e.percent() ? "%" : "");
 
             // Right part, drawn right-to-left: ")" armor " | " pets "(" then the total.
             int x = WIDTH - 6;
