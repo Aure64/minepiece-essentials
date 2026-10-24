@@ -13,3 +13,7 @@ Dans l'éditeur K, clique un panneau : ses réglages apparaissent en haut de l'�
 **🎨 Couleurs des prix de l'hôtel des ventes**
 
 Bouton « Couleurs prix AH... » dans l'éditeur K : une couleur par bande (bonne affaire / au prix / trop cher) avec aperçu du liseré et de l'infobulle, palette, champ hexa, et un bouton pour échanger jaune et vert.
+
+**ℹ️ Infobulle sur « Statistiques anonymes »**
+
+Survole l'interrupteur dans l'éditeur K pour lire ce qui est compté (et ce qui ne l'est pas).
