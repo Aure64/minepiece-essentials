@@ -68,6 +68,16 @@ class ArmorStatParserTest {
     }
 
     @Test
+    void setNameFromTheFullArmorPhrasing() {
+        ArmorPiece p = ArmorStatParser.parse(List.of(
+            "Tamago Leggings", "犹 Health +110", "",
+            "Ъ Full Armor Effect", "Get a bonus of xp of 10%", "on your profile by wearing", "the full Tamago armor."))
+            .orElseThrow();
+        assertEquals("Tamago", p.setName());
+        assertEquals("the full Tamago armor.", p.setEffect().get(2));
+    }
+
+    @Test
     void fallsBackToFirstWordOfNameWithoutSetParagraph() {
         ArmorPiece p = ArmorStatParser.parse(List.of("Marine's Boots", "犹 Health +10")).orElseThrow();
         assertEquals("Marine", p.setName());

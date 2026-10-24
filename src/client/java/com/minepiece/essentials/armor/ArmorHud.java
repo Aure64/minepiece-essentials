@@ -5,6 +5,8 @@ import com.minepiece.essentials.hud.HudElement;
 import com.minepiece.essentials.hud.ParchmentRenderer;
 import com.minepiece.essentials.pet.PetStat;
 import com.minepiece.essentials.util.RenderUtils;
+import java.util.ArrayList;
+import java.util.List;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
 
@@ -16,6 +18,7 @@ public class ArmorHud extends HudElement {
     private static final int NAME_COLOR = 0xFFFFE9D5;
     private static final int SET_COLOR = 0xFF9CE07A;
     private static final int SET_PARTIAL_COLOR = 0xFFCBC8C7;
+    private static final int EFFECT_COLOR = 0xFFB8D8C0;
 
     public ArmorHud() {
         super("active_armor", 5, 240, WIDTH, 60);
@@ -45,7 +48,8 @@ public class ArmorHud extends HudElement {
         int count = snap.pieces().size();
         int stats = (int) snap.totals().values().stream().filter(v -> v != 0.0).count();
         boolean setLine = snap.setName() != null;
-        int h = 20 + count * ROW + (setLine ? 10 : 0) + 6 + stats * 10 + 4;
+        List<String> effect = snap.fullSet() ? wrap(String.join(" ", snap.setEffect()), WIDTH - 16) : List.of();
+        int h = 20 + count * ROW + (setLine ? 10 : 0) + effect.size() * 10 + 6 + stats * 10 + 4;
         this.height = h;
         ParchmentRenderer.renderPanel(ctx, 0, 0, WIDTH, h, title + " (" + count + "/4)", getBackground());
 
@@ -61,6 +65,10 @@ public class ArmorHud extends HudElement {
             String line = Component.translatable(key, snap.setName(), count).getString();
             RenderUtils.drawTextFit(ctx, line, 6, y, WIDTH - 12, snap.fullSet() ? SET_COLOR : SET_PARTIAL_COLOR);
             y += 10;
+            for (String l : effect) {
+                RenderUtils.drawText(ctx, l, 10, y, EFFECT_COLOR);
+                y += 10;
+            }
         }
 
         y += 6;
@@ -83,6 +91,24 @@ public class ArmorHud extends HudElement {
         ctx.pose().scale(0.75f, 0.75f);
         ctx.item(worn.stack(), 0, 0);
         ctx.pose().popMatrix();
+    }
+
+    /** Word-wraps {@code text} so every line fits in {@code maxWidth} px. */
+    private static List<String> wrap(String text, int maxWidth) {
+        List<String> out = new ArrayList<>();
+        StringBuilder line = new StringBuilder();
+        for (String word : text.trim().split("\\s+")) {
+            if (word.isEmpty()) continue;
+            String candidate = line.isEmpty() ? word : line + " " + word;
+            if (RenderUtils.textWidth(candidate) > maxWidth && !line.isEmpty()) {
+                out.add(line.toString());
+                line = new StringBuilder(word);
+            } else {
+                line = new StringBuilder(candidate);
+            }
+        }
+        if (!line.isEmpty()) out.add(line.toString());
+        return out;
     }
 
     private static String fmt(double v) {
