@@ -219,6 +219,11 @@ public class HudEditScreen extends Screen {
         drawToggle(ctx, mouseX, mouseY, 9, Component.translatable("minepiece.ui.editor.boss_compact").getString(), cfg.bossCompactMode);
         drawToggle(ctx, mouseX, mouseY, 10, Component.translatable("minepiece.ui.editor.telemetry").getString(),
                 cfg.telemetryEnabled);
+        if (inBox(mouseX, mouseY, toggleX(10), toggleY(10), BTN_W, BTN_H)) {
+            Font font = Minecraft.getInstance().font;
+            ctx.setTooltipForNextFrame(font.split(Component.translatable("minepiece.ui.editor.telemetry.tooltip"), 220),
+                    mouseX, mouseY);
+        }
 
         // Bouton de don, seulement visible tant qu'on est connecté à MinePiece.
         // Traitement doré volontairement différent des toggles gris pour attirer l'œil.

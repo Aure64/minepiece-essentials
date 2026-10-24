@@ -143,5 +143,6 @@
     "minepiece.ui.ahcolors.invalid": "Format: #RRGGBB",
     "minepiece.ui.ahcolors.swap": "Swap yellow / green",
     "minepiece.ui.ahcolors.reset": "Default colors",
-    "minepiece.ui.ahcolors.close": "Close"
+    "minepiece.ui.ahcolors.close": "Close",
+    "minepiece.ui.editor.telemetry.tooltip": "Anonymously counts the mod's players (mod version, Minecraft version, features used). No username, no gameplay data. Only used to know how many people use it."
 }
