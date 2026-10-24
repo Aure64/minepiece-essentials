@@ -48,10 +48,22 @@ public final class ArmorScanner {
             fp = (fp ^ s.getCount()) * 1099511628211L;
         }
         if (fp == lastFingerprint) return;
-        boolean first = lastFingerprint == 0;
         lastFingerprint = fp;
-        ArmorState.set(scan(stacks));
-        if (!first) ProfileScanner.refreshSoon(); // les stats globales ont bougé
+        ArmorState.Snapshot before = ArmorState.get();
+        ArmorState.Snapshot after = scan(stacks);
+        ArmorState.set(after);
+        // Les instances changent à chaque resync d'inventaire (dont la fermeture d'un relevé
+        // de fond) : ne redemander /profil que si l'armure portée a réellement changé.
+        if (!sameArmor(before, after)) ProfileScanner.refreshSoon();
+    }
+
+    /** Same pieces (names) and same totals → nothing changed for the profile. */
+    static boolean sameArmor(ArmorState.Snapshot a, ArmorState.Snapshot b) {
+        if (a.pieces().size() != b.pieces().size()) return false;
+        for (int i = 0; i < a.pieces().size(); i++) {
+            if (!a.pieces().get(i).piece().name().equals(b.pieces().get(i).piece().name())) return false;
+        }
+        return a.totals().equals(b.totals());
     }
 
     static ArmorState.Snapshot scan(List<ItemStack> stacks) {

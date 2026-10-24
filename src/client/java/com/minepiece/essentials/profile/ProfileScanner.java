@@ -26,6 +26,8 @@ public final class ProfileScanner {
     public static final String PROFILE_COMMAND = "/profil";
     private static final int SCAN_INTERVAL = 4; // ticks
     private static final long ARMOR_DEBOUNCE_MS = 4_000L;
+    private static final long MIN_GAP_MS = 30_000L; // garde-fou : jamais deux relevés auto à moins de 30 s
+    private static long lastSentMillis;
 
     private static int ticks;
     private static boolean refreshPending;
@@ -47,11 +49,12 @@ public final class ProfileScanner {
         boolean onMinePiece = ServerDetector.isOnMinePiece();
         boolean inWorld = onMinePiece && client.player != null && client.level != null
                 && IslandDetector.getInstance().getCurrentIsland() != Island.UNKNOWN;
-        if (inWorld && !wasInWorld) { refreshPending = true; notBeforeMillis = 0; }
+        if (inWorld && !wasInWorld) { refreshPending = true; notBeforeMillis = 0; lastSentMillis = 0; }
         if (!inWorld && wasInWorld) ProfileState.clear();
         wasInWorld = inWorld;
 
-        if (refreshPending && inWorld && System.currentTimeMillis() >= notBeforeMillis
+        long now = System.currentTimeMillis();
+        if (refreshPending && inWorld && now >= notBeforeMillis && now - lastSentMillis >= MIN_GAP_MS
                 && !BackgroundGuiRefresh.isBusy() && BackgroundGuiRefresh.isReady()) {
             boolean sent = BackgroundGuiRefresh.sendCommand(PROFILE_COMMAND, items -> {
                 boolean ok = scan(new ArrayList<>(items.values()));
@@ -60,6 +63,7 @@ public final class ProfileScanner {
             });
             if (sent) {
                 refreshPending = false;
+                lastSentMillis = now;
                 MinepieceEssentialsClient.LOGGER.info("[Profile] Refresh via {}", PROFILE_COMMAND);
             }
         }
