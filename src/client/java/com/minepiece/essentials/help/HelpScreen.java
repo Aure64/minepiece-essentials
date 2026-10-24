@@ -70,6 +70,18 @@ public class HelpScreen extends Screen {
                 important(tr("minepiece.ui.help.boss.line2")),
                 important(tr("minepiece.ui.help.boss.line3")),
                 info(tr("minepiece.ui.help.boss.line4")),
+                info(tr("minepiece.ui.help.boss.line5")),
+            }),
+            new Feature(tr("minepiece.ui.help.ascensions.title"), new Line[]{
+                info(tr("minepiece.ui.help.ascensions.line1")),
+                info(tr("minepiece.ui.help.ascensions.line2")),
+            }),
+            new Feature(tr("minepiece.ui.help.rarity.title"), new Line[]{
+                info(tr("minepiece.ui.help.rarity.line1")),
+                info(tr("minepiece.ui.help.rarity.line2")),
+            }),
+            new Feature(tr("minepiece.ui.help.haki.title"), new Line[]{
+                info(tr("minepiece.ui.help.haki.line1")),
             }),
             new Feature(tr("minepiece.ui.help.scrolls.title"), new Line[]{
                 info(tr("minepiece.ui.help.scrolls.line1")),
@@ -111,17 +123,46 @@ public class HelpScreen extends Screen {
         };
     }
 
-    // Line counts per feature (fixed, not language-dependent) used for layout.
-    private static final int[] FEATURE_LINE_COUNTS = {3, 1, 2, 3, 2, 1, 4, 3, 1};
+    // Hauteur de contenu fixe : les features sont réparties en pages (◀ ▶ en bas).
+    private static final int CONTENT_H = 150;
+    private static final int NAV_H = 22;
+    private static final int PANEL_H = HEADER_H + CONTENT_H + NAV_H + FOOTER_H;
+    private static final int TEXT_W = PANEL_W - 32;
 
-    private static final int PANEL_H;
+    /** Une feature avec ses lignes déjà repliées à la largeur du panneau. */
+    private record Block(String title, java.util.List<Line> lines) {
+        int height() { return TITLE_H + lines.size() * LINE_H + FEATURE_GAP; }
+    }
 
-    static {
-        int h = HEADER_H;
-        for (int lineCount : FEATURE_LINE_COUNTS) {
-            h += TITLE_H + lineCount * LINE_H + FEATURE_GAP;
+    private java.util.List<java.util.List<Block>> pages = java.util.List.of();
+    private int page;
+
+    /** Replie les lignes trop longues puis remplit les pages sans couper une feature. */
+    private static java.util.List<java.util.List<Block>> paginate(Feature[] features) {
+        Font font = Minecraft.getInstance().font;
+        java.util.List<java.util.List<Block>> out = new java.util.ArrayList<>();
+        java.util.List<Block> current = new java.util.ArrayList<>();
+        int used = 0;
+        for (Feature f : features) {
+            java.util.List<Line> lines = new java.util.ArrayList<>();
+            for (Line l : f.lines()) {
+                for (net.minecraft.util.FormattedCharSequence seq : font.split(Component.literal(l.text()), TEXT_W)) {
+                    StringBuilder sb = new StringBuilder();
+                    seq.accept((i, style, cp) -> { sb.appendCodePoint(cp); return true; });
+                    lines.add(new Line(sb.toString(), l.important()));
+                }
+            }
+            Block b = new Block(f.title(), lines);
+            if (!current.isEmpty() && used + b.height() > CONTENT_H) {
+                out.add(current);
+                current = new java.util.ArrayList<>();
+                used = 0;
+            }
+            current.add(b);
+            used += b.height();
         }
-        PANEL_H = h + FOOTER_H;
+        if (!current.isEmpty()) out.add(current);
+        return out;
     }
 
     private int left;
@@ -135,6 +176,8 @@ public class HelpScreen extends Screen {
     protected void init() {
         left = (this.width - PANEL_W) / 2;
         top = (this.height - PANEL_H) / 2;
+        pages = paginate(buildFeatures());
+        page = Math.min(page, pages.size() - 1);
     }
 
     @Override
@@ -143,15 +186,25 @@ public class HelpScreen extends Screen {
         ParchmentRenderer.renderPanel(ctx, left, top, PANEL_W, PANEL_H, "Minepiece Essentials");
 
         int y = top + HEADER_H;
-        for (Feature f : buildFeatures()) {
-            RenderUtils.drawText(ctx, "» " + f.title(), left + 12, y, GOLD);
-            y += TITLE_H;
-            for (Line line : f.lines()) {
-                RenderUtils.drawText(ctx, line.text(), left + 20, y, line.important() ? RED : GRAY);
-                y += LINE_H;
+        if (!pages.isEmpty()) {
+            for (Block b : pages.get(page)) {
+                RenderUtils.drawText(ctx, "» " + b.title(), left + 12, y, GOLD);
+                y += TITLE_H;
+                for (Line line : b.lines()) {
+                    RenderUtils.drawText(ctx, line.text(), left + 20, y, line.important() ? RED : GRAY);
+                    y += LINE_H;
+                }
+                y += FEATURE_GAP;
             }
-            y += FEATURE_GAP;
         }
+
+        // Navigation ◀ n/N ▶ sous le contenu.
+        int navY = navRowY();
+        if (pages.size() > 1) {
+            drawButton(ctx, left + 12, navY, NAV_BTN_W, "◀", mouseX, mouseY);
+            drawButton(ctx, left + PANEL_W - 12 - NAV_BTN_W, navY, NAV_BTN_W, "▶", mouseX, mouseY);
+        }
+        RenderUtils.drawCenteredText(ctx, (page + 1) + " / " + Math.max(1, pages.size()), left + PANEL_W / 2, navY + 6, GRAY);
 
         int btnY = topRowY();
         drawButton(ctx, left + 12, btnY, 140, tr("minepiece.ui.help.btn_dismiss"), mouseX, mouseY);
@@ -163,9 +216,21 @@ public class HelpScreen extends Screen {
         }
     }
 
+    private static final int NAV_BTN_W = 40;
+
+    /** Rangée de navigation entre pages, juste sous le contenu. */
+    private int navRowY() {
+        return top + HEADER_H + CONTENT_H;
+    }
+
     /** Rangée du haut (dismiss/close). */
     private int topRowY() {
         return top + PANEL_H - FOOTER_H + 12;
+    }
+
+    private void turnPage(int delta) {
+        if (pages.isEmpty()) return;
+        page = Math.floorMod(page + delta, pages.size());
     }
 
     /** Rangée dédiée au don, sous la rangée dismiss/close. */
@@ -203,6 +268,10 @@ public class HelpScreen extends Screen {
     @Override
     public boolean mouseClicked(MouseButtonEvent click, boolean doubled) {
         if (click.button() == 0) {
+            if (pages.size() > 1) {
+                if (inside(click, left + 12, navRowY(), NAV_BTN_W)) { turnPage(-1); return true; }
+                if (inside(click, left + PANEL_W - 12 - NAV_BTN_W, navRowY(), NAV_BTN_W)) { turnPage(1); return true; }
+            }
             int btnY = topRowY();
             if (inside(click, left + 12, btnY, 140)) {
                 var cfg = MinepieceEssentialsClient.getInstance().getConfigManager();
@@ -226,6 +295,19 @@ public class HelpScreen extends Screen {
 
     private boolean inside(MouseButtonEvent click, int x, int y, int w) {
         return click.x() >= x && click.x() <= x + w && click.y() >= y && click.y() <= y + BTN_H;
+    }
+
+    @Override
+    public boolean keyPressed(net.minecraft.client.input.KeyEvent key) {
+        if (key.input() == org.lwjgl.glfw.GLFW.GLFW_KEY_LEFT) { turnPage(-1); return true; }
+        if (key.input() == org.lwjgl.glfw.GLFW.GLFW_KEY_RIGHT) { turnPage(1); return true; }
+        return super.keyPressed(key);
+    }
+
+    @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double dx, double dy) {
+        if (dy != 0) { turnPage(dy < 0 ? 1 : -1); return true; }
+        return super.mouseScrolled(mouseX, mouseY, dx, dy);
     }
 
     @Override

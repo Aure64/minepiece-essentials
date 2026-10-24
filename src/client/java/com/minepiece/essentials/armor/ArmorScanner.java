@@ -1,6 +1,7 @@
 package com.minepiece.essentials.armor;
 
 import com.minepiece.essentials.pet.PetStat;
+import com.minepiece.essentials.profile.ProfileScanner;
 import com.minepiece.essentials.util.ItemText;
 import java.util.ArrayList;
 import java.util.EnumMap;
@@ -47,8 +48,10 @@ public final class ArmorScanner {
             fp = (fp ^ s.getCount()) * 1099511628211L;
         }
         if (fp == lastFingerprint) return;
+        boolean first = lastFingerprint == 0;
         lastFingerprint = fp;
         ArmorState.set(scan(stacks));
+        if (!first) ProfileScanner.refreshSoon(); // les stats globales ont bougé
     }
 
     static ArmorState.Snapshot scan(List<ItemStack> stacks) {

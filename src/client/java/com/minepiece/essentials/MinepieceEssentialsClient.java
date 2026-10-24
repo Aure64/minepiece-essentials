@@ -135,6 +135,7 @@ public class MinepieceEssentialsClient implements ClientModInitializer {
             if (!ServerDetector.isOnMinePiece()) return;
 
             BossTracker.getInstance().tick();
+            com.minepiece.essentials.profile.ProfileScanner.tick();
 
             if (pendingHelp && client.gui.screen() == null && client.player != null) {
                 client.setScreenAndShow(new HelpScreen());

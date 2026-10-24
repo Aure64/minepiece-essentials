@@ -4,6 +4,7 @@ import com.minepiece.essentials.MinepieceEssentialsClient;
 import com.minepiece.essentials.hud.HudElement;
 import com.minepiece.essentials.hud.ParchmentRenderer;
 import com.minepiece.essentials.pet.PetStat;
+import com.minepiece.essentials.profile.StatLine;
 import com.minepiece.essentials.util.RenderUtils;
 import java.util.ArrayList;
 import java.util.List;
@@ -48,8 +49,8 @@ public class ArmorHud extends HudElement {
         int count = snap.pieces().size();
         int stats = (int) snap.totals().values().stream().filter(v -> v != 0.0).count();
         boolean setLine = snap.setName() != null;
-        List<String> effect = snap.fullSet() ? wrap(String.join(" ", snap.setEffect()), WIDTH - 16) : List.of();
-        int h = 20 + count * ROW + (setLine ? 10 : 0) + effect.size() * 10 + 6 + stats * 10 + 4;
+        String effect = snap.fullSet() ? ArmorSetEffect.summarize(snap.setEffect()) : "";
+        int h = 20 + count * ROW + (setLine ? 10 : 0) + 6 + stats * 10 + 4;
         this.height = h;
         ParchmentRenderer.renderPanel(ctx, 0, 0, WIDTH, h, title + " (" + count + "/4)", getBackground());
 
@@ -63,12 +64,13 @@ public class ArmorHud extends HudElement {
         if (setLine) {
             String key = snap.fullSet() ? "minepiece.ui.armor.full_set" : "minepiece.ui.armor.partial_set";
             String line = Component.translatable(key, snap.setName(), count).getString();
-            RenderUtils.drawTextFit(ctx, line, 6, y, WIDTH - 12, snap.fullSet() ? SET_COLOR : SET_PARTIAL_COLOR);
-            y += 10;
-            for (String l : effect) {
-                RenderUtils.drawText(ctx, l, 10, y, EFFECT_COLOR);
-                y += 10;
+            int ex = WIDTH - 6;
+            if (!effect.isEmpty()) {
+                ex = WIDTH - 6 - RenderUtils.textWidth(effect);
+                RenderUtils.drawText(ctx, effect, ex, y, EFFECT_COLOR);
             }
+            RenderUtils.drawTextFit(ctx, line, 6, y, ex - 10, snap.fullSet() ? SET_COLOR : SET_PARTIAL_COLOR);
+            y += 10;
         }
 
         y += 6;
@@ -77,9 +79,10 @@ public class ArmorHud extends HudElement {
             if (value == null || value == 0.0) continue;
             String name = snap.labels().get(stat);
             if (name == null || name.isBlank()) name = stat.fr();
-            RenderUtils.drawText(ctx, name, 6, y, stat.color());
-            String v = "+" + fmt(value);
-            RenderUtils.drawText(ctx, v, WIDTH - 6 - RenderUtils.textWidth(v), y, stat.color());
+            String v = StatLine.right(stat, value);
+            int vx = WIDTH - 6 - RenderUtils.textWidth(v);
+            RenderUtils.drawText(ctx, v, vx, y, stat.color());
+            RenderUtils.drawTextFit(ctx, name, 6, y, vx - 10, stat.color());
             y += 10;
         }
     }
@@ -91,24 +94,6 @@ public class ArmorHud extends HudElement {
         ctx.pose().scale(0.75f, 0.75f);
         ctx.item(worn.stack(), 0, 0);
         ctx.pose().popMatrix();
-    }
-
-    /** Word-wraps {@code text} so every line fits in {@code maxWidth} px. */
-    private static List<String> wrap(String text, int maxWidth) {
-        List<String> out = new ArrayList<>();
-        StringBuilder line = new StringBuilder();
-        for (String word : text.trim().split("\\s+")) {
-            if (word.isEmpty()) continue;
-            String candidate = line.isEmpty() ? word : line + " " + word;
-            if (RenderUtils.textWidth(candidate) > maxWidth && !line.isEmpty()) {
-                out.add(line.toString());
-                line = new StringBuilder(word);
-            } else {
-                line = new StringBuilder(candidate);
-            }
-        }
-        if (!line.isEmpty()) out.add(line.toString());
-        return out;
     }
 
     private static String fmt(double v) {

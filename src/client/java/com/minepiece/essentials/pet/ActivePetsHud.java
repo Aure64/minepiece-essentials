@@ -3,6 +3,7 @@ package com.minepiece.essentials.pet;
 import com.minepiece.essentials.MinepieceEssentialsClient;
 import com.minepiece.essentials.hud.HudElement;
 import com.minepiece.essentials.hud.ParchmentRenderer;
+import com.minepiece.essentials.profile.StatLine;
 import com.minepiece.essentials.util.RenderUtils;
 import java.util.Map;
 import net.minecraft.client.Minecraft;
@@ -80,9 +81,10 @@ public class ActivePetsHud extends HudElement {
             if (value == null || value == 0.0) continue;
             String name = snap.labels().get(stat);
             if (name == null || name.isBlank()) name = stat.fr();
-            RenderUtils.drawText(ctx, name, 6, y, stat.color());
-            String v = "+" + fmt(value);
-            RenderUtils.drawText(ctx, v, WIDTH - 6 - RenderUtils.textWidth(v), y, stat.color());
+            String v = StatLine.right(stat, value);
+            int vx = WIDTH - 6 - RenderUtils.textWidth(v);
+            RenderUtils.drawText(ctx, v, vx, y, stat.color());
+            RenderUtils.drawTextFit(ctx, name, 6, y, vx - 10, stat.color());
             y += 10;
         }
     }

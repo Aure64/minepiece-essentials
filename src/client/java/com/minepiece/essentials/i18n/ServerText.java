@@ -26,6 +26,12 @@ public final class ServerText {
     public static final String[] PET_NOT_DISCOVERED = {"Non découvert", "Not discovered"};
     public static final Pattern PET_LEVEL = Pattern.compile("(?:Niveau|Level):\\s*(\\S+)");
 
+    // Profil (/profil → objet « Information »)
+    public static final String[] PROFILE_STATS = {"Statistics", "Statistiques"};
+    public static final String[] PROFILE_END = {"Obtaining", "Obtention", "Acquisition"};
+    public static final Pattern PROFILE_LEVEL = Pattern.compile("(?:Level|Niveau):\\s*(\\d+)\\s*\\(([\\d.,]+)%\\)");
+    public static final Pattern PROFILE_ASCENSION = Pattern.compile("Ascension:\\s*(\\d+)");
+
     // Parchemins
     public static final String[] SCROLL_NAME = {"parchemin", "scroll"};
     public static final String[] OBJECTIVE = {"Objectif", "Objective"};
