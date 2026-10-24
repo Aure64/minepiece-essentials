@@ -17,7 +17,8 @@ import net.minecraft.world.item.ItemStack;
 
 /**
  * Keeps {@link ProfileState} filled: a silent {@link #PROFILE_COMMAND} read once per
- * connection, again (debounced) when the worn armor changes, and whenever the player
+ * connection, again (debounced) when the worn armor or the active pets change or the
+ * player levels up (boss bar), every 10 min as a safety net, and whenever the player
  * opens the screen themselves. Read, close, never click — see
  * docs/architecture-background-refresh.md.
  */
@@ -27,6 +28,7 @@ public final class ProfileScanner {
     private static final int SCAN_INTERVAL = 4; // ticks
     private static final long ARMOR_DEBOUNCE_MS = 4_000L;
     private static final long MIN_GAP_MS = 30_000L; // garde-fou : jamais deux relevés auto à moins de 30 s
+    private static final long PERIODIC_MS = 10 * 60_000L; // filet de sécurité
     private static long lastSentMillis;
 
     private static int ticks;
@@ -50,10 +52,11 @@ public final class ProfileScanner {
         boolean inWorld = onMinePiece && client.player != null && client.level != null
                 && IslandDetector.getInstance().getCurrentIsland() != Island.UNKNOWN;
         if (inWorld && !wasInWorld) { refreshPending = true; notBeforeMillis = 0; lastSentMillis = 0; }
-        if (!inWorld && wasInWorld) ProfileState.clear();
+        if (!inWorld && wasInWorld) { ProfileState.clear(); PlayerLevel.reset(); }
         wasInWorld = inWorld;
 
         long now = System.currentTimeMillis();
+        if (inWorld && !refreshPending && lastSentMillis > 0 && now - lastSentMillis >= PERIODIC_MS) refreshPending = true;
         if (refreshPending && inWorld && now >= notBeforeMillis && now - lastSentMillis >= MIN_GAP_MS
                 && !BackgroundGuiRefresh.isBusy() && BackgroundGuiRefresh.isReady()) {
             boolean sent = BackgroundGuiRefresh.sendCommand(PROFILE_COMMAND, items -> {

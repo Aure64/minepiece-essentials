@@ -58,8 +58,10 @@ public class ProfileHud extends HudElement {
         ParchmentRenderer.renderPanel(ctx, 0, 0, WIDTH, h, title, getBackground());
 
         int y = 20;
-        String level = Component.translatable("minepiece.ui.profile.level", p.level(),
-                String.format(java.util.Locale.US, "%.0f", p.levelPercent()), p.ascension()).getString();
+        int lvl = PlayerLevel.level() > 0 ? PlayerLevel.level() : p.level();
+        double pct = PlayerLevel.level() > 0 ? PlayerLevel.percent() : p.levelPercent();
+        String level = Component.translatable("minepiece.ui.profile.level", lvl,
+                String.format(java.util.Locale.US, "%.1f", pct), p.ascension()).getString();
         RenderUtils.drawTextFit(ctx, level, 6, y, WIDTH - 12, GRAY);
         y += 10;
 

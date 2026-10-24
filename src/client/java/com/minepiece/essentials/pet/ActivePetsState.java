@@ -37,6 +37,13 @@ public final class ActivePetsState {
     }
 
     public static void set(Snapshot snapshot) {
+        Snapshot before = current;
         current = snapshot;
+        // Pets activés/désactivés → les stats globales changent : relire /profil.
+        if (!names(before).equals(names(snapshot))) com.minepiece.essentials.profile.ProfileScanner.refreshSoon();
+    }
+
+    private static List<String> names(Snapshot s) {
+        return s.pets().stream().map(ActivePet::name).toList();
     }
 }

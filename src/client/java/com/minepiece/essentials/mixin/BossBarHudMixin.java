@@ -30,7 +30,9 @@ public class BossBarHudMixin {
         minepiece$lastBossbarScan = now;
 
         for (LerpingBossEvent bar : events.values()) {
-            IslandDetector.getInstance().onBossBarUpdate(bar.getName().getString());
+            String text = bar.getName().getString();
+            IslandDetector.getInstance().onBossBarUpdate(text);
+            com.minepiece.essentials.profile.PlayerLevel.onBossBarText(text);
         }
     }
 }
