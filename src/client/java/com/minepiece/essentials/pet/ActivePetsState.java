@@ -2,6 +2,7 @@ package com.minepiece.essentials.pet;
 
 import java.util.List;
 import java.util.Map;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 
 /** Latest snapshot of the active pets and their summed combat-stat bonuses. */
@@ -10,13 +11,14 @@ public final class ActivePetsState {
     /**
      * An active pet with its rarity-coloured name and level.
      *
-     * @param icon        the pet item, drawn as a small head in the HUD (may be empty)
-     * @param rarityGlyph pack glyph of the pet's rarity, "" if unknown
-     * @param statGlyphs  pack glyphs of its stat effects, in tooltip order
+     * @param icon       the pet item, drawn as a small head in the HUD (may be empty)
+     * @param statGlyphs the stat icons of its effects, in tooltip order: the pack glyph
+     *                   <em>with the font style it carries in the lore</em> (a bare
+     *                   String would render as a CJK character in the default font)
      */
-    public record ActivePet(String name, int color, int level, ItemStack icon, String rarityGlyph, List<String> statGlyphs) {
+    public record ActivePet(String name, int color, int level, ItemStack icon, List<Component> statGlyphs) {
         public ActivePet(String name, int color, int level) {
-            this(name, color, level, ItemStack.EMPTY, "", List.of());
+            this(name, color, level, ItemStack.EMPTY, List.of());
         }
     }
 

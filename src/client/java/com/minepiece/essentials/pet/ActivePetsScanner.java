@@ -6,8 +6,6 @@ import com.minepiece.essentials.i18n.ServerText;
 import com.minepiece.essentials.island.Island;
 import com.minepiece.essentials.island.IslandDetector;
 import com.minepiece.essentials.network.BackgroundGuiRefresh;
-import com.minepiece.essentials.rarity.ItemRarity;
-import com.minepiece.essentials.rarity.RarityDetector;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -22,6 +20,8 @@ import net.minecraft.network.chat.TextColor;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.world.item.component.ItemLore;
 
 /**
  * Scans the open /pets screen and publishes the combat-stat total of the
@@ -112,12 +112,8 @@ public final class ActivePetsScanner {
             int color = nameColor(stack.getHoverName());
             if (color == 0) color = rarityColor(stack); // fallback when the name has no explicit colour
             List<PetEffect> effects = combatStats(tip);
-            List<String> glyphs = new ArrayList<>(effects.size());
-            for (PetEffect e : effects) if (!e.glyph().isEmpty()) glyphs.add(e.glyph());
-            ItemRarity rarity = RarityDetector.detect(stack);
-            String rarityGlyph = rarity == null ? "" : new String(Character.toChars(rarity.glyph));
             activePets.add(new ActivePetsState.ActivePet(stack.getHoverName().getString(), color, levelOf(tip),
-                    stack.copy(), rarityGlyph, List.copyOf(glyphs)));
+                    stack.copy(), glyphComponents(stack, effects)));
             allStats.addAll(effects);
         }
 
@@ -164,6 +160,29 @@ public final class ActivePetsScanner {
             }
         }
         return 0;
+    }
+
+    /**
+     * Rebuilds each effect's glyph as a Component carrying the font the lore uses for it
+     * (the pack maps those codepoints in a dedicated font; the default font shows CJK).
+     */
+    private static List<Component> glyphComponents(ItemStack stack, List<PetEffect> effects) {
+        ItemLore lore = stack.get(DataComponents.LORE);
+        if (lore == null || effects.isEmpty()) return List.of();
+        List<Component> out = new ArrayList<>(effects.size());
+        for (PetEffect e : effects) {
+            if (e.glyph().isEmpty()) continue;
+            Style found = null;
+            for (Component line : lore.lines()) {
+                if (found != null) break;
+                found = line.visit((style, str) -> str.contains(e.glyph()) ? Optional.of(style) : Optional.empty(), Style.EMPTY)
+                        .orElse(null);
+            }
+            Style style = Style.EMPTY;
+            if (found != null && found.getFont() != null) style = style.withFont(found.getFont());
+            out.add(Component.literal(e.glyph()).withStyle(style));
+        }
+        return List.copyOf(out);
     }
 
     private static List<PetEffect> combatStats(List<String> lines) {

@@ -5,6 +5,8 @@ import com.minepiece.essentials.hud.HudElement;
 import com.minepiece.essentials.hud.ParchmentRenderer;
 import com.minepiece.essentials.util.RenderUtils;
 import java.util.Map;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
 
@@ -19,6 +21,7 @@ public class ActivePetsHud extends HudElement {
     private static final int WIDTH = 170;
     private static final int ROW = 12;   // 12 px rows: room for the 12 px head
     private static final int ICON = 12;
+    private static final int GLYPH_GAP = 3;
     private static final int LEVEL_COLOR = 0xFFCBC8C7;
 
     public ActivePetsHud() {
@@ -52,22 +55,20 @@ public class ActivePetsHud extends HudElement {
             int lvlX = WIDTH - 6 - RenderUtils.textWidth(lvl);
             RenderUtils.drawText(ctx, lvl, lvlX, ty, LEVEL_COLOR);
 
-            // Glyphes de stats (icônes du pack serveur) juste à gauche du niveau.
-            String glyphs = String.join(" ", pet.statGlyphs());
+            // Glyphes de stats (icônes du pack serveur, police portée par le composant)
+            // alignés à droite, juste à gauche du niveau.
+            Font font = Minecraft.getInstance().font;
             int glyphsX = lvlX;
-            if (!glyphs.isEmpty()) {
-                glyphsX = lvlX - 6 - RenderUtils.textWidth(glyphs);
-                RenderUtils.drawText(ctx, glyphs, glyphsX, ty, 0xFFFFFFFF);
+            for (int i = pet.statGlyphs().size() - 1; i >= 0; i--) {
+                Component g = pet.statGlyphs().get(i);
+                glyphsX -= font.width(g) + GLYPH_GAP;
+                ctx.text(font, g, glyphsX, ty, 0xFFFFFFFF, false);
             }
 
             int x = 6;
             if (!pet.icon().isEmpty()) {
                 drawIcon(ctx, pet.icon(), x, y - 2);
                 x += ICON + 4;
-            }
-            if (!pet.rarityGlyph().isEmpty()) {
-                RenderUtils.drawText(ctx, pet.rarityGlyph(), x, ty, 0xFFFFFFFF);
-                x += RenderUtils.textWidth(pet.rarityGlyph()) + 3;
             }
             RenderUtils.drawText(ctx, truncate(pet.name(), glyphsX - 6 - x), x, ty, pet.color());
             y += ROW;
